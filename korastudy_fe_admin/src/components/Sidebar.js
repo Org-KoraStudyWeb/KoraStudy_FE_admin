@@ -110,22 +110,17 @@ const Sidebar = () => {
     <div className="w-64 bg-white border-r border-gray-200 h-screen overflow-y-auto">
       {/* Logo */}
       <div className="p-6 border-b border-gray-200">
-        {/* <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">K</span>
-          </div>
-          <span className="font-bold text-xl text-gray-800">KoraStudy</span>
-        </div> */}
-        <div className="nav-logo flex items-center">
+
+        <div className="nav-logo flex items-center justify-center">
           <Link to="/" className="flex items-center">
             <img 
-              src="logo192.png" 
+              src="/bloom_black.png" 
               alt="KoraStudy Logo" 
-              className="h-12 md:h-16 w-auto mr-2 dark:filter dark:brightness-0 dark:invert"
+              className="h-12 md:h-16 w-auto mr-2"
+              // Bỏ các lớp dark:filter dark:brightness-0 dark:invert
             />
           </Link>
         </div>
-        <p className="text-sm text-gray-500 mt-1">Admin Panel</p>
       </div>
 
       {/* Navigation */}
