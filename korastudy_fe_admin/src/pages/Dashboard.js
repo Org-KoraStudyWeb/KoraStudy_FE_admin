@@ -1,91 +1,91 @@
 import React from 'react';
-import { 
-  Users, 
-  FileText, 
-  BookOpen, 
-  TrendingUp, 
-  Eye, 
-  Plus, 
-  Calendar,
-//   Clock,
-  Award,
-  Activity,
-  ArrowUpRight,
-  ArrowDownRight,
-//   MoreVertical
-} from 'lucide-react';
+import { FileText, Users, BookOpen, TrendingUp } from 'lucide-react';
 
 const Dashboard = () => {
-  // Mock data for dashboard
   const stats = [
     {
-      title: 'Tổng số người dùng',
-      value: '2,847',
+      title: 'Tổng đề thi',
+      value: '24',
       change: '+12%',
-      changeType: 'increase',
-      icon: <Users size={24} />,
+      icon: FileText,
       color: 'blue'
     },
     {
-      title: 'Đề thi đang hoạt động',
-      value: '156',
-      change: '+8%',
-      changeType: 'increase',
-      icon: <FileText size={24} />,
+      title: 'Người dùng',
+      value: '1,234',
+      change: '+5%',
+      icon: Users,
       color: 'green'
     },
     {
       title: 'Khóa học',
-      value: '89',
-      change: '+23%',
-      changeType: 'increase',
-      icon: <BookOpen size={24} />,
+      value: '18',
+      change: '+8%',
+      icon: BookOpen,
       color: 'purple'
     },
     {
-      title: 'Lượt thi hôm nay',
-      value: '1,234',
-      change: '-5%',
-      changeType: 'decrease',
-      icon: <TrendingUp size={24} />,
-      color: 'orange'
+      title: 'Lượt thi',
+      value: '5,678',
+      change: '+15%',
+      icon: TrendingUp,
+      color: 'yellow'
     }
   ];
 
-  const recentActivities = [
-    {
-      id: 1,
-      type: 'test_created',
-      title: 'Đề thi TOPIK I - Đề số 15 đã được tạo',
-      user: 'Admin User',
-      time: '2 phút trước',
-      icon: <FileText size={16} />,
-      color: 'blue'
-    },
-    {
-      id: 2,
-      type: 'user_registered',
-      title: 'Người dùng mới đăng ký: nguyenvana@email.com',
-      user: 'System',
-      time: '15 phút trước',
-      icon: <Users size={16} />,
-      color: 'green'
-    },
-    {
-      id: 3,
-      type: 'test_completed',
-      title: '25 thí sinh hoàn thành đề thi TOPIK II',
-      user: 'System',
-      time: '1 giờ trước',
-      icon: <Award size={16} />,
-      color: 'purple'
-    },
-    {
-      id: 4,
-      type: 'course_updated',
-      title: 'Khóa học "Ngữ pháp cơ bản" đã được cập nhật',
-      user: 'Admin User',
-      time: '2 giờ trước',
+  return (
+    <div className="p-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-gray-600">Tổng quan hệ thống KoraStudy</p>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {stats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <div key={index} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  <p className="text-sm text-green-600">{stat.change}</p>
+                </div>
+                <div className={`p-3 rounded-full bg-${stat.color}-100`}>
+                  <Icon className={`h-6 w-6 text-${stat.color}-600`} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Recent Activity */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Hoạt động gần đây</h2>
+        <div className="space-y-4">
+          <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <div>
+              <p className="text-sm font-medium">Đề thi mới được tạo</p>
+              <p className="text-xs text-gray-500">TOPIK I - Đề 25 • 2 giờ trước</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            <div>
+              <p className="text-sm font-medium">Người dùng mới đăng ký</p>
+              <p className="text-xs text-gray-500">5 người dùng • 3 giờ trước</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Dashboard;
       icon: <BookOpen size={16} />,
       color: 'orange'
     }
