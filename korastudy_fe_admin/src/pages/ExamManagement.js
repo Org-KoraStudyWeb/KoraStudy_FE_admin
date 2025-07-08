@@ -15,6 +15,7 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
+import AdminExamService from '../services/AdminExamService';
 
 const ExamManagement = () => {
   const navigate = useNavigate();
@@ -25,34 +26,6 @@ const ExamManagement = () => {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [selectedExams, setSelectedExams] = useState([]);
 
-  // Mock data - thay bằng API call thực tế
-  const mockExams = [
-    {
-      id: 1,
-      title: 'TOPIK I - 한국어능력시험 모의고사 1',
-      description: '초급 수준의 한국어 학습자를 위한 TOPIK I 모의고사입니다.',
-      level: 'TOPIK I',
-      totalQuestions: 40,
-      totalParts: 2,
-      durationTimes: 100,
-      isActive: true,
-      createdAt: '2024-01-15T10:00:00',
-      updatedAt: '2024-01-20T15:30:00'
-    },
-    {
-      id: 2,
-      title: 'TOPIK II - 한국어능력시험 모의고사 2',
-      description: '중급 이상 수준의 한국어 학습자를 위한 TOPIK II 모의고사입니다.',
-      level: 'TOPIK II',
-      totalQuestions: 50,
-      totalParts: 4,
-      durationTimes: 180,
-      isActive: false,
-      createdAt: '2024-01-10T08:00:00',
-      updatedAt: '2024-01-18T14:20:00'
-    }
-  ];
-
   useEffect(() => {
     fetchExams();
   }, []);
@@ -60,17 +33,12 @@ const ExamManagement = () => {
   const fetchExams = async () => {
     setLoading(true);
     try {
-      // API call sẽ ở đây
-      // const response = await adminExamService.getAllExams();
-      // setExams(response.data);
-      
-      // Mock data
-      setTimeout(() => {
-        setExams(mockExams);
-        setLoading(false);
-      }, 1000);
+      const response = await AdminExamService.getAllExams();
+      setExams(response);
     } catch (error) {
       console.error('Error fetching exams:', error);
+      alert('Có lỗi xảy ra khi tải danh sách bài thi: ' + error.message);
+    } finally {
       setLoading(false);
     }
   };
@@ -93,35 +61,36 @@ const ExamManagement = () => {
   const handleDeleteExam = async (examId) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa bài thi này? Hành động này không thể hoàn tác.')) {
       try {
-        // await adminExamService.deleteExam(examId);
+        await AdminExamService.deleteExam(examId);
         setExams(exams.filter(exam => exam.id !== examId));
         alert('Xóa bài thi thành công!');
       } catch (error) {
         console.error('Error deleting exam:', error);
-        alert('Có lỗi xảy ra khi xóa bài thi.');
+        alert('Có lỗi xảy ra khi xóa bài thi: ' + error.message);
       }
     }
   };
 
   const handleDuplicateExam = async (examId) => {
     try {
-      // const response = await adminExamService.duplicateExam(examId);
-      // fetchExams(); // Refresh list
+      const duplicatedExam = await AdminExamService.duplicateExam(examId);
+      setExams([duplicatedExam, ...exams]);
       alert('Sao chép bài thi thành công!');
     } catch (error) {
       console.error('Error duplicating exam:', error);
-      alert('Có lỗi xảy ra khi sao chép bài thi.');
+      alert('Có lỗi xảy ra khi sao chép bài thi: ' + error.message);
     }
   };
 
   const handleToggleStatus = async (examId) => {
     try {
-      // const response = await adminExamService.toggleExamActive(examId);
+      const response = await AdminExamService.toggleExamActive(examId);
       setExams(exams.map(exam => 
-        exam.id === examId ? { ...exam, isActive: !exam.isActive } : exam
+        exam.id === examId ? { ...exam, isActive: response.isActive } : exam
       ));
     } catch (error) {
       console.error('Error toggling exam status:', error);
+      alert('Có lỗi xảy ra khi thay đổi trạng thái bài thi: ' + error.message);
     }
   };
 
@@ -146,13 +115,13 @@ const ExamManagement = () => {
     
     if (window.confirm(`Bạn có chắc chắn muốn xóa ${selectedExams.length} bài thi đã chọn?`)) {
       try {
-        // await Promise.all(selectedExams.map(id => adminExamService.deleteExam(id)));
+        await Promise.all(selectedExams.map(id => AdminExamService.deleteExam(id)));
         setExams(exams.filter(exam => !selectedExams.includes(exam.id)));
         setSelectedExams([]);
         alert('Xóa các bài thi thành công!');
       } catch (error) {
         console.error('Error bulk deleting exams:', error);
-        alert('Có lỗi xảy ra khi xóa bài thi.');
+        alert('Có lỗi xảy ra khi xóa bài thi: ' + error.message);
       }
     }
   };
@@ -462,3 +431,4 @@ const ExamManagement = () => {
 };
 
 export default ExamManagement;
+                  

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit, Copy, Trash2 } from 'lucide-react';
+import AdminExamService from '../services/AdminExamService';
 
 const ExamDetail = () => {
   const { id } = useParams();
@@ -15,21 +16,11 @@ const ExamDetail = () => {
   const fetchExamDetail = async () => {
     setLoading(true);
     try {
-      // Mock data
-      setExam({
-        id: 1,
-        title: 'TOPIK I - 한국어능력시험 모의고사 1',
-        description: '초급 수준의 한국어 학습자를 위한 TOPIK I 모의고사입니다.',
-        level: 'TOPIK I',
-        totalQuestions: 40,
-        totalParts: 2,
-        durationTimes: 100,
-        isActive: true,
-        createdAt: '2024-01-15T10:00:00',
-        updatedAt: '2024-01-20T15:30:00'
-      });
+      const examData = await AdminExamService.getExamDetail(id);
+      setExam(examData);
     } catch (error) {
       console.error('Error fetching exam detail:', error);
+      alert('Có lỗi xảy ra khi tải chi tiết bài thi: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -138,3 +129,4 @@ const ExamDetail = () => {
 };
 
 export default ExamDetail;
+            

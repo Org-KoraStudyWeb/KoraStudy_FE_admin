@@ -1,12 +1,15 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { 
   Trash2, 
   Upload, 
   Volume2, 
   Image as ImageIcon,
   X,
-  Loader
+  Loader,
+  Play,
+  Pause
 } from 'lucide-react';
+import CloudinaryService from '../../services/CloudinaryService';
 
 const QuestionEditor = ({
   question,
@@ -19,39 +22,114 @@ const QuestionEditor = ({
 }) => {
   const imageInputRef = useRef(null);
   const audioInputRef = useRef(null);
+  const audioRef = useRef(null);
+  
+  const [imagePreview, setImagePreview] = useState(null);
+  const [audioPreview, setAudioPreview] = useState(null);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
-        alert('Kích thước file ảnh không được vượt quá 5MB');
-        return;
+  // Clean up preview URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        CloudinaryService.revokePreviewUrl(imagePreview);
       }
-      onFileUpload(file, 'image', questionIndex);
+      if (audioPreview && audioPreview.startsWith('blob:')) {
+        CloudinaryService.revokePreviewUrl(audioPreview);
+      }
+    };
+  }, [imagePreview, audioPreview]);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      // Validate file
+      CloudinaryService.validateFile(file, 'image');
+      
+      // Create preview immediately
+      const previewUrl = CloudinaryService.generatePreviewUrl(file);
+      setImagePreview(previewUrl);
+      
+      // Upload to Cloudinary
+      await onFileUpload(file, 'image', questionIndex);
+      
+    } catch (error) {
+      console.error('Error handling image upload:', error);
+      alert(error.message);
+      // Clean up preview on error
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        CloudinaryService.revokePreviewUrl(imagePreview);
+        setImagePreview(null);
+      }
     }
   };
 
-  const handleAudioUpload = (e) => {
+  const handleAudioUpload = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
-        alert('Kích thước file audio không được vượt quá 10MB');
-        return;
+    if (!file) return;
+
+    try {
+      // Validate file
+      CloudinaryService.validateFile(file, 'audio');
+      
+      // Create preview immediately
+      const previewUrl = CloudinaryService.generatePreviewUrl(file);
+      setAudioPreview(previewUrl);
+      
+      // Upload to Cloudinary
+      await onFileUpload(file, 'audio', questionIndex);
+      
+    } catch (error) {
+      console.error('Error handling audio upload:', error);
+      alert(error.message);
+      // Clean up preview on error
+      if (audioPreview && audioPreview.startsWith('blob:')) {
+        CloudinaryService.revokePreviewUrl(audioPreview);
+        setAudioPreview(null);
       }
-      onFileUpload(file, 'audio', questionIndex);
     }
   };
 
   const removeImage = () => {
+    if (imagePreview && imagePreview.startsWith('blob:')) {
+      CloudinaryService.revokePreviewUrl(imagePreview);
+    }
+    setImagePreview(null);
     onUpdateQuestion(questionIndex, 'imageUrl', null);
   };
 
   const removeAudio = () => {
+    if (audioPreview && audioPreview.startsWith('blob:')) {
+      CloudinaryService.revokePreviewUrl(audioPreview);
+    }
+    setAudioPreview(null);
+    setIsPlaying(false);
     onUpdateQuestion(questionIndex, 'audioUrl', null);
+  };
+
+  const toggleAudioPlayback = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleAudioEnded = () => {
+    setIsPlaying(false);
   };
 
   const isUploadingImage = uploadingFiles[`${partIndex}-${questionIndex}-image`];
   const isUploadingAudio = uploadingFiles[`${partIndex}-${questionIndex}-audio`];
+
+  // Use preview or uploaded URL
+  const displayImageUrl = imagePreview || question.imageUrl;
+  const displayAudioUrl = audioPreview || question.audioUrl;
 
   return (
     <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
@@ -114,10 +192,10 @@ const QuestionEditor = ({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Hình ảnh
             </label>
-            {question.imageUrl ? (
+            {displayImageUrl ? (
               <div className="relative">
                 <img 
-                  src={question.imageUrl} 
+                  src={displayImageUrl} 
                   alt="Question" 
                   className="w-full h-32 object-cover rounded-lg border"
                 />
@@ -128,6 +206,14 @@ const QuestionEditor = ({
                 >
                   <X size={12} />
                 </button>
+                {isUploadingImage && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center">
+                    <div className="text-white text-center">
+                      <Loader className="animate-spin mx-auto mb-2" size={24} />
+                      <span className="text-sm">Đang upload...</span>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div>
@@ -151,6 +237,9 @@ const QuestionEditor = ({
                   <span className="text-sm text-gray-500">
                     {isUploadingImage ? 'Đang upload...' : 'Nhấn để upload ảnh'}
                   </span>
+                  <span className="text-xs text-gray-400 mt-1">
+                    JPG, PNG, GIF (tối đa 5MB)
+                  </span>
                 </button>
               </div>
             )}
@@ -161,21 +250,44 @@ const QuestionEditor = ({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               File âm thanh
             </label>
-            {question.audioUrl ? (
+            {displayAudioUrl ? (
               <div className="relative">
-                <div className="p-4 border border-gray-300 rounded-lg">
-                  <audio controls className="w-full">
-                    <source src={question.audioUrl} type="audio/mpeg" />
-                    Trình duyệt không hỗ trợ audio.
-                  </audio>
-                  <button
-                    onClick={removeAudio}
-                    className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-full hover:bg-red-700"
-                    title="Xóa audio"
-                  >
-                    <X size={12} />
-                  </button>
+                <div className="p-4 border border-gray-300 rounded-lg bg-white">
+                  <div className="flex items-center gap-3 mb-3">
+                    <button
+                      onClick={toggleAudioPlayback}
+                      className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors"
+                    >
+                      {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+                    </button>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-gray-900">Audio File</div>
+                      <div className="text-xs text-gray-500">Nhấn play để nghe thử</div>
+                    </div>
+                    <button
+                      onClick={removeAudio}
+                      className="p-1 bg-red-600 text-white rounded-full hover:bg-red-700"
+                      title="Xóa audio"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                  <audio
+                    ref={audioRef}
+                    src={displayAudioUrl}
+                    onEnded={handleAudioEnded}
+                    className="w-full"
+                    controls
+                  />
                 </div>
+                {isUploadingAudio && (
+                  <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center">
+                    <div className="text-white text-center">
+                      <Loader className="animate-spin mx-auto mb-2" size={24} />
+                      <span className="text-sm">Đang upload...</span>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div>
@@ -198,6 +310,9 @@ const QuestionEditor = ({
                   )}
                   <span className="text-sm text-gray-500">
                     {isUploadingAudio ? 'Đang upload...' : 'Nhấn để upload audio'}
+                  </span>
+                  <span className="text-xs text-gray-400 mt-1">
+                    MP3, WAV, M4A (tối đa 20MB)
                   </span>
                 </button>
               </div>

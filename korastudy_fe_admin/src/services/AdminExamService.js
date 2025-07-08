@@ -1,69 +1,92 @@
-import axios from 'axios';
+import ApiService from './ApiService';
 
-const API_BASE_URL = 'http://localhost:8080/api/v1';
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Add auth token to requests
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('adminToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-export const adminExamService = {
+class AdminExamService {
+  
   // Get all exams for admin
-  getAllExams: () => api.get('/admin/exams'),
+  async getAllExams() {
+    return ApiService.get('/admin/exams');
+  }
 
-  // Get exam for editing
-  getExamForEdit: (id) => api.get(`/admin/exams/${id}`),
+  // Get exam detail for editing
+  async getExamDetail(id) {
+    return ApiService.get(`/admin/exams/${id}`);
+  }
 
   // Create new exam
-  createExam: (examData) => api.post('/admin/exams', examData),
+  async createExam(examData) {
+    const requestData = {
+      title: examData.title,
+      description: examData.description,
+      level: examData.level,
+      durationTimes: examData.durationTimes,
+      instructions: examData.instructions,
+      requirements: examData.requirements
+    };
+    return ApiService.post('/admin/exams', requestData);
+  }
 
   // Update exam
-  updateExam: (id, examData) => api.put(`/admin/exams/${id}`, examData),
+  async updateExam(id, examData) {
+    const requestData = {
+      title: examData.title,
+      description: examData.description,
+      level: examData.level,
+      durationTimes: examData.durationTimes,
+      instructions: examData.instructions,
+      requirements: examData.requirements
+    };
+    return ApiService.put(`/admin/exams/${id}`, requestData);
+  }
 
   // Delete exam
-  deleteExam: (id) => api.delete(`/admin/exams/${id}`),
+  async deleteExam(id) {
+    return ApiService.delete(`/admin/exams/${id}`);
+  }
 
   // Toggle exam active status
-  toggleExamActive: (id) => api.patch(`/admin/exams/${id}/toggle-active`),
+  async toggleExamActive(id) {
+    return ApiService.patch(`/admin/exams/${id}/toggle-active`);
+  }
 
   // Duplicate exam
-  duplicateExam: (id) => api.post(`/admin/exams/${id}/duplicate`),
-
-  // Part management
-  addPart: (examId, partData) => api.post(`/admin/exams/${examId}/parts`, partData),
-  updatePart: (partId, partData) => api.put(`/admin/exams/parts/${partId}`, partData),
-  deletePart: (partId) => api.delete(`/admin/exams/parts/${partId}`),
-
-  // Question management
-  addQuestion: (partId, questionData) => api.post(`/admin/exams/parts/${partId}/questions`, questionData),
-  updateQuestion: (questionId, questionData) => api.put(`/admin/exams/questions/${questionId}`, questionData),
-  deleteQuestion: (questionId) => api.delete(`/admin/exams/questions/${questionId}`),
-
-  // File upload
-  uploadQuestionImage: (questionId, file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    return api.post(`/admin/exams/questions/${questionId}/upload-image`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-  },
-
-  uploadQuestionAudio: (questionId, file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    return api.post(`/admin/exams/questions/${questionId}/upload-audio`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+  async duplicateExam(id) {
+    return ApiService.post(`/admin/exams/${id}/duplicate`);
   }
-};
+
+  // Part operations
+  async addPart(examId, partData) {
+    return ApiService.post(`/admin/exams/${examId}/parts`, partData);
+  }
+
+  async updatePart(partId, partData) {
+    return ApiService.put(`/admin/exams/parts/${partId}`, partData);
+  }
+
+  async deletePart(partId) {
+    return ApiService.delete(`/admin/exams/parts/${partId}`);
+  }
+
+  // Question operations
+  async addQuestion(partId, questionData) {
+    return ApiService.post(`/admin/exams/parts/${partId}/questions`, questionData);
+  }
+
+  async updateQuestion(questionId, questionData) {
+    return ApiService.put(`/admin/exams/questions/${questionId}`, questionData);
+  }
+
+  async deleteQuestion(questionId) {
+    return ApiService.delete(`/admin/exams/questions/${questionId}`);
+  }
+
+  // File upload operations
+  async uploadQuestionImage(questionId, file) {
+    return ApiService.uploadFile(`/admin/exams/questions/${questionId}/upload-image`, file);
+  }
+
+  async uploadQuestionAudio(questionId, file) {
+    return ApiService.uploadFile(`/admin/exams/questions/${questionId}/upload-audio`, file);
+  }
+}
+
+export default new AdminExamService();
