@@ -136,7 +136,7 @@ const AddCourse = ({
                   onClick={() => onRemoveGroup(index)}
                   className="text-red-500 text-sm mt-2 hover:underline col-span-2 text-right"
                 >
-                  Xóa nhóm
+                  Xóa nhóm mới tạo
                 </button>
               </div>
             ))}
