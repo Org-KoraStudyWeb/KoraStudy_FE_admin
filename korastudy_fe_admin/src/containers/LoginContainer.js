@@ -1,4 +1,3 @@
-// src/containers/LoginContainer.js
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import LoginForm from "../components/auth/LoginForm";
@@ -12,6 +11,10 @@ const LoginContainer = () => {
     setLoading(true);
     setError("");
 
+    // Debug log
+    console.log("=== LOGIN DEBUG ===");
+    console.log("Form data:", formData);
+
     try {
       const response = await fetch("http://localhost:8080/api/v1/auth/login", {
         method: "POST",
@@ -22,28 +25,43 @@ const LoginContainer = () => {
       });
 
       const data = await response.json();
+      
+      // Debug log để xem dữ liệu trả về
+      console.log("Response data:", data);
+      console.log("Roles:", data.roles);
 
       if (response.ok) {
-        // ✅ Lưu token và role vào localStorage
+        // ✅ Lưu token vào localStorage
         localStorage.setItem("accessToken", data.token);
-        localStorage.setItem("userRole", data.role); // 👈 lưu role để kiểm tra quyền
+        
+        // ✅ Lưu roles (là mảng) vào localStorage
+        localStorage.setItem("userRoles", JSON.stringify(data.roles));
+        localStorage.setItem("username", data.username);
 
-        // ✅ Chỉ cho phép ADMIN hoặc MANAGER truy cập trang admin
-        if (
-          data.role === "ADMIN" ||
-          data.role === "CONTENT_MANAGER" ||
-          data.role === "DELIVERY_MANAGER"
-        ) {
+        // ✅ Kiểm tra roles - data.roles là mảng ["ADMIN"]
+        const userRoles = data.roles || [];
+        const hasAdminAccess = userRoles.some(role => 
+          role === "ADMIN" || 
+          role === "CONTENT_MANAGER" || 
+          role === "DELIVERY_MANAGER"
+        );
+
+        console.log("User roles:", userRoles);
+        console.log("Has admin access:", hasAdminAccess);
+
+        if (hasAdminAccess) {
+          console.log("✅ Access granted, navigating to /admin");
           navigate("/admin");
         } else {
-          setError("Bạn không có quyền truy cập trang quản trị.");
-          // Optional: có thể navigate về trang thường:
-          // navigate("/");
+          console.log("❌ Access denied. User roles:", userRoles);
+          setError(`Bạn không có quyền truy cập trang quản trị. Roles: ${userRoles.join(', ')}`);
         }
       } else {
+        console.log("❌ Login failed:", data);
         setError(data.message || "Đăng nhập không thành công");
       }
     } catch (error) {
+      console.error("❌ API Error:", error);
       setError("Lỗi kết nối với máy chủ");
     } finally {
       setLoading(false);

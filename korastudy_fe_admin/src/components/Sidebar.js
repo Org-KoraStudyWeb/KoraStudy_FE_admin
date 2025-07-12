@@ -6,12 +6,14 @@ import {
   Users,
   BookOpen,
   Settings,
+  List,
+  PlusCircle,
+  BarChart3,
   ChevronDown,
   ChevronRight,
-  PlusCircle,
-  List,
-  BarChart3,
   User,
+  CreditCard, // Icon cho Flash Card
+  Edit3, // Icon cho Blog
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -20,6 +22,8 @@ const Sidebar = () => {
     tests: true,
     users: false,
     courses: false,
+    flashcards: false,
+    blogs: false,
   });
 
   const toggleMenu = (menu) => {
@@ -89,6 +93,40 @@ const Sidebar = () => {
           title: "Tạo khóa học",
           icon: <PlusCircle size={16} />,
           path: "/admin/courses/create",
+        },
+      ],
+    },
+    {
+      title: "Quản lý Flash Card",
+      icon: <CreditCard size={20} />,
+      key: "flashcards",
+      submenu: [
+        {
+          title: "Danh sách Flash Card",
+          icon: <List size={16} />,
+          path: "/admin/flashcards",
+        },
+        {
+          title: "Tạo Flash Card mới",
+          icon: <PlusCircle size={16} />,
+          path: "/admin/flashcards/create",
+        },
+      ],
+    },
+    {
+      title: "Quản lý Blog",
+      icon: <Edit3 size={20} />,
+      key: "blogs",
+      submenu: [
+        {
+          title: "Danh sách bài viết",
+          icon: <List size={16} />,
+          path: "/admin/blogs",
+        },
+        {
+          title: "Tạo bài viết mới",
+          icon: <PlusCircle size={16} />,
+          path: "/admin/blogs/create",
         },
       ],
     },
