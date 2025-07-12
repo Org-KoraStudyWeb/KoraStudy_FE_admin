@@ -8,14 +8,20 @@ import LoginPages from "./pages/auth/LoginPages";
 import CourseList from "./pages/course/CourseListPages";
 import CourseContainer from "./containers/course/AddCourseContainer";
 
+// Import các component mới cho Flash Card và Blog
+import FlashCardList from "./pages/flashcard/FlashCardList";
+import CreateFlashCard from "./pages/flashcard/CreateFlashCard";
+import BlogList from "./pages/blog/BlogList";
+import CreateBlog from "./pages/blog/CreateBlog";
+
 function App() {
   return (
     <Router>
       <Routes>
-        {/* Login Route - không redirect nếu đã đăng nhập */}
+        {/* Login Route */}
         <Route path="/login" element={<LoginPages />} />
 
-        {/* Dashboard và các routes khác - không yêu cầu xác thực */}
+        {/* Dashboard và các routes khác */}
         <Route
           path="/"
           element={
@@ -32,6 +38,8 @@ function App() {
             </AdminLayout>
           }
         />
+        
+        {/* Test Management Routes */}
         <Route
           path="/admin/tests"
           element={
@@ -48,16 +56,16 @@ function App() {
             </AdminLayout>
           }
         />
-
-        {/* Các routes admin khác */}
         <Route
           path="/admin/tests/statistics"
           element={
-            <AdminLayout title="Thống kê">
-              <div className="p-6">Thống kê - Coming Soon</div>
+            <AdminLayout title="Thống kê đề thi">
+              <div className="p-6">Thống kê đề thi - Coming Soon</div>
             </AdminLayout>
           }
         />
+
+        {/* User Management Routes */}
         <Route
           path="/admin/users"
           element={
@@ -74,6 +82,8 @@ function App() {
             </AdminLayout>
           }
         />
+
+        {/* Course Management Routes */}
         <Route
           path="/admin/courses"
           element={
@@ -90,6 +100,60 @@ function App() {
             </AdminLayout>
           }
         />
+
+        {/* Flash Card Management Routes */}
+        <Route
+          path="/admin/flashcards"
+          element={
+            <AdminLayout title="Quản lý Flash Card">
+              <FlashCardList />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/flashcards/create"
+          element={
+            <AdminLayout title="Tạo Flash Card mới">
+              <CreateFlashCard />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/flashcards/edit/:id"
+          element={
+            <AdminLayout title="Chỉnh sửa Flash Card">
+              <CreateFlashCard />
+            </AdminLayout>
+          }
+        />
+
+        {/* Blog Management Routes */}
+        <Route
+          path="/admin/blogs"
+          element={
+            <AdminLayout title="Quản lý Blog">
+              <BlogList />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/blogs/create"
+          element={
+            <AdminLayout title="Tạo bài viết mới">
+              <CreateBlog />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/blogs/edit/:id"
+          element={
+            <AdminLayout title="Chỉnh sửa bài viết">
+              <CreateBlog />
+            </AdminLayout>
+          }
+        />
+
+        {/* Settings Route */}
         <Route
           path="/admin/settings"
           element={
