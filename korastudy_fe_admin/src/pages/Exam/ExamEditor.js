@@ -6,6 +6,7 @@ import {
   Plus
 } from 'lucide-react';
 import PartEditor from '../../components/ExamEditor/PartEditor';
+import AdminExamService from '../../services/AdminExamService';
 
 const ExamEditor = () => {
   const { id } = useParams();
@@ -38,43 +39,11 @@ const ExamEditor = () => {
   const fetchExamData = async () => {
     setLoading(true);
     try {
-      // Mock data
-      setExam({
-        id: 1,
-        title: 'TOPIK I - 한국어능력시험 모의고사 1',
-        description: '초급 수준의 한국어 학습자를 위한 TOPIK I 모의고사입니다.',
-        level: 'TOPIK I',
-        durationTimes: 100,
-        instructions: 'Đọc kỹ hướng dẫn trước khi bắt đầu',
-        requirements: 'Đã học xong bảng chữ cái Hangeul',
-        parts: [
-          {
-            id: 1,
-            partNumber: 1,
-            title: 'Phần I: Nghe hiểu',
-            description: 'Nghe và chọn đáp án đúng',
-            instructions: 'Bạn sẽ nghe mỗi đoạn audio 2 lần',
-            timeLimit: 40,
-            questionCount: 20,
-            questions: [
-              {
-                id: 1,
-                questionText: 'Bạn nghe thấy gì?',
-                questionType: 'MULTIPLE_CHOICE',
-                option: 'A) 안녕하세요 B) 고마워요 C) 죄송합니다 D) 괜찮아요',
-                correctAnswer: 'A',
-                explanation: 'Đây là lời chào thông dụng',
-                audioUrl: null,
-                imageUrl: null,
-                questionOrder: 1,
-                points: 1
-              }
-            ]
-          }
-        ]
-      });
+      const examData = await AdminExamService.getExamDetail(id);
+      setExam(examData);
     } catch (error) {
       console.error('Error fetching exam:', error);
+      alert('Không thể tải thông tin bài thi. Vui lòng thử lại.');
     } finally {
       setLoading(false);
     }
@@ -83,17 +52,143 @@ const ExamEditor = () => {
   const handleSaveExam = async () => {
     setLoading(true);
     try {
-      if (isEditing) {
-        // await adminExamService.updateExam(id, exam);
-        alert('Cập nhật bài thi thành công!');
-      } else {
-        // await adminExamService.createExam(exam);
-        alert('Tạo bài thi thành công!');
+      // Validate required fields
+      if (!exam.title.trim()) {
+        alert('Vui lòng nhập tiêu đề bài thi');
+        setLoading(false);
+        return;
       }
-      navigate('/admin/exams');
+      
+      if (!exam.level) {
+        alert('Vui lòng chọn cấp độ bài thi');
+        setLoading(false);
+        return;
+      }
+      
+      if (!exam.durationTimes || exam.durationTimes <= 0) {
+        alert('Vui lòng nhập thời gian làm bài hợp lệ');
+        setLoading(false);
+        return;
+      }
+
+      // Prepare data for API
+      const examData = {
+        title: exam.title,
+        description: exam.description || '',
+        level: exam.level,
+        durationTimes: exam.durationTimes,
+        instructions: exam.instructions || '',
+        requirements: exam.requirements || ''
+      };
+
+      console.log('Saving exam data:', examData);
+      
+      // 1. Lưu thông tin cơ bản của bài thi
+      let examId;
+      let result;
+      
+      if (isEditing) {
+        result = await AdminExamService.updateExam(id, examData);
+        examId = id;
+        console.log('Updated exam:', result);
+      } else {
+        result = await AdminExamService.createExam(examData);
+        examId = result.id;
+        console.log('Created new exam with ID:', examId);
+      }
+
+      // 2. Lưu các phần thi và câu hỏi nếu có
+      if (exam.parts.length > 0) {
+        for (const part of exam.parts) {
+          const partData = {
+            title: part.title,
+            description: part.description || '',
+            instructions: part.instructions || '',
+            timeLimit: part.timeLimit || 30
+          };
+
+          console.log(`Saving part for exam ${examId}:`, partData);
+          
+          // Tạo phần thi mới hoặc cập nhật phần thi hiện có
+          let partId;
+          if (part.id && !isNaN(parseInt(part.id)) && part.id < 1000000) {
+            // Part đã tồn tại trong database
+            const updatedPart = await AdminExamService.updatePart(part.id, partData);
+            partId = part.id;
+            console.log('Updated existing part:', updatedPart);
+          } else {
+            // Part mới
+            const newPart = await AdminExamService.addPart(examId, partData);
+            partId = newPart.id;
+            console.log('Added new part with ID:', partId);
+          }
+
+          // Lưu câu hỏi cho phần thi
+          if (part.questions && part.questions.length > 0) {
+            for (const question of part.questions) {
+              const questionData = {
+                questionText: question.questionText,
+                questionType: question.questionType,
+                option: question.option,
+                correctAnswer: question.correctAnswer,
+                explanation: question.explanation || '',
+                points: question.points || 1,
+                questionOrder: question.questionOrder || 1,
+                // Không bao gồm imageUrl và audioUrl ở đây, sẽ upload riêng
+              };
+
+              console.log(`Saving question for part ${partId}:`, questionData);
+              
+              // Tạo câu hỏi mới hoặc cập nhật câu hỏi hiện có
+              let questionId;
+              if (question.id && !isNaN(parseInt(question.id)) && question.id < 1000000) {
+                // Question đã tồn tại
+                const updatedQuestion = await AdminExamService.updateQuestion(question.id, questionData);
+                questionId = question.id;
+                console.log('Updated existing question:', updatedQuestion);
+              } else {
+                // Question mới
+                const newQuestion = await AdminExamService.addQuestion(partId, questionData);
+                questionId = newQuestion.id;
+                console.log('Added new question with ID:', questionId);
+              }
+
+              // Upload media files nếu có và là blob URLs (chưa được upload)
+              if (question.imageUrl && question.imageUrl.startsWith('blob:')) {
+                try {
+                  // File ảnh mới cần được upload
+                  console.log(`Đang xử lý upload ảnh cho câu hỏi ${questionId}`);
+                  const imageFile = await fetch(question.imageUrl).then(r => r.blob());
+                  const formattedFile = new File([imageFile], `question_${questionId}_image.png`, { type: 'image/png' });
+                  await AdminExamService.uploadFileAndUpdateQuestion(questionId, formattedFile, 'image');
+                  console.log(`Upload ảnh thành công cho câu hỏi ${questionId}`);
+                } catch (error) {
+                  console.error(`Lỗi upload ảnh:`, error);
+                }
+              }
+
+              if (question.audioUrl && question.audioUrl.startsWith('blob:')) {
+                try {
+                  // File audio mới cần được upload
+                  console.log(`Đang xử lý upload audio cho câu hỏi ${questionId}`);
+                  const audioFile = await fetch(question.audioUrl).then(r => r.blob());
+                  const formattedFile = new File([audioFile], `question_${questionId}_audio.mp3`, { type: 'audio/mpeg' });
+                  await AdminExamService.uploadFileAndUpdateQuestion(questionId, formattedFile, 'audio');
+                  console.log(`Upload audio thành công cho câu hỏi ${questionId}`);
+                } catch (error) {
+                  console.error(`Lỗi upload audio:`, error);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      alert(isEditing ? 'Cập nhật bài thi thành công!' : 'Tạo bài thi thành công!');
+      navigate('/admin/tests');
     } catch (error) {
       console.error('Error saving exam:', error);
-      alert('Có lỗi xảy ra khi lưu bài thi.');
+      alert('Có lỗi xảy ra khi lưu bài thi: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
@@ -176,33 +271,60 @@ const ExamEditor = () => {
     setUploadingFiles(prev => ({ ...prev, [uploadKey]: true }));
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      // Mock upload - replace with actual API call
-      setTimeout(() => {
-        const mockUrl = `https://res.cloudinary.com/demo/${type}/${file.name}`;
-        
-        const updatedParts = [...exam.parts];
-        if (type === 'image') {
-          updatedParts[partIndex].questions[questionIndex].imageUrl = mockUrl;
-        } else if (type === 'audio') {
-          updatedParts[partIndex].questions[questionIndex].audioUrl = mockUrl;
+      // Hiển thị preview ngay lập tức để UX tốt hơn
+      const previewUrl = URL.createObjectURL(file);
+      
+      // Cập nhật state để hiển thị preview
+      const updatedParts = [...exam.parts];
+      if (type === 'image') {
+        updatedParts[partIndex].questions[questionIndex].imageUrl = previewUrl;
+      } else if (type === 'audio') {
+        updatedParts[partIndex].questions[questionIndex].audioUrl = previewUrl;
+      }
+      
+      setExam({ ...exam, parts: updatedParts });
+      
+      // Lấy question ID nếu câu hỏi đã được lưu trong database
+      const question = updatedParts[partIndex].questions[questionIndex];
+      if (question.id && !isNaN(parseInt(question.id)) && question.id < 1000000) {
+        // Câu hỏi đã tồn tại trong DB, upload và cập nhật ngay
+        try {
+          const result = await AdminExamService.uploadFileAndUpdateQuestion(
+            question.id, 
+            file, 
+            type
+          );
+          
+          // Cập nhật URL thực từ Cloudinary
+          if (type === 'image') {
+            updatedParts[partIndex].questions[questionIndex].imageUrl = result.url;
+          } else if (type === 'audio') {
+            updatedParts[partIndex].questions[questionIndex].audioUrl = result.url;
+          }
+          
+          setExam({ ...exam, parts: updatedParts });
+          alert(`Upload ${type} thành công!`);
+        } catch (error) {
+          console.error(`Lỗi upload ${type} lên server:`, error);
+          alert(`Upload ${type} lên server thất bại: ${error.message}`);
+          
+          // Xóa preview nếu upload thất bại
+          if (type === 'image') {
+            updatedParts[partIndex].questions[questionIndex].imageUrl = null;
+          } else if (type === 'audio') {
+            updatedParts[partIndex].questions[questionIndex].audioUrl = null;
+          }
+          setExam({ ...exam, parts: updatedParts });
         }
-        
-        setExam({
-          ...exam,
-          parts: updatedParts
-        });
-        
-        setUploadingFiles(prev => ({ ...prev, [uploadKey]: false }));
-        alert(`Upload ${type} thành công!`);
-      }, 2000);
-
+      } else {
+        // Câu hỏi chưa có trong DB, lưu file tạm vào state để sau lưu bài thi sẽ upload
+        console.log(`Câu hỏi chưa được lưu trong DB, sẽ upload ${type} khi lưu bài thi`);
+      }
     } catch (error) {
-      console.error(`Error uploading ${type}:`, error);
+      console.error(`Error handling ${type} file:`, error);
+      alert(`Lỗi xử lý file ${type}: ${error.message}`);
+    } finally {
       setUploadingFiles(prev => ({ ...prev, [uploadKey]: false }));
-      alert(`Có lỗi xảy ra khi upload ${type}.`);
     }
   };
 
@@ -257,7 +379,7 @@ const ExamEditor = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => navigate('/admin/exams')}
+                onClick={() => navigate('/admin/tests')}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
               >
                 <ArrowLeft size={20} />

@@ -7,6 +7,7 @@ import {
   Edit, 
   Trash2, 
   Eye,
+  // Download,
   Users,
   Clock,
   Calendar
@@ -130,15 +131,6 @@ const TestList = () => {
 
   const handleViewTest = (testId) => {
     navigate(`/admin/tests/${testId}`);
-  };
-
-  // Add the missing handleDeleteTest function
-  const handleDeleteTest = (testId) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa đề thi này?')) {
-      // Logic xóa đề thi
-      console.log('Deleting test:', testId);
-      // Có thể thêm logic gọi API để xóa
-    }
   };
 
   return (
@@ -394,6 +386,5 @@ const TestList = () => {
     </div>
   );
 };
-
 export default TestList;
 

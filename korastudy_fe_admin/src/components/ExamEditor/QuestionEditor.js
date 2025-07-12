@@ -45,24 +45,18 @@ const QuestionEditor = ({
     if (!file) return;
 
     try {
-      // Validate file
+      // Validate file trước khi upload
       CloudinaryService.validateFile(file, 'image');
       
-      // Create preview immediately
+      // Tạo preview URL cho UX tốt hơn
       const previewUrl = CloudinaryService.generatePreviewUrl(file);
       setImagePreview(previewUrl);
       
-      // Upload to Cloudinary
+      // Gửi file lên để xử lý
       await onFileUpload(file, 'image', questionIndex);
-      
     } catch (error) {
-      console.error('Error handling image upload:', error);
+      console.error('Lỗi khi xử lý file ảnh:', error);
       alert(error.message);
-      // Clean up preview on error
-      if (imagePreview && imagePreview.startsWith('blob:')) {
-        CloudinaryService.revokePreviewUrl(imagePreview);
-        setImagePreview(null);
-      }
     }
   };
 
@@ -71,24 +65,18 @@ const QuestionEditor = ({
     if (!file) return;
 
     try {
-      // Validate file
+      // Validate file trước khi upload
       CloudinaryService.validateFile(file, 'audio');
       
-      // Create preview immediately
+      // Tạo preview URL cho UX tốt hơn
       const previewUrl = CloudinaryService.generatePreviewUrl(file);
       setAudioPreview(previewUrl);
       
-      // Upload to Cloudinary
+      // Gửi file lên để xử lý
       await onFileUpload(file, 'audio', questionIndex);
-      
     } catch (error) {
-      console.error('Error handling audio upload:', error);
+      console.error('Lỗi khi xử lý file âm thanh:', error);
       alert(error.message);
-      // Clean up preview on error
-      if (audioPreview && audioPreview.startsWith('blob:')) {
-        CloudinaryService.revokePreviewUrl(audioPreview);
-        setAudioPreview(null);
-      }
     }
   };
 
@@ -368,3 +356,6 @@ const QuestionEditor = ({
 };
 
 export default QuestionEditor;
+
+
+
