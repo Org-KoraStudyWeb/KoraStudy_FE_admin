@@ -3,17 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Save, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Upload,
-  Volume2,
-  Image as ImageIcon,
-  ChevronDown,
-  ChevronUp,
-  GripVertical
+  Plus
 } from 'lucide-react';
-import PartEditor from '../components/ExamEditor/PartEditor';
+import PartEditor from '../../components/ExamEditor/PartEditor';
 
 const ExamEditor = () => {
   const { id } = useParams();

@@ -133,6 +133,13 @@ const TestList = () => {
     navigate(`/admin/tests/${testId}`);
   };
 
+  const handleDeleteTest = (testId) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa đề thi này?')) {
+      // Logic xóa đề thi
+      console.log('Deleting test:', testId);
+    }
+  };
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -386,4 +393,4 @@ const TestList = () => {
     </div>
   );
 };
-
+export default TestList;

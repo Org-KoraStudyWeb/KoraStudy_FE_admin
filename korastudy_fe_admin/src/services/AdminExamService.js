@@ -18,52 +18,103 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-export const adminExamService = {
+const AdminExamService = {
   // Get all exams for admin
-  getAllExams: () => api.get('/admin/exams'),
-
-  // Get exam for editing
-  getExamForEdit: (id) => api.get(`/admin/exams/${id}`),
-
-  // Create new exam
-  createExam: (examData) => api.post('/admin/exams', examData),
-
-  // Update exam
-  updateExam: (id, examData) => api.put(`/admin/exams/${id}`, examData),
-
-  // Delete exam
-  deleteExam: (id) => api.delete(`/admin/exams/${id}`),
-
-  // Toggle exam active status
-  toggleExamActive: (id) => api.patch(`/admin/exams/${id}/toggle-active`),
-
-  // Duplicate exam
-  duplicateExam: (id) => api.post(`/admin/exams/${id}/duplicate`),
-
-  // Part management
-  addPart: (examId, partData) => api.post(`/admin/exams/${examId}/parts`, partData),
-  updatePart: (partId, partData) => api.put(`/admin/exams/parts/${partId}`, partData),
-  deletePart: (partId) => api.delete(`/admin/exams/parts/${partId}`),
-
-  // Question management
-  addQuestion: (partId, questionData) => api.post(`/admin/exams/parts/${partId}/questions`, questionData),
-  updateQuestion: (questionId, questionData) => api.put(`/admin/exams/questions/${questionId}`, questionData),
-  deleteQuestion: (questionId) => api.delete(`/admin/exams/questions/${questionId}`),
-
-  // File upload
-  uploadQuestionImage: (questionId, file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    return api.post(`/admin/exams/questions/${questionId}/upload-image`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+  getAllExams: async () => {
+    try {
+      const response = await api.get('/admin/exams');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   },
 
-  uploadQuestionAudio: (questionId, file) => {
+  // Get exam detail for editing
+  getExamDetail: async (id) => {
+    try {
+      const response = await api.get(`/admin/exams/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Create new exam
+  createExam: async (examData) => {
+    try {
+      const response = await api.post('/admin/exams', examData);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Update exam
+  updateExam: async (id, examData) => {
+    try {
+      const response = await api.put(`/admin/exams/${id}`, examData);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Delete exam
+  deleteExam: async (id) => {
+    try {
+      const response = await api.delete(`/admin/exams/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Toggle exam active status
+  toggleExamActive: async (id) => {
+    try {
+      const response = await api.patch(`/admin/exams/${id}/toggle-active`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Duplicate exam
+  duplicateExam: async (id) => {
+    try {
+      const response = await api.post(`/admin/exams/${id}/duplicate`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // File upload methods
+  uploadQuestionImage: async (questionId, file) => {
     const formData = new FormData();
     formData.append('file', file);
-    return api.post(`/admin/exams/questions/${questionId}/upload-audio`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    try {
+      const response = await api.post(`/admin/exams/questions/${questionId}/upload-image`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  uploadQuestionAudio: async (questionId, file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const response = await api.post(`/admin/exams/questions/${questionId}/upload-audio`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 };
+
+export default AdminExamService;

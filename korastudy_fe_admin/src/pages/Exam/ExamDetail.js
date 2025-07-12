@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit, Copy, Trash2 } from 'lucide-react';
-import AdminExamService from '../services/AdminExamService';
+import AdminExamService from '../../services/AdminExamService';
 
 const ExamDetail = () => {
   const { id } = useParams();
@@ -129,4 +129,4 @@ const ExamDetail = () => {
 };
 
 export default ExamDetail;
-            
+

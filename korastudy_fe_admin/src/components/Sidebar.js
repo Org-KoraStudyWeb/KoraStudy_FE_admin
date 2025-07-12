@@ -1,102 +1,102 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { 
-  Home, 
-  FileText, 
-  Users, 
-  BookOpen, 
-  Settings, 
-  ChevronDown, 
+import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import {
+  Home,
+  FileText,
+  Users,
+  BookOpen,
+  Settings,
+  ChevronDown,
   ChevronRight,
   PlusCircle,
   List,
   BarChart3,
-  User
-} from 'lucide-react';
+  User,
+} from "lucide-react";
 
 const Sidebar = () => {
   const location = useLocation();
   const [expandedMenus, setExpandedMenus] = useState({
     tests: true,
     users: false,
-    courses: false
+    courses: false,
   });
 
   const toggleMenu = (menu) => {
-    setExpandedMenus(prev => ({
+    setExpandedMenus((prev) => ({
       ...prev,
-      [menu]: !prev[menu]
+      [menu]: !prev[menu],
     }));
   };
 
   const menuItems = [
     {
-      title: 'Dashboard',
+      title: "Dashboard",
       icon: <Home size={20} />,
-      path: '/admin',
-      exact: true
+      path: "/admin",
+      exact: true,
     },
     {
-      title: 'Quản lý đề thi',
+      title: "Quản lý đề thi",
       icon: <FileText size={20} />,
-      key: 'tests',
+      key: "tests",
       submenu: [
         {
-          title: 'Danh sách đề thi',
+          title: "Danh sách đề thi",
           icon: <List size={16} />,
-          path: '/admin/tests'
+          path: "/admin/tests",
         },
         {
-          title: 'Tạo đề thi mới',
+          title: "Tạo đề thi mới",
           icon: <PlusCircle size={16} />,
-          path: '/admin/tests/create'
+          path: "/admin/tests/create",
         },
         {
-          title: 'Thống kê',
+          title: "Thống kê",
           icon: <BarChart3 size={16} />,
-          path: '/admin/tests/statistics'
-        }
-      ]
+          path: "/admin/tests/statistics",
+        },
+      ],
     },
     {
-      title: 'Quản lý người dùng',
+      title: "Quản lý người dùng",
       icon: <Users size={20} />,
-      key: 'users',
+      key: "users",
       submenu: [
         {
-          title: 'Danh sách người dùng',
+          title: "Danh sách người dùng",
           icon: <List size={16} />,
-          path: '/admin/users'
+          path: "/admin/users",
         },
         {
-          title: 'Thêm người dùng',
+          title: "Thêm người dùng",
           icon: <PlusCircle size={16} />,
-          path: '/admin/users/create'
-        }
-      ]
+          path: "/admin/users/create",
+        },
+      ],
     },
     {
-      title: 'Quản lý khóa học',
+      title: "Quản lý khóa học",
       icon: <BookOpen size={20} />,
-      key: 'courses',
+      key: "courses",
       submenu: [
         {
-          title: 'Danh sách khóa học',
+          title: "Danh sách khóa học",
           icon: <List size={16} />,
-          path: '/admin/courses'
+          path: "/admin/courses",
         },
         {
-          title: 'Tạo khóa học',
+          title: "Tạo khóa học",
           icon: <PlusCircle size={16} />,
-          path: '/admin/courses/create'
-        }
-      ]
+          path: "/admin/courses/create",
+        },
+      ],
     },
     {
-      title: 'Cài đặt',
+      title: "Cài đặt",
       icon: <Settings size={20} />,
-      path: '/admin/settings'
-    }
+      path: "/admin/settings",
+    },
   ];
 
   const isActive = (path, exact = false) => {
@@ -110,22 +110,16 @@ const Sidebar = () => {
     <div className="w-64 bg-white border-r border-gray-200 h-screen overflow-y-auto">
       {/* Logo */}
       <div className="p-6 border-b border-gray-200">
-        {/* <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">K</span>
-          </div>
-          <span className="font-bold text-xl text-gray-800">KoraStudy</span>
-        </div> */}
-        <div className="nav-logo flex items-center">
+        <div className="nav-logo flex items-center justify-center">
           <Link to="/" className="flex items-center">
-            <img 
-              src="logo192.png" 
-              alt="KoraStudy Logo" 
-              className="h-12 md:h-16 w-auto mr-2 dark:filter dark:brightness-0 dark:invert"
+            <img
+              src="/bloom_black.png"
+              alt="KoraStudy Logo"
+              className="h-12 md:h-16 w-auto mr-2"
+              // Bỏ các lớp dark:filter dark:brightness-0 dark:invert
             />
           </Link>
         </div>
-        <p className="text-sm text-gray-500 mt-1">Admin Panel</p>
       </div>
 
       {/* Navigation */}
@@ -157,8 +151,8 @@ const Sidebar = () => {
                             to={subItem.path}
                             className={`flex items-center gap-3 p-2 rounded-lg transition-colors duration-200 ${
                               isActive(subItem.path)
-                                ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
-                                : 'text-gray-600 hover:bg-gray-50'
+                                ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
+                                : "text-gray-600 hover:bg-gray-50"
                             }`}
                           >
                             {subItem.icon}
@@ -174,8 +168,8 @@ const Sidebar = () => {
                   to={item.path}
                   className={`flex items-center gap-3 p-3 rounded-lg transition-colors duration-200 ${
                     isActive(item.path, item.exact)
-                      ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
+                      : "text-gray-700 hover:bg-gray-100"
                   }`}
                 >
                   {item.icon}
