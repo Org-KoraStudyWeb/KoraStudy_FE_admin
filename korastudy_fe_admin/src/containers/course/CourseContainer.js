@@ -1,3 +1,4 @@
+// src/containers/CourseContainer.jsx
 import React, { useEffect, useState } from "react";
 import CourseListPages from "../../pages/course/CourseListPages";
 import axiosClient from "../../api/axiosClient";
@@ -9,8 +10,7 @@ const CourseContainer = () => {
 
   useEffect(() => {
     const fetchCourses = async () => {
-      console.log("🚀 [useEffect] Đã chạy useEffect");
-
+      console.log("🚀 [useEffect] Đã chạy fetchCourses()");
       setLoading(true);
       setError("");
 
@@ -22,13 +22,26 @@ const CourseContainer = () => {
       );
 
       try {
-        console.log("📡 Bắt đầu gọi axiosClient.get('/courses/lists')");
-        const res = await axiosClient.get("/courses/lists");
+        const res = await axiosClient.get("/courses/lists", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
         console.log("✅ API trả về dữ liệu:", res.data);
-        setCourses(res.data);
+
+        if (Array.isArray(res.data)) {
+          setCourses(res.data);
+        } else if (res.data?.content && Array.isArray(res.data.content)) {
+          console.warn("⚠️ API trả về kiểu { content: [...] }");
+          setCourses(res.data.content);
+        } else {
+          console.error("❌ Dữ liệu trả về không hợp lệ:", res.data);
+          setCourses([]);
+          setError("Lỗi: Dữ liệu trả về không hợp lệ.");
+        }
       } catch (err) {
-        console.error("❌ Lỗi khi gọi API:");
-        console.error(err);
+        console.error("❌ Lỗi khi gọi API:", err);
         setError("Lỗi khi tải danh sách khóa học.");
         setCourses([]);
       } finally {
@@ -42,7 +55,10 @@ const CourseContainer = () => {
   return (
     <>
       {error && (
-        <div style={{ color: "red", marginBottom: "1rem" }}>{error}</div>
+        <>
+          <div style={{ color: "red", marginBottom: "1rem" }}>{error}</div>
+          {console.log("🪵 Lỗi đang hiển thị:", error)}
+        </>
       )}
       <CourseListPages courses={courses} loading={loading} />
     </>

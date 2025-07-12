@@ -5,8 +5,8 @@ import Dashboard from "./pages/Dashboard";
 import TestList from "./pages/TestPage/TestList";
 import UploadTest from "./pages/TestPage/UploadTest";
 import LoginPages from "./pages/auth/LoginPages";
-import CourseList from "./pages/course/CourseListPages";
-import CourseContainer from "./containers/course/AddCourseContainer";
+import CourseContainer from "./containers/course/CourseContainer";
+import AddCourseContainer from "./containers/course/AddCourseContainer";
 
 // Import các component mới cho Flash Card và Blog
 import FlashCardList from "./pages/flashcard/FlashCardList";
@@ -38,7 +38,7 @@ function App() {
             </AdminLayout>
           }
         />
-        
+
         {/* Test Management Routes */}
         <Route
           path="/admin/tests"
@@ -88,7 +88,7 @@ function App() {
           path="/admin/courses"
           element={
             <AdminLayout title="Quản lý khóa học">
-              <CourseList />
+              <CourseContainer /> {/* Đúng: xử lý fetch và truyền dữ liệu */}
             </AdminLayout>
           }
         />
@@ -96,7 +96,7 @@ function App() {
           path="/admin/courses/create"
           element={
             <AdminLayout title="Tạo khóa học">
-              <CourseContainer />
+              <AddCourseContainer /> {/* Hiển thị form thêm mới */}
             </AdminLayout>
           }
         />
