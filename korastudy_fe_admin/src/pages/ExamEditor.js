@@ -14,8 +14,6 @@ import {
   GripVertical
 } from 'lucide-react';
 import PartEditor from '../components/ExamEditor/PartEditor';
-import CloudinaryService from '../services/CloudinaryService';
-import AdminExamService from '../services/AdminExamService';
 
 const ExamEditor = () => {
   const { id } = useParams();
@@ -48,146 +46,136 @@ const ExamEditor = () => {
   const fetchExamData = async () => {
     setLoading(true);
     try {
-      const examData = await AdminExamService.getExamDetail(id);
-      setExam(examData);
+      // Mock data
+      setExam({
+        id: 1,
+        title: 'TOPIK I - 한국어능력시험 모의고사 1',
+        description: '초급 수준의 한국어 학습자를 위한 TOPIK I 모의고사입니다.',
+        level: 'TOPIK I',
+        durationTimes: 100,
+        instructions: 'Đọc kỹ hướng dẫn trước khi bắt đầu',
+        requirements: 'Đã học xong bảng chữ cái Hangeul',
+        parts: [
+          {
+            id: 1,
+            partNumber: 1,
+            title: 'Phần I: Nghe hiểu',
+            description: 'Nghe và chọn đáp án đúng',
+            instructions: 'Bạn sẽ nghe mỗi đoạn audio 2 lần',
+            timeLimit: 40,
+            questionCount: 20,
+            questions: [
+              {
+                id: 1,
+                questionText: 'Bạn nghe thấy gì?',
+                questionType: 'MULTIPLE_CHOICE',
+                option: 'A) 안녕하세요 B) 고마워요 C) 죄송합니다 D) 괜찮아요',
+                correctAnswer: 'A',
+                explanation: 'Đây là lời chào thông dụng',
+                audioUrl: null,
+                imageUrl: null,
+                questionOrder: 1,
+                points: 1
+              }
+            ]
+          }
+        ]
+      });
     } catch (error) {
       console.error('Error fetching exam:', error);
-      alert('Có lỗi xảy ra khi tải dữ liệu bài thi: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSaveExam = async () => {
-    if (!exam.title.trim()) {
-      alert('Vui lòng nhập tiêu đề bài thi');
-      return;
-    }
-
     setLoading(true);
     try {
-      let savedExam;
       if (isEditing) {
-        savedExam = await AdminExamService.updateExam(id, exam);
+        // await adminExamService.updateExam(id, exam);
         alert('Cập nhật bài thi thành công!');
       } else {
-        savedExam = await AdminExamService.createExam(exam);
+        // await adminExamService.createExam(exam);
         alert('Tạo bài thi thành công!');
       }
-      
-      // If creating new exam, redirect to edit mode with the new ID
-      if (!isEditing && savedExam.id) {
-        navigate(`/admin/exams/${savedExam.id}/edit`);
-      } else {
-        navigate('/admin/exams');
-      }
+      navigate('/admin/exams');
     } catch (error) {
       console.error('Error saving exam:', error);
-      alert('Có lỗi xảy ra khi lưu bài thi: ' + error.message);
+      alert('Có lỗi xảy ra khi lưu bài thi.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleAddPart = async () => {
-    if (!exam.id) {
-      alert('Vui lòng lưu bài thi trước khi thêm phần');
-      return;
-    }
-
-    const newPartData = {
+  const handleAddPart = () => {
+    const newPart = {
+      id: Date.now(),
+      partNumber: exam.parts.length + 1,
       title: `Phần ${exam.parts.length + 1}`,
       description: '',
       instructions: '',
-      timeLimit: 30
+      timeLimit: 30,
+      questionCount: 0,
+      questions: []
     };
+    setExam({
+      ...exam,
+      parts: [...exam.parts, newPart]
+    });
+  };
 
-    try {
-      const newPart = await AdminExamService.addPart(exam.id, newPartData);
+  const handleDeletePart = (partIndex) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa phần này?')) {
+      const updatedParts = exam.parts.filter((_, index) => index !== partIndex);
       setExam({
         ...exam,
-        parts: [...exam.parts, newPart]
+        parts: updatedParts.map((part, index) => ({
+          ...part,
+          partNumber: index + 1
+        }))
       });
-    } catch (error) {
-      console.error('Error adding part:', error);
-      alert('Có lỗi xảy ra khi thêm phần: ' + error.message);
     }
   };
 
-  const handleDeletePart = async (partIndex) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa phần này?')) {
-      const part = exam.parts[partIndex];
-      
-      try {
-        await AdminExamService.deletePart(part.id);
-        const updatedParts = exam.parts.filter((_, index) => index !== partIndex);
-        setExam({
-          ...exam,
-          parts: updatedParts.map((part, index) => ({
-            ...part,
-            partNumber: index + 1
-          }))
-        });
-      } catch (error) {
-        console.error('Error deleting part:', error);
-        alert('Có lỗi xảy ra khi xóa phần: ' + error.message);
-      }
-    }
-  };
-
-  const handleAddQuestion = async (partIndex) => {
-    const part = exam.parts[partIndex];
-    
-    const newQuestionData = {
+  const handleAddQuestion = (partIndex) => {
+    const newQuestion = {
+      id: Date.now(),
       questionText: '',
       questionType: 'MULTIPLE_CHOICE',
       option: 'A)  B)  C)  D) ',
       correctAnswer: 'A',
       explanation: '',
+      audioUrl: null,
+      imageUrl: null,
+      questionOrder: exam.parts[partIndex].questions.length + 1,
       points: 1
     };
 
-    try {
-      const newQuestion = await AdminExamService.addQuestion(part.id, newQuestionData);
-      
+    const updatedParts = [...exam.parts];
+    updatedParts[partIndex].questions.push(newQuestion);
+    updatedParts[partIndex].questionCount = updatedParts[partIndex].questions.length;
+    
+    setExam({
+      ...exam,
+      parts: updatedParts
+    });
+  };
+
+  const handleDeleteQuestion = (partIndex, questionIndex) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa câu hỏi này?')) {
       const updatedParts = [...exam.parts];
-      updatedParts[partIndex].questions = [...updatedParts[partIndex].questions, newQuestion];
+      updatedParts[partIndex].questions.splice(questionIndex, 1);
       updatedParts[partIndex].questionCount = updatedParts[partIndex].questions.length;
+      
+      // Cập nhật lại order
+      updatedParts[partIndex].questions.forEach((q, idx) => {
+        q.questionOrder = idx + 1;
+      });
       
       setExam({
         ...exam,
         parts: updatedParts
       });
-    } catch (error) {
-      console.error('Error adding question:', error);
-      alert('Có lỗi xảy ra khi thêm câu hỏi: ' + error.message);
-    }
-  };
-
-  const handleDeleteQuestion = async (partIndex, questionIndex) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa câu hỏi này?')) {
-      const question = exam.parts[partIndex].questions[questionIndex];
-      
-      try {
-        await AdminExamService.deleteQuestion(question.id);
-        
-        const updatedParts = [...exam.parts];
-        updatedParts[partIndex].questions.splice(questionIndex, 1);
-        updatedParts[partIndex].questionCount = updatedParts[partIndex].questions.length;
-        
-        // Update question orders
-        updatedParts[partIndex].questions.forEach((q, idx) => {
-          q.questionOrder = idx + 1;
-        });
-        
-        setExam({
-          ...exam,
-          parts: updatedParts
-        });
-      } catch (error) {
-        console.error('Error deleting question:', error);
-        alert('Có lỗi xảy ra khi xóa câu hỏi: ' + error.message);
-      }
     }
   };
 
@@ -196,87 +184,66 @@ const ExamEditor = () => {
     setUploadingFiles(prev => ({ ...prev, [uploadKey]: true }));
 
     try {
-      const question = exam.parts[partIndex].questions[questionIndex];
-      let uploadResult;
-      
-      if (type === 'image') {
-        uploadResult = await AdminExamService.uploadQuestionImage(question.id, file);
-      } else if (type === 'audio') {
-        uploadResult = await AdminExamService.uploadQuestionAudio(question.id, file);
-      }
-      
-      const updatedParts = [...exam.parts];
-      if (type === 'image') {
-        updatedParts[partIndex].questions[questionIndex].imageUrl = uploadResult.imageUrl;
-      } else if (type === 'audio') {
-        updatedParts[partIndex].questions[questionIndex].audioUrl = uploadResult.audioUrl;
-      }
-      
-      setExam({
-        ...exam,
-        parts: updatedParts
-      });
-      
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // Mock upload - replace with actual API call
+      setTimeout(() => {
+        const mockUrl = `https://res.cloudinary.com/demo/${type}/${file.name}`;
+        
+        const updatedParts = [...exam.parts];
+        if (type === 'image') {
+          updatedParts[partIndex].questions[questionIndex].imageUrl = mockUrl;
+        } else if (type === 'audio') {
+          updatedParts[partIndex].questions[questionIndex].audioUrl = mockUrl;
+        }
+        
+        setExam({
+          ...exam,
+          parts: updatedParts
+        });
+        
+        setUploadingFiles(prev => ({ ...prev, [uploadKey]: false }));
+        alert(`Upload ${type} thành công!`);
+      }, 2000);
+
     } catch (error) {
       console.error(`Error uploading ${type}:`, error);
-      alert(`Có lỗi xảy ra khi upload ${type}: ${error.message}`);
-    } finally {
       setUploadingFiles(prev => ({ ...prev, [uploadKey]: false }));
+      alert(`Có lỗi xảy ra khi upload ${type}.`);
     }
   };
 
-  const updatePartField = async (partIndex, field, value) => {
-    const part = exam.parts[partIndex];
-    const updatedPartData = { ...part, [field]: value };
-    
-    try {
-      if (part.id) {
-        await AdminExamService.updatePart(part.id, updatedPartData);
-      }
-      
-      const updatedParts = [...exam.parts];
-      updatedParts[partIndex][field] = value;
-      setExam({
-        ...exam,
-        parts: updatedParts
-      });
-    } catch (error) {
-      console.error('Error updating part:', error);
-      // Still update UI for better UX, but show error
-      const updatedParts = [...exam.parts];
-      updatedParts[partIndex][field] = value;
-      setExam({
-        ...exam,
-        parts: updatedParts
-      });
-    }
+  const togglePartExpanded = (partIndex) => {
+    setExpandedParts(prev => ({
+      ...prev,
+      [partIndex]: !prev[partIndex]
+    }));
   };
 
-  const updateQuestionField = async (partIndex, questionIndex, field, value) => {
-    const question = exam.parts[partIndex].questions[questionIndex];
-    const updatedQuestionData = { ...question, [field]: value };
-    
-    try {
-      if (question.id) {
-        await AdminExamService.updateQuestion(question.id, updatedQuestionData);
-      }
-      
-      const updatedParts = [...exam.parts];
-      updatedParts[partIndex].questions[questionIndex][field] = value;
-      setExam({
-        ...exam,
-        parts: updatedParts
-      });
-    } catch (error) {
-      console.error('Error updating question:', error);
-      // Still update UI for better UX, but show error
-      const updatedParts = [...exam.parts];
-      updatedParts[partIndex].questions[questionIndex][field] = value;
-      setExam({
-        ...exam,
-        parts: updatedParts
-      });
-    }
+  const updateExamField = (field, value) => {
+    setExam({
+      ...exam,
+      [field]: value
+    });
+  };
+
+  const updatePartField = (partIndex, field, value) => {
+    const updatedParts = [...exam.parts];
+    updatedParts[partIndex][field] = value;
+    setExam({
+      ...exam,
+      parts: updatedParts
+    });
+  };
+
+  const updateQuestionField = (partIndex, questionIndex, field, value) => {
+    const updatedParts = [...exam.parts];
+    updatedParts[partIndex].questions[questionIndex][field] = value;
+    setExam({
+      ...exam,
+      parts: updatedParts
+    });
   };
 
   if (loading) {

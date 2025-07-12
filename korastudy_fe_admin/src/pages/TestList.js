@@ -133,18 +133,6 @@ const TestList = () => {
     navigate(`/admin/tests/${testId}`);
   };
 
-  const handleDeleteTest = (testId) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa bài thi này?')) {
-      try {
-        console.log('Deleting test:', testId);
-        alert('Xóa bài thi thành công!');
-      } catch (error) {
-        console.error('Error deleting test:', error);
-        alert('Có lỗi xảy ra khi xóa bài thi.');
-      }
-    }
-  };
-
   return (
     <div className="p-6">
       {/* Header */}
@@ -399,7 +387,3 @@ const TestList = () => {
   );
 };
 
-export default TestList;
-};
-
-export default TestList;
