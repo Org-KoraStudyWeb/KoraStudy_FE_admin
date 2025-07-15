@@ -5,9 +5,6 @@ const API_BASE_URL = 'http://localhost:8080/api/v1';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
 });
 
 // Add auth token to requests
@@ -167,11 +164,7 @@ const AdminExamService = {
     console.log(`Sử dụng endpoint: ${endpoint}`);
 
     // Gửi request lên backend (đã có middleware update Cloudinary)
-    const response = await api.post(endpoint, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  const response = await api.post(endpoint, formData);
 
     console.log(`Upload ${fileType} và cập nhật câu hỏi thành công:`, response.data);
 
