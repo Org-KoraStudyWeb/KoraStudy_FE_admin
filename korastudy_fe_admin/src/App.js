@@ -42,7 +42,7 @@ function App() {
             </AdminLayout>
           }
         />
-        
+
         {/* Test Management Routes */}
         <Route
           path="/admin/tests"
@@ -101,7 +101,7 @@ function App() {
           path="/admin/courses"
           element={
             <AdminLayout title="Quản lý khóa học">
-              <CourseList />
+              <CourseContainer /> {/* Đúng: xử lý fetch và truyền dữ liệu */}
             </AdminLayout>
           }
         />
@@ -109,7 +109,7 @@ function App() {
           path="/admin/courses/create"
           element={
             <AdminLayout title="Tạo khóa học">
-              <CourseContainer />
+              <AddCourseContainer /> {/* Hiển thị form thêm mới */}
             </AdminLayout>
           }
         />

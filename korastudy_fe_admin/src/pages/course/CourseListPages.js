@@ -10,26 +10,14 @@ import {
   Layers,
 } from "lucide-react";
 
-const getStatusColor = (status) => {
-  switch (status) {
-    case "active":
-      return "bg-green-100 text-green-800";
-    case "inactive":
-      return "bg-gray-100 text-gray-800";
-    default:
-      return "bg-gray-100 text-gray-800";
-  }
+const getStatusColor = (published) => {
+  return published
+    ? "bg-green-100 text-green-800"
+    : "bg-gray-100 text-gray-800";
 };
 
-const getStatusText = (status) => {
-  switch (status) {
-    case "active":
-      return "Hoạt động";
-    case "inactive":
-      return "Ẩn";
-    default:
-      return "Không xác định";
-  }
+const getStatusText = (published) => {
+  return published ? "Hoạt động" : "Ẩn";
 };
 
 const CourseListPages = ({ courses = [], loading = false }) => {
@@ -38,11 +26,15 @@ const CourseListPages = ({ courses = [], loading = false }) => {
   const [selectedCourses, setSelectedCourses] = useState([]);
 
   const filteredCourses = courses.filter((course) => {
+    const name = course.courseName || "";
+    const description = course.description || "";
     const matchesSearch =
-      course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.description.toLowerCase().includes(searchTerm.toLowerCase());
+      name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter =
-      filterStatus === "all" || course.status === filterStatus;
+      filterStatus === "all" ||
+      (filterStatus === "active" && course.published) ||
+      (filterStatus === "inactive" && !course.published);
     return matchesSearch && matchesFilter;
   });
 
@@ -77,7 +69,7 @@ const CourseListPages = ({ courses = [], loading = false }) => {
           </div>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
           <div className="bg-white p-6 rounded-lg border border-gray-200">
             <div className="flex items-center justify-between">
@@ -101,7 +93,7 @@ const CourseListPages = ({ courses = [], loading = false }) => {
                   Đang hoạt động
                 </p>
                 <p className="text-2xl font-bold text-green-600">
-                  {courses.filter((c) => c.status === "active").length}
+                  {courses.filter((c) => c.published).length}
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -126,7 +118,7 @@ const CourseListPages = ({ courses = [], loading = false }) => {
           </div>
         </div>
 
-        {/* Filters and Search */}
+        {/* Filters */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
@@ -143,6 +135,7 @@ const CourseListPages = ({ courses = [], loading = false }) => {
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
+
             {/* Status Filter */}
             <div className="flex items-center gap-2">
               <Filter size={16} className="text-gray-400" />
@@ -156,17 +149,6 @@ const CourseListPages = ({ courses = [], loading = false }) => {
                 <option value="inactive">Ẩn</option>
               </select>
             </div>
-            {/* Bulk Actions */}
-            {selectedCourses.length > 0 && (
-              <div className="flex items-center gap-2">
-                <button className="px-3 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors">
-                  Xóa ({selectedCourses.length})
-                </button>
-                <button className="px-3 py-2 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
-                  Xuất file
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
@@ -187,28 +169,22 @@ const CourseListPages = ({ courses = [], loading = false }) => {
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Tên khóa học
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Mô tả
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Trạng thái
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Học viên
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Thông tin chung
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ngày tạo
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Số nhóm chủ đề
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Danh sách nhóm chủ đề
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
                     Thao tác
                   </th>
                 </tr>
@@ -228,7 +204,7 @@ const CourseListPages = ({ courses = [], loading = false }) => {
                   </tr>
                 ) : (
                   filteredCourses.map((course) => (
-                    <tr key={course.id} className="hover:bg-gray-50">
+                    <tr key={course.id} className="hover:bg-gray-50 align-top">
                       <td className="px-6 py-4">
                         <input
                           type="checkbox"
@@ -237,10 +213,13 @@ const CourseListPages = ({ courses = [], loading = false }) => {
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-gray-900">
-                          {course.name}
-                        </div>
+                      <td className="px-6 py-4 text-sm font-semibold text-gray-900">
+                        {course.courseName}
+                        {course.courseLevel && (
+                          <div className="text-xs text-gray-500 font-normal">
+                            {course.courseLevel}
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         {course.description}
@@ -248,19 +227,23 @@ const CourseListPages = ({ courses = [], loading = false }) => {
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                            course.status
+                            course.published
                           )}`}
                         >
-                          {getStatusText(course.status)}
+                          {getStatusText(course.published)}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900 flex items-center gap-1">
                         <Users size={14} />
-                        {course.students}
+                        {course.students || 0}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900 flex items-center gap-1">
                         <Calendar size={14} />
-                        {course.createdAt}
+                        {course.createdAt
+                          ? new Date(course.createdAt).toLocaleDateString(
+                              "vi-VN"
+                            )
+                          : "?"}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900 flex items-center gap-1">
                         <Layers size={14} />
@@ -268,7 +251,11 @@ const CourseListPages = ({ courses = [], loading = false }) => {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         {course.topicGroups && course.topicGroups.length > 0 ? (
-                          course.topicGroups.map((g) => g.groupName).join(", ")
+                          <ul className="list-disc pl-4">
+                            {course.topicGroups.map((g, idx) => (
+                              <li key={idx}>{g.groupName}</li>
+                            ))}
+                          </ul>
                         ) : (
                           <span className="text-gray-400 italic">Không có</span>
                         )}
@@ -292,6 +279,7 @@ const CourseListPages = ({ courses = [], loading = false }) => {
               </tbody>
             </table>
           </div>
+
           {/* Pagination */}
           <div className="bg-white px-6 py-3 border-t border-gray-200 flex items-center justify-between">
             <div className="text-sm text-gray-700">
