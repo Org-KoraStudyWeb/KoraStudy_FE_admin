@@ -2,12 +2,16 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/Dashboard";
-import TestList from "./pages/TestPage/TestList";
-import UploadTest from "./pages/TestPage/UploadTest";
+import TestList from "./pages/Exam/TestList";
 import LoginPages from "./pages/auth/LoginPages";
-import CourseContainer from "./containers/course/CourseContainer";
-import AddCourseContainer from "./containers/course/AddCourseContainer";
+import CourseList from "./pages/course/CourseListPages";
+import CourseContainer from "./containers/course/AddCourseContainer";
+import ExamEditor from "./pages/Exam/ExamEditor";
+import ExamDetail from "./pages/Exam/ExamDetail";
 
+
+// Import ApiDebugger để có sẵn trong console
+import "./utils/ApiDebugger";
 // Import các component mới cho Flash Card và Blog
 import FlashCardList from "./pages/flashcard/FlashCardList";
 import CreateFlashCard from "./pages/flashcard/CreateFlashCard";
@@ -16,7 +20,7 @@ import CreateBlog from "./pages/blog/CreateBlog";
 
 function App() {
   return (
-    <Router>
+  
       <Routes>
         {/* Login Route */}
         <Route path="/login" element={<LoginPages />} />
@@ -52,19 +56,28 @@ function App() {
           path="/admin/tests/create"
           element={
             <AdminLayout title="Tạo đề thi mới">
-              <UploadTest />
+              <ExamEditor />
             </AdminLayout>
           }
         />
         <Route
-          path="/admin/tests/statistics"
+          path="/admin/tests/:id"
           element={
-            <AdminLayout title="Thống kê đề thi">
-              <div className="p-6">Thống kê đề thi - Coming Soon</div>
+            <AdminLayout title="Chi tiết đề thi">
+              <ExamDetail />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/tests/:id/edit"
+          element={
+            <AdminLayout title="Chỉnh sửa đề thi">
+              <ExamEditor />
             </AdminLayout>
           }
         />
 
+       
         {/* User Management Routes */}
         <Route
           path="/admin/users"
@@ -184,7 +197,7 @@ function App() {
           }
         />
       </Routes>
-    </Router>
+  
   );
 }
 

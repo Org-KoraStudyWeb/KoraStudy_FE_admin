@@ -12,35 +12,41 @@ import {
   Clock,
   Calendar
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const TestList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedTests, setSelectedTests] = useState([]);
+  const navigate = useNavigate();
 
-  // Mock data for tests
+  // Enhanced mock data with Korean content
   const tests = [
     {
       id: 1,
-      title: 'TOPIK I - Đề thi thử số 1',
+      title: 'TOPIK I - 한국어능력시험 모의고사 1',
       type: 'TOPIK I',
       status: 'active',
       questions: 40,
       duration: 100,
       participants: 156,
       createdDate: '2024-01-15',
-      lastModified: '2024-01-20'
+      lastModified: '2024-01-20',
+      level: '초급',
+      description: '초급 수준의 한국어 학습자를 위한 TOPIK I 모의고사입니다.'
     },
     {
       id: 2,
-      title: 'TOPIK II - Đề thi thử số 2',
+      title: 'TOPIK II - 한국어능력시험 모의고사 2',
       type: 'TOPIK II',
       status: 'draft',
       questions: 50,
       duration: 180,
       participants: 89,
       createdDate: '2024-01-10',
-      lastModified: '2024-01-18'
+      lastModified: '2024-01-18',
+      level: '중급',
+      description: '중급 이상 수준의 한국어 학습자를 위한 TOPIK II 모의고사입니다.'
     },
     {
       id: 3,
@@ -115,6 +121,18 @@ const TestList = () => {
     }
   };
 
+  const handleCreateTest = () => {
+    navigate('/admin/tests/create');
+  };
+
+  const handleEditTest = (testId) => {
+    navigate(`/admin/tests/${testId}/edit`);
+  };
+
+  const handleViewTest = (testId) => {
+    navigate(`/admin/tests/${testId}`);
+  };
+
   return (
     <div className="p-6">
       {/* Header */}
@@ -123,7 +141,10 @@ const TestList = () => {
           <h1 className="text-2xl font-bold text-gray-900">Quản lý đề thi</h1>
           <p className="text-gray-600 mt-1">Quản lý và tổ chức các đề thi TOPIK</p>
         </div>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+        <button 
+          onClick={handleCreateTest}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
+        >
           <Plus size={20} />
           Tạo đề thi mới
         </button>
@@ -283,6 +304,7 @@ const TestList = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm font-medium text-gray-900">{test.title}</div>
+                    <div className="text-sm text-gray-500">{test.description}</div>
                   </td>
                   <td className="px-6 py-4">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
@@ -311,13 +333,25 @@ const TestList = () => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button className="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-blue-600">
+                      <button 
+                        onClick={() => handleViewTest(test.id)}
+                        className="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-blue-600"
+                        title="Xem chi tiết"
+                      >
                         <Eye size={16} />
                       </button>
-                      <button className="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-green-600">
+                      <button 
+                        onClick={() => handleEditTest(test.id)}
+                        className="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-green-600"
+                        title="Chỉnh sửa"
+                      >
                         <Edit size={16} />
                       </button>
-                      <button className="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-red-600">
+                      <button 
+                        onClick={() => handleDeleteTest(test.id)}
+                        className="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-red-600"
+                        title="Xóa"
+                      >
                         <Trash2 size={16} />
                       </button>
                       <button className="p-1 hover:bg-gray-100 rounded text-gray-600">
@@ -352,5 +386,5 @@ const TestList = () => {
     </div>
   );
 };
-
 export default TestList;
+
