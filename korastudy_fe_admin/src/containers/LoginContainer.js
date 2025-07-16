@@ -11,7 +11,6 @@ const LoginContainer = () => {
     setLoading(true);
     setError("");
 
-    // Debug log
     console.log("=== LOGIN DEBUG ===");
     console.log("Form data:", formData);
 
@@ -26,19 +25,22 @@ const LoginContainer = () => {
 
       const data = await response.json();
       
-      // Debug log để xem dữ liệu trả về
+      console.log("Response status:", response.status);
       console.log("Response data:", data);
+      console.log("Token received:", data.token);
       console.log("Roles:", data.roles);
 
-      if (response.ok) {
-        // ✅ Lưu token vào localStorage
+      if (response.ok && data.token) {
+        // Lưu token với tất cả các key có thể
         localStorage.setItem("accessToken", data.token);
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("adminToken", data.token);
         
-        // ✅ Lưu roles (là mảng) vào localStorage
-        localStorage.setItem("userRoles", JSON.stringify(data.roles));
-        localStorage.setItem("username", data.username);
+        // Lưu thông tin user
+        localStorage.setItem("userRoles", JSON.stringify(data.roles || []));
+        localStorage.setItem("username", data.username || formData.username);
 
-        // ✅ Kiểm tra roles - data.roles là mảng ["ADMIN"]
+        // Kiểm tra roles
         const userRoles = data.roles || [];
         const hasAdminAccess = userRoles.some(role => 
           role === "ADMIN" || 
