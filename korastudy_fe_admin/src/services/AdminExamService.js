@@ -21,10 +21,23 @@ const AdminExamService = {
   getAllExams: async () => {
     try {
       const response = await api.get('/admin/exams');
-      console.log('Got exams:', response.data);
+      console.log('Fetched exams from server:', response.data);
       return response.data;
     } catch (error) {
       console.error('Error fetching exams:', error);
+      throw error;
+    }
+  },
+
+  // Delete an exam
+  deleteExam: async (id) => {
+    try {
+      console.log('Deleting exam with ID:', id);
+      const response = await api.delete(`/admin/exams/${id}`);
+      console.log('Delete response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting exam:', error);
       throw error;
     }
   },
@@ -190,7 +203,7 @@ const AdminExamService = {
   },
 
   // Duplicate exam
-  duplicateExam: async (id) => {
+  duplicateExam: async (id) => {{/* Right Content - Course Card */}
     try {
       const response = await api.post(`/admin/exams/${id}/duplicate`);
       return response.data;
