@@ -42,7 +42,7 @@ const ExamDetail = () => {
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Không tìm thấy bài thi</h2>
           <button 
-            onClick={() => navigate('/admin/exams')}
+            onClick={() => navigate('/admin/tests')}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
           >
             Quay lại danh sách
@@ -58,7 +58,7 @@ const ExamDetail = () => {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
           <button
-            onClick={() => navigate('/admin/exams')}
+            onClick={() => navigate('/admin/tests')}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft size={20} />

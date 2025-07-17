@@ -16,7 +16,7 @@ import UserEdit from './pages/user/UserEdit'; // ✅ Import mới
 
 
 // Import ApiDebugger để có sẵn trong console
-import "./utils/ApiDebugger";
+
 // Import các component mới cho Flash Card và Blog
 import FlashCardList from "./pages/flashcard/FlashCardList";
 import CreateFlashCard from "./pages/flashcard/CreateFlashCard";

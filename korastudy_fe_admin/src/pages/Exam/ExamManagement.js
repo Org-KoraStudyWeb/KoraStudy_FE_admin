@@ -15,7 +15,7 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
-import AdminExamService from '../services/AdminExamService';
+import AdminExamService from '../../services/AdminExamService';
 
 const ExamManagement = () => {
   const navigate = useNavigate();
