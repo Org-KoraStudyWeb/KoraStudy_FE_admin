@@ -203,7 +203,7 @@ const AdminExamService = {
   },
 
   // Duplicate exam
-  duplicateExam: async (id) => {
+  duplicateExam: async (id) => {{/* Right Content - Course Card */}
     try {
       const response = await api.post(`/admin/exams/${id}/duplicate`);
       return response.data;

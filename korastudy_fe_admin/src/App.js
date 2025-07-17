@@ -4,11 +4,15 @@ import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/Dashboard";
 import TestList from "./pages/Exam/TestList";
 import LoginPages from "./pages/auth/LoginPages";
-import CourseList from "./pages/course/CourseListPages";
-import CourseContainer from "./containers/course/CourseContainer";
-import AddCourseContainer from "./containers/course/AddCourseContainer";
+// import CourseList from "./pages/course/CourseListPages";
+// import CourseContainer from "./containers/course/AddCourseContainer";
 import ExamEditor from "./pages/Exam/ExamEditor";
 import ExamDetail from "./pages/Exam/ExamDetail";
+import CourseContainer from "./containers/course/CourseContainer";
+import AddCourseContainer from "./containers/course/AddCourseContainer";
+import UserDetail from './pages/user/UserDetails'; // ✅ Import mới
+import UserEdit from './pages/user/UserEdit'; // ✅ Import mới
+
 
 
 // Import ApiDebugger để có sẵn trong console
@@ -19,6 +23,11 @@ import CreateFlashCard from "./pages/flashcard/CreateFlashCard";
 import BlogList from "./pages/blog/BlogList";
 import CreateBlog from "./pages/blog/CreateBlog";
 
+// Import User Management components
+import UserList from "./pages/user/UserList";
+
+
+
 function App() {
   return (
   
@@ -26,7 +35,7 @@ function App() {
         {/* Login Route */}
         <Route path="/login" element={<LoginPages />} />
 
-        {/* Dashboard và các routes khác */}
+        {/* Dashboard routes */}
         <Route
           path="/"
           element={
@@ -61,6 +70,24 @@ function App() {
             </AdminLayout>
           }
         />
+        {/* ✅ Route mới cho xem chi tiết user */}
+        <Route
+          path="/admin/users/view/:id"
+          element={
+            <AdminLayout title="Xem thông tin người dùng">
+              <UserDetail />
+            </AdminLayout>
+          }
+        />
+        {/* ✅ Route mới cho chỉnh sửa user */}
+        <Route
+          path="/admin/users/edit/:id"
+          element={
+            <AdminLayout title="Chỉnh sửa người dùng">
+              <UserEdit />
+            </AdminLayout>
+          }
+        />
         <Route
           path="/admin/tests/:id"
           element={
@@ -84,15 +111,23 @@ function App() {
           path="/admin/users"
           element={
             <AdminLayout title="Quản lý người dùng">
-              <div className="p-6">Quản lý người dùng - Coming Soon</div>
+              <UserList />
             </AdminLayout>
           }
         />
         <Route
-          path="/admin/users/create"
+          path="/admin/users/view/:id"
           element={
-            <AdminLayout title="Thêm người dùng">
-              <div className="p-6">Thêm người dùng - Coming Soon</div>
+            <AdminLayout title="Xem thông tin người dùng">
+              <div className="p-6">Chi tiết người dùng - Coming Soon</div>
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/users/edit/:id"
+          element={
+            <AdminLayout title="Chỉnh sửa người dùng">
+              <div className="p-6">Chỉnh sửa người dùng - Coming Soon</div>
             </AdminLayout>
           }
         />
@@ -136,6 +171,14 @@ function App() {
           path="/admin/flashcards/edit/:id"
           element={
             <AdminLayout title="Chỉnh sửa Flash Card">
+              <CreateFlashCard />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/flashcards/view/:id"
+          element={
+            <AdminLayout title="Xem Flash Card">
               <CreateFlashCard />
             </AdminLayout>
           }

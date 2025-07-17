@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, 
   FileText, 
@@ -7,51 +7,61 @@ import {
   Eye, 
   Plus, 
   Calendar,
-//   Clock,
   Award,
   Activity,
   ArrowUpRight,
   ArrowDownRight,
-//   MoreVertical
 } from 'lucide-react';
+import userApi from '../api/userApi';
+import blogApi from '../api/blogApi';
 
 const Dashboard = () => {
-  // Mock data for dashboard
-  const stats = [
-    {
-      title: 'Tổng số người dùng',
-      value: '2,847',
-      change: '+12%',
-      changeType: 'increase',
-      icon: <Users size={24} />,
-      color: 'blue'
-    },
-    {
-      title: 'Đề thi đang hoạt động',
-      value: '156',
-      change: '+8%',
-      changeType: 'increase',
-      icon: <FileText size={24} />,
-      color: 'green'
-    },
-    {
-      title: 'Khóa học',
-      value: '89',
-      change: '+23%',
-      changeType: 'increase',
-      icon: <BookOpen size={24} />,
-      color: 'purple'
-    },
-    {
-      title: 'Lượt thi hôm nay',
-      value: '1,234',
-      change: '-5%',
-      changeType: 'decrease',
-      icon: <TrendingUp size={24} />,
-      color: 'orange'
-    }
-  ];
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalExams: 0,
+    totalCourses: 0,
+    todayTests: 0
+  });
+  
+  const [loading, setLoading] = useState(true);
 
+  // Fetch dashboard data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch users data
+        const usersResponse = await userApi.getAllUsers({ page: 0, size: 1 });
+        const usersData = usersResponse.data;
+        
+        // Fetch blogs data for stats (tạm thời dùng blog thay cho exam)
+        let blogData = { totalElements: 0 };
+        try {
+          const blogsResponse = await blogApi.getAllPosts({ page: 0, size: 1 });
+          blogData = blogsResponse.data;
+        } catch (error) {
+          console.error('Error fetching blogs:', error);
+        }
+        
+        setStats({
+          totalUsers: usersData.totalElements || 0,
+          totalExams: blogData.totalElements || 0, // Tạm thời dùng blog count
+          totalCourses: 89, // Mock data
+          todayTests: 1234 // Mock data
+        });
+        
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  // Mock data for other sections
   const recentActivities = [
     {
       id: 1,
@@ -100,11 +110,11 @@ const Dashboard = () => {
       path: '/admin/tests/create'
     },
     {
-      title: 'Thêm người dùng',
-      description: 'Thêm người dùng mới',
-      icon: <Users size={20} />,
+      title: 'Xem bài viết',
+      description: 'Quản lý bài viết blog',
+      icon: <Eye size={20} />,
       color: 'green',
-      path: '/admin/users/create'
+      path: '/admin/blogs'
     },
     {
       title: 'Tạo khóa học',
@@ -172,39 +182,73 @@ const Dashboard = () => {
     return colors[color] || colors.blue;
   };
 
+  // Cập nhật stats data với dữ liệu thực
+  const statsData = [
+    {
+      title: 'Tổng số người dùng',
+      value: loading ? '...' : stats.totalUsers.toLocaleString(),
+      change: '+12%',
+      changeType: 'increase',
+      icon: <Users size={24} />,
+      color: 'blue'
+    },
+    {
+      title: 'Đề thi đang hoạt động',
+      value: loading ? '...' : stats.totalExams.toString(),
+      change: '+8%',
+      changeType: 'increase',
+      icon: <FileText size={24} />,
+      color: 'green'
+    },
+    {
+      title: 'Khóa học',
+      value: stats.totalCourses.toString(),
+      change: '+23%',
+      changeType: 'increase',
+      icon: <BookOpen size={24} />,
+      color: 'purple'
+    },
+    {
+      title: 'Lượt thi hôm nay',
+      value: stats.todayTests.toLocaleString(),
+      change: '-5%',
+      changeType: 'decrease',
+      icon: <TrendingUp size={24} />,
+      color: 'orange'
+    }
+  ];
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6">
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600 mt-1">Tổng quan hệ thống KoraStudy Admin</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Calendar size={16} />
-            <span>Hôm nay: {new Date().toLocaleDateString('vi-VN')}</span>
-          </div>
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <Calendar size={16} />
+          <span>Hôm nay: {new Date().toLocaleDateString('vi-VN')}</span>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => {
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        {statsData.map((stat, index) => {
           const colorClasses = getColorClasses(stat.color);
           return (
-            <div key={index} className="bg-white p-6 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+            <div key={index} className="bg-white rounded-lg border border-gray-200 p-6">
               <div className="flex items-center justify-between">
-                <div className="flex-1">
+                <div>
                   <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
                   <div className="flex items-center mt-2">
                     {stat.changeType === 'increase' ? (
                       <ArrowUpRight size={16} className="text-green-600" />
                     ) : (
                       <ArrowDownRight size={16} className="text-red-600" />
                     )}
-                    <span className={`text-sm font-medium ml-1 ${
+                    <span className={`text-sm font-medium ${
                       stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
                     }`}>
                       {stat.change}
@@ -235,20 +279,19 @@ const Dashboard = () => {
               {quickActions.map((action, index) => {
                 const colorClasses = getColorClasses(action.color);
                 return (
-                  <button
+                  <a
                     key={index}
-                    className="w-full flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-left"
+                    href={action.path}
+                    className={`flex items-center gap-3 p-3 rounded-lg border ${colorClasses.border} ${colorClasses.bg} hover:opacity-80 transition-opacity group`}
                   >
-                    <div className={`w-10 h-10 ${colorClasses.bg} rounded-lg flex items-center justify-center`}>
-                      <div className={colorClasses.text}>
-                        {action.icon}
-                      </div>
+                    <div className={`w-10 h-10 ${colorClasses.bg} rounded-lg flex items-center justify-center ${colorClasses.text} group-hover:scale-110 transition-transform`}>
+                      {action.icon}
                     </div>
-                    <div className="flex-1">
+                    <div>
                       <p className="font-medium text-gray-900">{action.title}</p>
                       <p className="text-sm text-gray-600">{action.description}</p>
                     </div>
-                  </button>
+                  </a>
                 );
               })}
             </div>
@@ -268,11 +311,9 @@ const Dashboard = () => {
               {recentActivities.map((activity) => {
                 const colorClasses = getColorClasses(activity.color);
                 return (
-                  <div key={activity.id} className="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                    <div className={`w-8 h-8 ${colorClasses.bg} rounded-full flex items-center justify-center flex-shrink-0`}>
-                      <div className={colorClasses.text}>
-                        {activity.icon}
-                      </div>
+                  <div key={activity.id} className="flex items-start gap-3">
+                    <div className={`w-8 h-8 ${colorClasses.bg} rounded-lg flex items-center justify-center ${colorClasses.text} flex-shrink-0`}>
+                      {activity.icon}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900">{activity.title}</p>
@@ -291,7 +332,7 @@ const Dashboard = () => {
       </div>
 
       {/* Top Performing Tests */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-lg border border-gray-200 p-6 mt-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-900">Đề thi phổ biến nhất</h3>
           <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
@@ -323,9 +364,9 @@ const Dashboard = () => {
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
-                      <div className="w-16 bg-gray-200 rounded-full h-2">
+                      <div className="w-20 bg-gray-200 rounded-full h-2">
                         <div 
-                          className="bg-green-500 h-2 rounded-full" 
+                          className="bg-green-600 h-2 rounded-full" 
                           style={{ width: `${test.completionRate}%` }}
                         ></div>
                       </div>
@@ -333,11 +374,11 @@ const Dashboard = () => {
                     </div>
                   </td>
                   <td className="py-3 px-4">
-                    <span className="font-medium text-gray-900">{test.avgScore}/100</span>
+                    <span className="text-sm font-medium text-gray-900">{test.avgScore}</span>
                   </td>
                   <td className="py-3 px-4 text-right">
-                    <button className="p-1 hover:bg-gray-100 rounded text-gray-600">
-                      <Eye size={16} />
+                    <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                      Xem chi tiết
                     </button>
                   </td>
                 </tr>
