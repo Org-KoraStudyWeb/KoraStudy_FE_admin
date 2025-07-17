@@ -38,12 +38,12 @@ const userApi = {
     });
   },
 
-  // Lấy thông tin chi tiết người dùng
+  // ✅ Lấy thông tin chi tiết người dùng
   getUserDetail: (userId) => {
     return axiosClient.get(`/api/v1/admin/users/${userId}`);
   },
 
-  // Cập nhật thông tin người dùng
+  // ✅ Cập nhật thông tin người dùng  
   updateUser: (userId, data) => {
     return axiosClient.put(`/api/v1/admin/users/${userId}`, data);
   },

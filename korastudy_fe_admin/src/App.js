@@ -2,12 +2,21 @@ import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/Dashboard";
-import TestList from "./pages/TestPage/TestList";
-import UploadTest from "./pages/TestPage/UploadTest";
+import TestList from "./pages/Exam/TestList";
 import LoginPages from "./pages/auth/LoginPages";
-import CourseList from "./pages/course/CourseListPages";
-import CourseContainer from "./containers/course/AddCourseContainer";
+// import CourseList from "./pages/course/CourseListPages";
+// import CourseContainer from "./containers/course/AddCourseContainer";
+import ExamEditor from "./pages/Exam/ExamEditor";
+import ExamDetail from "./pages/Exam/ExamDetail";
+import CourseContainer from "./containers/course/CourseContainer";
+import AddCourseContainer from "./containers/course/AddCourseContainer";
+import UserDetail from './pages/user/UserDetails'; // ✅ Import mới
+import UserEdit from './pages/user/UserEdit'; // ✅ Import mới
 
+
+
+// Import ApiDebugger để có sẵn trong console
+import "./utils/ApiDebugger";
 // Import các component mới cho Flash Card và Blog
 import FlashCardList from "./pages/flashcard/FlashCardList";
 import CreateFlashCard from "./pages/flashcard/CreateFlashCard";
@@ -17,9 +26,11 @@ import CreateBlog from "./pages/blog/CreateBlog";
 // Import User Management components
 import UserList from "./pages/user/UserList";
 
+
+
 function App() {
   return (
-    <Router>
+  
       <Routes>
         {/* Login Route */}
         <Route path="/login" element={<LoginPages />} />
@@ -41,7 +52,7 @@ function App() {
             </AdminLayout>
           }
         />
-        
+
         {/* Test Management Routes */}
         <Route
           path="/admin/tests"
@@ -55,19 +66,46 @@ function App() {
           path="/admin/tests/create"
           element={
             <AdminLayout title="Tạo đề thi mới">
-              <UploadTest />
+              <ExamEditor />
+            </AdminLayout>
+          }
+        />
+        {/* ✅ Route mới cho xem chi tiết user */}
+        <Route
+          path="/admin/users/view/:id"
+          element={
+            <AdminLayout title="Xem thông tin người dùng">
+              <UserDetail />
+            </AdminLayout>
+          }
+        />
+        {/* ✅ Route mới cho chỉnh sửa user */}
+        <Route
+          path="/admin/users/edit/:id"
+          element={
+            <AdminLayout title="Chỉnh sửa người dùng">
+              <UserEdit />
             </AdminLayout>
           }
         />
         <Route
-          path="/admin/tests/statistics"
+          path="/admin/tests/:id"
           element={
-            <AdminLayout title="Thống kê đề thi">
-              <div className="p-6">Thống kê đề thi - Coming Soon</div>
+            <AdminLayout title="Chi tiết đề thi">
+              <ExamDetail />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/tests/:id/edit"
+          element={
+            <AdminLayout title="Chỉnh sửa đề thi">
+              <ExamEditor />
             </AdminLayout>
           }
         />
 
+       
         {/* User Management Routes */}
         <Route
           path="/admin/users"
@@ -99,7 +137,7 @@ function App() {
           path="/admin/courses"
           element={
             <AdminLayout title="Quản lý khóa học">
-              <CourseList />
+              <CourseContainer /> {/* Đúng: xử lý fetch và truyền dữ liệu */}
             </AdminLayout>
           }
         />
@@ -107,7 +145,7 @@ function App() {
           path="/admin/courses/create"
           element={
             <AdminLayout title="Tạo khóa học">
-              <CourseContainer />
+              <AddCourseContainer /> {/* Hiển thị form thêm mới */}
             </AdminLayout>
           }
         />
@@ -203,7 +241,7 @@ function App() {
           }
         />
       </Routes>
-    </Router>
+  
   );
 }
 

@@ -63,7 +63,7 @@ const Sidebar = () => {
       ],
     },
     {
-      title: "Quản lý người dùng",
+      title: "Quản lý User",
       icon: <Users size={20} />,
       key: "users",
       submenu: [
@@ -71,11 +71,6 @@ const Sidebar = () => {
           title: "Danh sách người dùng",
           icon: <List size={16} />,
           path: "/admin/users",
-        },
-        {
-          title: "Thêm người dùng",
-          icon: <PlusCircle size={16} />,
-          path: "/admin/users/create",
         },
       ],
     },
