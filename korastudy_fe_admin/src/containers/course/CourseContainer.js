@@ -18,11 +18,11 @@ const CourseContainer = () => {
       console.log("🔑 Token hiện tại:", token);
       console.log(
         "🌍 API URL:",
-        axiosClient.defaults.baseURL + "/courses/lists"
+        axiosClient.defaults.baseURL + "api/v1/courses/lists"
       );
 
       try {
-        const res = await axiosClient.get("/courses/lists", {
+        const res = await axiosClient.get("api/v1/courses/lists", {
           headers: {
             Authorization: `Bearer ${token}`,
           },

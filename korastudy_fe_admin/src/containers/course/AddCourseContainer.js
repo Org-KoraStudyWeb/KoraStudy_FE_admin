@@ -78,7 +78,7 @@ const CourseContainer = () => {
         price: parseFloat(form.price),
       };
 
-      await axiosClient.post("/courses/create", payload); // axiosClient tự gắn token
+      await axiosClient.post("api/v1/courses/create", payload); // axiosClient tự gắn token
 
       alert("Tạo khóa học thành công!");
       navigate("/admin/courses");

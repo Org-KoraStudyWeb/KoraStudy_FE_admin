@@ -13,6 +13,10 @@ import AddCourseContainer from "./containers/course/AddCourseContainer";
 import UserDetail from './pages/user/UserDetails'; // ✅ Import mới
 import UserEdit from './pages/user/UserEdit'; // ✅ Import mới
 
+// Thêm vào file routes hoặc menu của ứng dụng
+import NotificationManagement from './pages/NotificationManagement';
+
+
 
 
 // Import ApiDebugger để có sẵn trong console
@@ -210,6 +214,16 @@ function App() {
           }
         />
 
+        {/* Notification Management Route */}
+        <Route
+          path="/admin/notifications"
+          element={
+            <AdminLayout title="Quản lý thông báo">
+              <NotificationManagement />
+            </AdminLayout>
+          }
+        />
+
         {/* Settings Route */}
         <Route
           path="/admin/settings"
@@ -219,6 +233,8 @@ function App() {
             </AdminLayout>
           }
         />
+
+        
 
         {/* Fallback route - 404 Page */}
         <Route
