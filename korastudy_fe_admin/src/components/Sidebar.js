@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { IoNotificationsOutline } from "react-icons/io5";
 import {
   Home,
   FileText,
@@ -108,6 +109,8 @@ const Sidebar = () => {
         },
       ],
     },
+
+    
     {
       title: "Quản lý Blog",
       icon: <Edit3 size={20} />,
@@ -130,6 +133,13 @@ const Sidebar = () => {
       icon: <Settings size={20} />,
       path: "/admin/settings",
     },
+
+    {
+    title: "Quản lý thông báo",
+    icon: <IoNotificationsOutline className="text-lg" />, // Hoặc icon phù hợp khác
+    path: "/admin/notifications",
+    permissions: ["ADMIN"]
+      },
   ];
 
   const isActive = (path, exact = false) => {
