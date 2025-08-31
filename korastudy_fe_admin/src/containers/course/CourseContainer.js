@@ -15,7 +15,6 @@ const CourseContainer = () => {
       setError("");
 
       const token = localStorage.getItem("accessToken");
-      console.log("🔑 Token hiện tại:", token);
       console.log(
         "🌍 API URL:",
         axiosClient.defaults.baseURL + "/courses/lists"
@@ -52,6 +51,36 @@ const CourseContainer = () => {
     fetchCourses();
   }, []);
 
+  const handleDeleteCourse = async (courseId) => {
+    // ---- Mã gỡ lỗi ----
+    console.log("ID khóa học nhận được để xóa:", courseId);
+    if (typeof courseId === "undefined" || courseId === null) {
+      alert(
+        "Lỗi: Không thể xóa vì ID khóa học không xác định. Vui lòng kiểm tra lại dữ liệu trả về từ API."
+      );
+      return;
+    }
+    // ---- Kết thúc gỡ lỗi ----
+
+    if (!window.confirm("Bạn có chắc chắn muốn xóa khóa học này không?")) {
+      return;
+    }
+
+    try {
+      // Gọi API để xóa khóa học với ID tương ứng
+      await axiosClient.delete(`/courses/delete/${courseId}`);
+      // Cập nhật lại state để loại bỏ khóa học đã xóa khỏi giao diện
+      setCourses((prev) => prev.filter((course) => course.id !== courseId));
+      alert("Xóa khóa học thành công!");
+    } catch (error) {
+      console.error("Lỗi khi xóa khóa học:", error);
+      alert(
+        "Xóa khóa học thất bại: " +
+          (error.response?.data?.message || error.message)
+      );
+    }
+  };
+
   return (
     <>
       {error && (
@@ -60,7 +89,11 @@ const CourseContainer = () => {
           {console.log("🪵 Lỗi đang hiển thị:", error)}
         </>
       )}
-      <CourseListPages courses={courses} loading={loading} />
+      <CourseListPages
+        courses={courses}
+        loading={loading}
+        onDeleteCourse={handleDeleteCourse}
+      />
     </>
   );
 };

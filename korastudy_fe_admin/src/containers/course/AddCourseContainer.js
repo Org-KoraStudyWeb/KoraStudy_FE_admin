@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axiosClient from "../../api/axiosClient"; // dùng client có interceptor
-import axios from "axios";
+import axiosClient from "../../api/axiosClient";
 import AddCourse from "../../pages/course/AddCoursePages";
 
 const CourseContainer = () => {
@@ -18,6 +17,7 @@ const CourseContainer = () => {
   const [imageFile, setImageFile] = useState(null);
   const navigate = useNavigate();
 
+  // Xử lý thay đổi trường đơn
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setForm((prev) => ({
@@ -26,11 +26,13 @@ const CourseContainer = () => {
     }));
   };
 
+  // Xử lý chọn ảnh
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     setImageFile(file);
   };
 
+  // Thêm nhóm từ vựng
   const handleAddGroup = () => {
     setForm((prev) => ({
       ...prev,
@@ -38,47 +40,47 @@ const CourseContainer = () => {
     }));
   };
 
+  // Xóa nhóm từ vựng
   const handleRemoveGroup = (index) => {
     const updated = form.topicGroups.filter((_, i) => i !== index);
     setForm((prev) => ({ ...prev, topicGroups: updated }));
   };
 
+  // Thay đổi thông tin nhóm từ vựng
   const handleGroupChange = (e, index, field) => {
     const updatedGroups = [...form.topicGroups];
     updatedGroups[index][field] = e.target.value;
     setForm((prev) => ({ ...prev, topicGroups: updatedGroups }));
   };
 
+  // Gửi form
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      let imageUrlToSend = form.imageUrl;
+      const formData = new FormData();
 
+      // Gắn ảnh nếu có
       if (imageFile) {
-        const imageForm = new FormData();
-        imageForm.append("file", imageFile);
-
-        const uploadRes = await axios.post(
-          "http://localhost:8080/api/v1/upload",
-          imageForm,
-          {
-            headers: {
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-
-        imageUrlToSend = uploadRes.data.url;
+        formData.append("image", imageFile);
       }
 
-      const payload = {
+      // Gắn JSON dữ liệu khóa học
+      const coursePayload = {
         ...form,
-        imageUrl: imageUrlToSend,
         price: parseFloat(form.price),
       };
+      const jsonBlob = new Blob([JSON.stringify(coursePayload)], {
+        type: "application/json",
+      });
+      formData.append("course", jsonBlob);
 
-      await axiosClient.post("/courses/create", payload); // axiosClient tự gắn token
+      // Gửi lên server
+      await axiosClient.post("/courses/create", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       alert("Tạo khóa học thành công!");
       navigate("/admin/courses");

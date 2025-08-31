@@ -10,31 +10,31 @@ import {
   Layers,
 } from "lucide-react";
 
-const getStatusColor = (published) => {
-  return published
+const getStatusColor = (isPublished) => {
+  return isPublished
     ? "bg-green-100 text-green-800"
     : "bg-gray-100 text-gray-800";
 };
 
-const getStatusText = (published) => {
-  return published ? "Hoạt động" : "Ẩn";
+const getStatusText = (isPublished) => {
+  return isPublished ? "Hoạt động" : "Ẩn";
 };
 
-const CourseListPages = ({ courses = [], loading = false }) => {
+const CourseListPages = ({ courses = [], loading = false, onDeleteCourse }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedCourses, setSelectedCourses] = useState([]);
 
   const filteredCourses = courses.filter((course) => {
-    const name = course.courseName || "";
+    const name = course.name || "";
     const description = course.description || "";
     const matchesSearch =
       name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter =
       filterStatus === "all" ||
-      (filterStatus === "active" && course.published) ||
-      (filterStatus === "inactive" && !course.published);
+      (filterStatus === "active" && course.isPublished) ||
+      (filterStatus === "inactive" && !course.isPublished);
     return matchesSearch && matchesFilter;
   });
 
@@ -93,7 +93,7 @@ const CourseListPages = ({ courses = [], loading = false }) => {
                   Đang hoạt động
                 </p>
                 <p className="text-2xl font-bold text-green-600">
-                  {courses.filter((c) => c.published).length}
+                  {courses.filter((c) => c.isPublished).length}
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -179,10 +179,16 @@ const CourseListPages = ({ courses = [], loading = false }) => {
                     Trạng thái
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Thông tin chung
+                    Học viên
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Danh sách nhóm chủ đề
+                    Ngày tạo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Số nhóm CĐ
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Tên các nhóm
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
                     Thao tác
@@ -203,8 +209,11 @@ const CourseListPages = ({ courses = [], loading = false }) => {
                     </td>
                   </tr>
                 ) : (
-                  filteredCourses.map((course) => (
-                    <tr key={course.id} className="hover:bg-gray-50 align-top">
+                  filteredCourses.map((course, index) => (
+                    <tr
+                      key={course.id || index}
+                      className="hover:bg-gray-50 align-top"
+                    >
                       <td className="px-6 py-4">
                         <input
                           type="checkbox"
@@ -214,10 +223,10 @@ const CourseListPages = ({ courses = [], loading = false }) => {
                         />
                       </td>
                       <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                        {course.courseName}
-                        {course.courseLevel && (
+                        {course.name || "Không có tên"}
+                        {course.level && (
                           <div className="text-xs text-gray-500 font-normal">
-                            {course.courseLevel}
+                            {course.level}
                           </div>
                         )}
                       </td>
@@ -227,10 +236,10 @@ const CourseListPages = ({ courses = [], loading = false }) => {
                       <td className="px-6 py-4">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
-                            course.published
+                            course.isPublished
                           )}`}
                         >
-                          {getStatusText(course.published)}
+                          {getStatusText(course.isPublished)}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900 flex items-center gap-1">
@@ -253,7 +262,7 @@ const CourseListPages = ({ courses = [], loading = false }) => {
                         {course.topicGroups && course.topicGroups.length > 0 ? (
                           <ul className="list-disc pl-4">
                             {course.topicGroups.map((g, idx) => (
-                              <li key={idx}>{g.groupName}</li>
+                              <li key={g.id || idx}>{g.groupName}</li>
                             ))}
                           </ul>
                         ) : (
@@ -268,7 +277,11 @@ const CourseListPages = ({ courses = [], loading = false }) => {
                           <button className="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-green-600">
                             <Edit size={16} />
                           </button>
-                          <button className="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-red-600">
+                          <button
+                            onClick={() => onDeleteCourse(course.id)}
+                            className="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-red-600"
+                            title="Xóa khóa học"
+                          >
                             <Trash2 size={16} />
                           </button>
                         </div>
