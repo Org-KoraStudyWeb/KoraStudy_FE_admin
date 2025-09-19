@@ -13,6 +13,10 @@ import AddCourseContainer from "./containers/course/AddCourseContainer";
 import UserDetail from './pages/user/UserDetails'; // ✅ Import mới
 import UserEdit from './pages/user/UserEdit'; // ✅ Import mới
 
+// Import course management components
+import CourseManagement from "./pages/course/CourseManagement";
+import CourseDetail from "./pages/course/CourseDetail";
+
 // Thêm vào file routes hoặc menu của ứng dụng
 import NotificationManagement from './pages/NotificationManagement';
 
@@ -141,14 +145,30 @@ function App() {
           path="/admin/courses"
           element={
             <AdminLayout title="Quản lý khóa học">
+              <CourseManagement />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/courses/:id"
+          element={
+            <AdminLayout title="Chi tiết khóa học">
+              <CourseDetail />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/courses-old"
+          element={
+            <AdminLayout title="Quản lý khóa học (Cũ)">
               <CourseContainer /> {/* Đúng: xử lý fetch và truyền dữ liệu */}
             </AdminLayout>
           }
         />
         <Route
-          path="/admin/courses/create"
+          path="/admin/courses-old/create"
           element={
-            <AdminLayout title="Tạo khóa học">
+            <AdminLayout title="Tạo khóa học (Cũ)">
               <AddCourseContainer /> {/* Hiển thị form thêm mới */}
             </AdminLayout>
           }

@@ -84,12 +84,7 @@ const Sidebar = () => {
           title: "Danh sách khóa học",
           icon: <List size={16} />,
           path: "/admin/courses",
-        },
-        {
-          title: "Tạo khóa học",
-          icon: <PlusCircle size={16} />,
-          path: "/admin/courses/create",
-        },
+        }
       ],
     },
     {
