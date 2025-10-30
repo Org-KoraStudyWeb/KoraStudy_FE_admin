@@ -1,6 +1,6 @@
 // src/pages/course/CourseDetail.js
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
   Breadcrumb,
@@ -16,8 +16,8 @@ import {
   Statistic,
   Divider,
   message,
-  Switch
-} from 'antd';
+  Switch,
+} from "antd";
 import {
   ArrowLeftOutlined,
   PlusOutlined,
@@ -28,11 +28,11 @@ import {
   QuestionCircleOutlined,
   BookOutlined,
   EyeOutlined,
-  UserOutlined
-} from '@ant-design/icons';
-import CourseService from '../../services/CourseService';
-import SectionForm from '../../components/course/SectionForm';
-import LessonForm from '../../components/course/LessonForm';
+  UserOutlined,
+} from "@ant-design/icons";
+import CourseService from "../../services/CourseService";
+import SectionForm from "../../components/course/SectionForm";
+import LessonForm from "../../components/course/LessonForm";
 
 const { Panel } = Collapse;
 
@@ -54,7 +54,7 @@ const CourseDetail = () => {
   // Load course detail data
   const loadCourseDetail = async () => {
     if (!id) return;
-    
+
     setLoading(true);
     try {
       // Load course info
@@ -68,18 +68,24 @@ const CourseDetail = () => {
       if (sectionsResponse.success) {
         const sectionsWithLessons = await Promise.all(
           sectionsResponse.data.map(async (section) => {
-            const lessonsResponse = await CourseService.getLessonsBySectionId(section.id);
+            const lessonsResponse = await CourseService.getLessonsBySectionId(
+              section.id
+            );
             return {
               ...section,
-              lessons: lessonsResponse.success ? lessonsResponse.data : []
+              lessons: lessonsResponse.success ? lessonsResponse.data : [],
             };
           })
         );
-        setSections(sectionsWithLessons.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)));
+        setSections(
+          sectionsWithLessons.sort(
+            (a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)
+          )
+        );
       }
     } catch (error) {
-      console.error('Load course detail error:', error);
-      message.error('Lỗi khi tải thông tin khóa học');
+      console.error("Load course detail error:", error);
+      message.error("Lỗi khi tải thông tin khóa học");
     } finally {
       setLoading(false);
     }
@@ -98,17 +104,17 @@ const CourseDetail = () => {
     try {
       const response = await CourseService.updateCourse(id, {
         ...course,
-        isPublished: checked
+        published: checked,
       });
-      
+
       if (response.success) {
-        setCourse(prev => ({ ...prev, isPublished: checked }));
-        message.success(checked ? 'Đã xuất bản khóa học' : 'Đã ẩn khóa học');
+        setCourse((prev) => ({ ...prev, published: checked }));
+        message.success(checked ? "Đã xuất bản khóa học" : "Đã ẩn khóa học");
       } else {
         message.error(response.message);
       }
     } catch (error) {
-      message.error('Có lỗi xảy ra khi cập nhật trạng thái khóa học');
+      message.error("Có lỗi xảy ra khi cập nhật trạng thái khóa học");
     } finally {
       setPublishLoading(false);
     }
@@ -139,8 +145,8 @@ const CourseDetail = () => {
         message.error(response.message);
       }
     } catch (error) {
-      console.error('Delete section error:', error);
-      message.error('Có lỗi xảy ra khi xóa chương học');
+      console.error("Delete section error:", error);
+      message.error("Có lỗi xảy ra khi xóa chương học");
     }
   };
 
@@ -171,20 +177,20 @@ const CourseDetail = () => {
         message.error(response.message);
       }
     } catch (error) {
-      console.error('Delete lesson error:', error);
-      message.error('Có lỗi xảy ra khi xóa bài học');
+      console.error("Delete lesson error:", error);
+      message.error("Có lỗi xảy ra khi xóa bài học");
     }
   };
 
   // Content type icons and labels
   const getContentTypeIcon = (type) => {
     switch (type) {
-      case 'VIDEO':
-        return <PlayCircleOutlined style={{ color: '#1890ff' }} />;
-      case 'TEXT':
-        return <FileTextOutlined style={{ color: '#52c41a' }} />;
-      case 'QUIZ':
-        return <QuestionCircleOutlined style={{ color: '#faad14' }} />;
+      case "VIDEO":
+        return <PlayCircleOutlined style={{ color: "#1890ff" }} />;
+      case "TEXT":
+        return <FileTextOutlined style={{ color: "#52c41a" }} />;
+      case "QUIZ":
+        return <QuestionCircleOutlined style={{ color: "#faad14" }} />;
       default:
         return <BookOutlined />;
     }
@@ -192,20 +198,20 @@ const CourseDetail = () => {
 
   const getContentTypeLabel = (type) => {
     switch (type) {
-      case 'VIDEO':
-        return 'Video';
-      case 'TEXT':
-        return 'Văn bản';
-      case 'QUIZ':
-        return 'Bài kiểm tra';
+      case "VIDEO":
+        return "Video";
+      case "TEXT":
+        return "Văn bản";
+      case "QUIZ":
+        return "Bài kiểm tra";
       default:
-        return 'Khác';
+        return "Khác";
     }
   };
 
   if (!course) {
     return (
-      <div style={{ padding: '24px', textAlign: 'center' }}>
+      <div style={{ padding: "24px", textAlign: "center" }}>
         <Card loading={loading}>
           <p>Đang tải thông tin khóa học...</p>
         </Card>
@@ -214,14 +220,14 @@ const CourseDetail = () => {
   }
 
   return (
-    <div style={{ padding: '24px' }}>
+    <div style={{ padding: "24px" }}>
       {/* Breadcrumb */}
-      <Breadcrumb style={{ marginBottom: '16px' }}>
+      <Breadcrumb style={{ marginBottom: "16px" }}>
         <Breadcrumb.Item>
-          <Button 
-            type="link" 
+          <Button
+            type="link"
             icon={<ArrowLeftOutlined />}
-            onClick={() => navigate('/admin/courses')}
+            onClick={() => navigate("/admin/courses")}
           >
             Quản lý khóa học
           </Button>
@@ -230,15 +236,15 @@ const CourseDetail = () => {
       </Breadcrumb>
 
       {/* Course Info */}
-      <Row gutter={16} style={{ marginBottom: '24px' }}>
+      <Row gutter={16} style={{ marginBottom: "24px" }}>
         <Col span={18}>
-          <Card 
+          <Card
             title={
               <Space>
                 <BookOutlined />
                 {course.courseName}
-                <Tag color={course.isPublished ? 'green' : 'orange'}>
-                  {course.isPublished ? 'Đã xuất bản' : 'Nháp'}
+                <Tag color={course.published ? "green" : "orange"}>
+                  {course.published ? "Đã xuất bản" : "Nháp"}
                 </Tag>
               </Space>
             }
@@ -246,10 +252,10 @@ const CourseDetail = () => {
               <Space>
                 <div>
                   <span style={{ marginRight: 8 }}>
-                    {course.isPublished ? 'Đã xuất bản' : 'Chưa xuất bản'}
+                    {course.published ? "Đã xuất bản" : "Chưa xuất bản"}
                   </span>
                   <Switch
-                    checked={course.isPublished}
+                    checked={course.published}
                     onChange={handleTogglePublish}
                     loading={publishLoading}
                     checkedChildren="Xuất bản"
@@ -266,12 +272,32 @@ const CourseDetail = () => {
               </Space>
             }
           >
-            <p>{course.courseDescription}</p>
+            <div
+              className="course-description"
+              style={{
+                marginBottom: "24px",
+                padding: "16px",
+                backgroundColor: "#f9f9f9",
+                borderRadius: "8px",
+                border: "1px solid #f0f0f0",
+              }}
+            >
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: course.courseDescription || "Chưa có mô tả",
+                }}
+                style={{
+                  fontSize: "14px",
+                  lineHeight: "1.6",
+                  color: "#333",
+                }}
+              />
+            </div>
             <Row gutter={16}>
               <Col span={8}>
                 <Statistic
                   title="Giá khóa học"
-                  value={course.price || 0}
+                  value={course.coursePrice || 0}
                   suffix="VND"
                   formatter={(value) => value.toLocaleString()}
                 />
@@ -286,7 +312,10 @@ const CourseDetail = () => {
               <Col span={8}>
                 <Statistic
                   title="Tổng bài học"
-                  value={sections.reduce((total, section) => total + (section.lessons?.length || 0), 0)}
+                  value={sections.reduce(
+                    (total, section) => total + (section.lessons?.length || 0),
+                    0
+                  )}
                   prefix={<PlayCircleOutlined />}
                 />
               </Col>
@@ -313,9 +342,9 @@ const CourseDetail = () => {
       {/* Sections and Lessons */}
       <Card title="Nội dung khóa học" loading={loading}>
         {sections.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
-            <BookOutlined style={{ fontSize: '48px', color: '#d9d9d9' }} />
-            <p style={{ marginTop: '16px', color: '#999' }}>
+          <div style={{ textAlign: "center", padding: "40px" }}>
+            <BookOutlined style={{ fontSize: "48px", color: "#d9d9d9" }} />
+            <p style={{ marginTop: "16px", color: "#999" }}>
               Chưa có chương học nào. Hãy thêm chương học đầu tiên!
             </p>
             <Button
@@ -327,16 +356,23 @@ const CourseDetail = () => {
             </Button>
           </div>
         ) : (
-          <Collapse defaultActiveKey={sections.map(s => s.id.toString())}>
+          <Collapse defaultActiveKey={sections.map((s) => s.id.toString())}>
             {sections.map((section) => (
               <Panel
                 key={section.id}
                 header={
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      width: "100%",
+                    }}
+                  >
                     <span>
-                      <BookOutlined style={{ marginRight: '8px' }} />
+                      <BookOutlined style={{ marginRight: "8px" }} />
                       {section.sectionTitle}
-                      <Tag style={{ marginLeft: '8px' }}>
+                      <Tag style={{ marginLeft: "8px" }}>
                         {section.lessons?.length || 0} bài học
                       </Tag>
                     </span>
@@ -369,25 +405,34 @@ const CourseDetail = () => {
                       okType="danger"
                     >
                       <Tooltip title="Xóa chương">
-                        <Button
-                          size="small"
-                          icon={<DeleteOutlined />}
-                          danger
-                        />
+                        <Button size="small" icon={<DeleteOutlined />} danger />
                       </Tooltip>
                     </Popconfirm>
                   </Space>
                 }
               >
                 {section.sectionDescription && (
-                  <p style={{ marginBottom: '16px', color: '#666', fontStyle: 'italic' }}>
-                    {section.sectionDescription}
-                  </p>
+                  <div
+                    style={{
+                      marginBottom: "16px",
+                      padding: "12px",
+                      backgroundColor: "#fafafa",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      lineHeight: "1.5",
+                      color: "#666",
+                    }}
+                    dangerouslySetInnerHTML={{
+                      __html: section.sectionDescription || "Chưa có mô tả",
+                    }}
+                  />
                 )}
-                
+
                 {section.lessons && section.lessons.length > 0 ? (
                   <List
-                    dataSource={section.lessons.sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0))}
+                    dataSource={section.lessons.sort(
+                      (a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)
+                    )}
                     renderItem={(lesson, index) => (
                       <List.Item
                         actions={[
@@ -413,17 +458,23 @@ const CourseDetail = () => {
                                 danger
                               />
                             </Tooltip>
-                          </Popconfirm>
+                          </Popconfirm>,
                         ]}
                       >
                         <List.Item.Meta
                           avatar={getContentTypeIcon(lesson.contentType)}
                           title={
                             <Space>
-                              <span>{index + 1}. {lesson.lessonTitle}</span>
-                              <Tag size="small">{getContentTypeLabel(lesson.contentType)}</Tag>
+                              <span>
+                                {index + 1}. {lesson.lessonTitle}
+                              </span>
+                              <Tag size="small">
+                                {getContentTypeLabel(lesson.contentType)}
+                              </Tag>
                               {lesson.videoUrl && (
-                                <Tag size="small" color="blue">Có video</Tag>
+                                <Tag size="small" color="blue">
+                                  Có video
+                                </Tag>
                               )}
                             </Space>
                           }
@@ -433,8 +484,16 @@ const CourseDetail = () => {
                     )}
                   />
                 ) : (
-                  <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
-                    <FileTextOutlined style={{ fontSize: '24px', marginBottom: '8px' }} />
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: "20px",
+                      color: "#999",
+                    }}
+                  >
+                    <FileTextOutlined
+                      style={{ fontSize: "24px", marginBottom: "8px" }}
+                    />
                     <p>Chưa có bài học nào trong chương này</p>
                     <Button
                       size="small"
