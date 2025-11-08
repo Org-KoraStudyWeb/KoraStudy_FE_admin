@@ -38,8 +38,8 @@ const AddCourse = ({
             </label>
             <input
               type="text"
-              name="level"
-              value={form.level}
+              name="courseLevel"
+              value={form.courseLevel}
               onChange={onChange}
               className="w-full border border-gray-300 rounded-lg px-4 py-3 mb-4 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none text-lg"
               placeholder="Ví dụ: Beginner, Intermediate, Advanced"
@@ -81,8 +81,8 @@ const AddCourse = ({
             </label>
             <input
               type="number"
-              name="price"
-              value={form.price}
+              name="coursePrice"
+              value={form.coursePrice}
               onChange={onChange}
               min={0}
               className="w-full border border-gray-300 rounded-lg px-4 py-3 mb-4 focus:ring-2 focus:ring-blue-400 focus:border-blue-400 outline-none text-lg"
@@ -92,14 +92,14 @@ const AddCourse = ({
             <div className="flex items-center mb-4">
               <input
                 type="checkbox"
-                name="isPublished"
-                checked={form.isPublished}
+                name="published"
+                checked={form.published}
                 onChange={onChange}
-                id="isPublished"
+                id="published"
                 className="mr-3 h-5 w-5 accent-blue-600"
               />
               <label
-                htmlFor="isPublished"
+                htmlFor="published"
                 className="font-semibold text-gray-700"
               >
                 Công khai khóa học

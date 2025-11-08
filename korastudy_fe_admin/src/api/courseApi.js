@@ -3,23 +3,25 @@ import axiosClient from "./axiosClient";
 
 const courseApi = {
   // ==================== ADMIN COURSE MANAGEMENT ====================
-  
+
   // Lấy danh sách tất cả khóa học (admin) với pagination
   getAllCoursesAdmin: (params = {}) => {
     const {
       page = 0,
       size = 10,
       sortBy = "id",
-      sortDir = "desc"
+      sortDir = "desc",
+      keyword = "", // <— nhận keyword
     } = params;
-    
+
     return axiosClient.get("/api/v1/admin/courses", {
       params: {
         page,
         size,
         sortBy,
-        sortDir
-      }
+        sortDir,
+        ...(keyword ? { keyword } : {}), // <— chỉ gửi khi có
+      },
     });
   },
 
@@ -46,7 +48,7 @@ const courseApi = {
   // Xuất bản/hủy xuất bản khóa học
   togglePublishCourse: (id, isPublished) => {
     return axiosClient.put(`/api/v1/admin/courses/${id}/publish`, null, {
-      params: { isPublished }
+      params: { isPublished },
     });
   },
 
@@ -59,12 +61,12 @@ const courseApi = {
   getCourseEnrollments: (id, params = {}) => {
     const { page = 0, size = 10 } = params;
     return axiosClient.get(`/api/v1/admin/courses/${id}/enrollments`, {
-      params: { page, size }
+      params: { page, size },
     });
   },
 
   // ==================== PUBLIC COURSE APIs ====================
-  
+
   // Lấy tất cả khóa học đã xuất bản
   getAllPublishedCourses: () => {
     return axiosClient.get("/api/v1/courses");
@@ -78,12 +80,12 @@ const courseApi = {
   // Tìm kiếm khóa học
   searchCourses: (keyword) => {
     return axiosClient.get("/api/v1/courses/search", {
-      params: { keyword }
+      params: { keyword },
     });
   },
 
   // ==================== SECTION MANAGEMENT ====================
-  
+
   // Lấy tất cả sections của một khóa học
   getSectionsByCourseId: (courseId) => {
     return axiosClient.get(`/api/v1/sections/course/${courseId}`);
@@ -110,7 +112,7 @@ const courseApi = {
   },
 
   // ==================== LESSON MANAGEMENT ====================
-  
+
   // Lấy tất cả lessons của một section
   getLessonsBySectionId: (sectionId) => {
     return axiosClient.get(`/api/v1/lessons/section/${sectionId}`);
@@ -137,7 +139,7 @@ const courseApi = {
   },
 
   // ==================== ENROLLMENT MANAGEMENT ====================
-  
+
   // Đăng ký khóa học
   enrollCourse: (enrollmentData) => {
     return axiosClient.post("/api/v1/enrollments", enrollmentData);
@@ -166,7 +168,7 @@ const courseApi = {
   // Cập nhật tiến độ học tập
   updateProgress: (id, progress) => {
     return axiosClient.put(`/api/v1/enrollments/${id}/progress`, null, {
-      params: { progress }
+      params: { progress },
     });
   },
 
@@ -178,12 +180,12 @@ const courseApi = {
   // Kiểm tra đã đăng ký hay chưa
   checkEnrollment: (userId, courseId) => {
     return axiosClient.get("/api/v1/enrollments/check", {
-      params: { userId, courseId }
+      params: { userId, courseId },
     });
   },
 
   // ==================== REVIEW MANAGEMENT ====================
-  
+
   // Thêm đánh giá
   addReview: (reviewData) => {
     return axiosClient.post("/api/v1/reviews", reviewData);
@@ -215,15 +217,15 @@ const courseApi = {
   },
 
   // ==================== UTILITY METHODS ====================
-  
+
   // Upload hình ảnh khóa học
   uploadCourseImage: (file) => {
     const formData = new FormData();
-    formData.append('file', file);
-    
-    return axiosClient.post('/api/v1/upload/course-image', formData, {
+    formData.append("file", file);
+
+    return axiosClient.post("/api/v1/upload/course-image", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
   },
@@ -231,11 +233,11 @@ const courseApi = {
   // Upload video bài học
   uploadLessonVideo: (file) => {
     const formData = new FormData();
-    formData.append('file', file);
-    
-    return axiosClient.post('/api/v1/upload/lesson-video', formData, {
+    formData.append("file", file);
+
+    return axiosClient.post("/api/v1/upload/lesson-video", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
   },

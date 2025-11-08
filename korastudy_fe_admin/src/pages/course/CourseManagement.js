@@ -1,53 +1,73 @@
 // src/pages/course/CourseManagement.js
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  Table, 
-  Button, 
-  Space, 
-  Popconfirm, 
-  message, 
-  Input, 
-  Tag, 
-  Card, 
-  Row, 
-  Col, 
-  Statistic, 
-  Modal, 
-  Form, 
+  Table,
+  Button,
+  Space,
+  Popconfirm,
+  message,
+  Input,
+  Tag,
+  Card,
+  Row,
+  Col,
+  Statistic,
+  Modal,
+  Form,
   Select,
-  Switch,
   Upload,
   Image,
   Tooltip,
-  InputNumber
-} from 'antd';
-import { 
-  PlusOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
-  SearchOutlined, 
+  InputNumber,
+} from "antd";
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  SearchOutlined,
   EyeOutlined,
   BookOutlined,
   UserOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   UploadOutlined,
-  ReloadOutlined
-} from '@ant-design/icons';
-import useCourseManagement from '../../hooks/useCourseManagement';
-import CourseService from '../../services/CourseService';
-import CourseEnrollmentList from '../../components/course/CourseEnrollmentList';
-import CreateCourseForm from '../../components/course/CreateCourseForm';
+  ReloadOutlined,
+} from "@ant-design/icons";
+import useCourseManagement from "../../hooks/useCourseManagement";
+import CourseService from "../../services/CourseService";
+import CourseEnrollmentList from "../../components/course/CourseEnrollmentList";
+import CreateCourseForm from "../../components/course/CreateCourseForm";
+import { Editor } from "@tinymce/tinymce-react";
+
+// TinyMCE wrapper so AntD Form can pass value/onChange
+const TinyEditor = ({ value = "", onChange }) => {
+  return (
+    <Editor
+      apiKey={process.env.REACT_APP_TINYMCE_API_KEY || ""}
+      value={value}
+      init={{
+        height: 300,
+        menubar: false,
+        plugins: [
+          "advlist autolink lists link image charmap preview anchor",
+          "searchreplace visualblocks code fullscreen",
+          "insertdatetime media table paste code help wordcount",
+        ],
+        toolbar:
+          "undo redo | formatselect | bold italic underline | alignleft aligncenter alignright | bullist numlist outdent indent | removeformat | help",
+      }}
+      onEditorChange={(content) => onChange && onChange(content)}
+    />
+  );
+};
 
 const { Search } = Input;
 const { Option } = Select;
-const { TextArea } = Input;
 
 const CourseManagement = () => {
   const navigate = useNavigate();
-  
-  // Hook để quản lý khóa học
+
   const {
     courses,
     loading,
@@ -61,68 +81,61 @@ const CourseManagement = () => {
     togglePublishCourse,
     searchCourses,
     changePage,
-    clearError
+    clearError,
   } = useCourseManagement();
 
-  // States cho modal
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
   const [form] = Form.useForm();
-  const [imageUrl, setImageUrl] = useState('');
+  const [imageUrl, setImageUrl] = useState("");
   const [uploadLoading, setUploadLoading] = useState(false);
   const [enrollmentModalVisible, setEnrollmentModalVisible] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [createModalVisible, setCreateModalVisible] = useState(false);
 
-  // Hiển thị modal thêm/sửa khóa học
+  // ========== MODAL ==========
   const showModal = (course = null) => {
     if (course) {
-      // Chỉnh sửa khóa học
       setEditingCourse(course);
       setIsModalVisible(true);
-      
       form.setFieldsValue({
         courseName: course.courseName,
         courseDescription: course.courseDescription,
-        price: course.price,
-        level: course.level,
+        coursePrice: course.coursePrice,
+        courseLevel: course.courseLevel,
         duration: course.duration,
         category: course.category,
-        isPublished: course.isPublished
+        published: course.published,
       });
-      setImageUrl(course.thumbnailUrl || '');
+      setImageUrl(course.courseImageUrl || "");
     } else {
-      // Thêm khóa học mới
       setCreateModalVisible(true);
     }
   };
 
-  // Đóng modal
   const handleCancel = () => {
     setIsModalVisible(false);
     setEditingCourse(null);
     form.resetFields();
-    setImageUrl('');
+    setImageUrl("");
   };
 
-  // Xử lý submit form
+  const handleCreateSuccess = () => loadCourses();
+  const closeCreateModal = () => setCreateModalVisible(false);
+
+  // ========== CRUD ==========
   const handleSubmit = async (values) => {
-    console.log('Form values:', values); // Debug log
-    
     try {
-      // Chuyển đổi dữ liệu form
       const courseData = {
         courseName: values.courseName,
         courseDescription: values.courseDescription,
-        price: values.price ? parseFloat(values.price) : 0,
-        level: values.level || null,
+        coursePrice: values.coursePrice ? parseFloat(values.coursePrice) : 0,
+        courseLevel: values.courseLevel || null,
         duration: values.duration ? parseFloat(values.duration) : null,
         category: values.category || null,
-        isPublished: values.isPublished || false,
-        thumbnailUrl: imageUrl || null
+        published: values.published || false,
+        courseImageUrl: imageUrl || null,
       };
-
-      console.log('Course data to submit:', courseData); // Debug log
 
       let response;
       if (editingCourse) {
@@ -131,242 +144,256 @@ const CourseManagement = () => {
         response = await createCourse(courseData);
       }
 
-      console.log('API response:', response); // Debug log
-
       if (response.success) {
-        message.success(response.message || 'Lưu khóa học thành công');
+        message.success(response.message || "Lưu khóa học thành công");
         handleCancel();
       } else {
-        message.error(response.message || 'Có lỗi xảy ra');
+        message.error(response.message || "Có lỗi xảy ra");
       }
-    } catch (err) {
-      console.error('Form submit error:', err);
-      message.error('Có lỗi xảy ra khi lưu khóa học');
+    } catch {
+      message.error("Có lỗi xảy ra khi lưu khóa học");
     }
   };
 
-  // Xử lý xóa khóa học
   const handleDelete = async (id) => {
     try {
       const response = await deleteCourse(id);
-      if (response.success) {
-        message.success(response.message);
-      } else {
-        message.error(response.message);
-      }
-    } catch (err) {
-      message.error('Có lỗi xảy ra khi xóa khóa học');
+      if (response.success) message.success(response.message);
+      else message.error(response.message);
+    } catch {
+      message.error("Có lỗi xảy ra khi xóa khóa học");
     }
   };
 
-  // Xử lý thay đổi trạng thái xuất bản
   const handleTogglePublish = async (id, currentStatus) => {
     try {
-      const response = await togglePublishCourse(id, !currentStatus);
+      // When currentStatus is true, set to false to unpublish
+      const newStatus = currentStatus ? false : true;
+      const response = await togglePublishCourse(id, newStatus);
       if (response.success) {
-        message.success(response.message);
+        message.success(
+          newStatus ? "Đã xuất bản khóa học" : "Đã ngừng xuất bản khóa học"
+        );
       } else {
         message.error(response.message);
       }
-    } catch (err) {
-      message.error('Có lỗi xảy ra khi thay đổi trạng thái xuất bản');
+    } catch {
+      message.error("Có lỗi khi thay đổi trạng thái xuất bản");
     }
   };
 
-  // Xử lý upload hình ảnh
+  // ========== IMAGE UPLOAD ==========
   const handleImageUpload = async (file) => {
-    // Validate file type
-    const isImage = file.type.startsWith('image/');
-    if (!isImage) {
-      message.error('Chỉ chấp nhận file hình ảnh!');
-      return;
-    }
-
-    // Validate file size (max 5MB)
+    const isImage = file.type.startsWith("image/");
+    if (!isImage) return message.error("Chỉ chấp nhận file hình ảnh!");
     const isLt5M = file.size / 1024 / 1024 < 5;
-    if (!isLt5M) {
-      message.error('Hình ảnh phải nhỏ hơn 5MB!');
-      return;
-    }
+    if (!isLt5M) return message.error("Hình ảnh phải nhỏ hơn 5MB!");
 
     try {
       setUploadLoading(true);
-      
-      // Tạo URL tạm thời để preview
       const tempUrl = URL.createObjectURL(file);
       setImageUrl(tempUrl);
-      message.success('Upload hình ảnh thành công');
-      
-      // TODO: Implement actual upload to server
-      // const formData = new FormData();
-      // formData.append('file', file);
-      // const response = await CourseService.uploadCourseImage(file);
-      // if (response.success) {
-      //   setImageUrl(response.data.url);
-      //   message.success('Upload hình ảnh thành công');
-      // }
-    } catch (error) {
-      console.error('Upload error:', error);
-      message.error('Lỗi khi upload hình ảnh');
+      message.success("Upload hình ảnh thành công");
     } finally {
       setUploadLoading(false);
     }
   };
 
-  // Hiển thị danh sách học viên
+  // ========== ENROLLMENT ==========
   const showEnrollmentList = (course) => {
     setSelectedCourse(course);
     setEnrollmentModalVisible(true);
   };
-
-  // Đóng modal danh sách học viên
   const closeEnrollmentModal = () => {
     setEnrollmentModalVisible(false);
     setSelectedCourse(null);
   };
 
-  // Đóng modal tạo khóa học
-  const closeCreateModal = () => {
-    setCreateModalVisible(false);
-  };
-
-  // Xử lý sau khi tạo khóa học thành công
-  const handleCreateSuccess = () => {
-    loadCourses(); // Reload danh sách
-  };
-
-  // Cấu hình columns cho bảng
+  // ========== TABLE ==========
   const columns = [
     {
-      title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
       width: 60,
       sorter: true,
+      fixed: "left",
     },
     {
-      title: 'Hình ảnh',
-      dataIndex: 'thumbnailUrl',
-      key: 'thumbnailUrl',
+      title: "Hình ảnh",
+      dataIndex: "courseImageUrl",
+      key: "courseImageUrl",
       width: 80,
       render: (url) => (
         <Image
           width={50}
           height={50}
-          src={url || '/api/placeholder/50/50'}
+          src={url || "/api/placeholder/50/50"}
           fallback="/api/placeholder/50/50"
-          style={{ objectFit: 'cover', borderRadius: 4 }}
+          style={{ objectFit: "cover", borderRadius: 4 }}
         />
       ),
     },
     {
-      title: 'Tên khóa học',
-      dataIndex: 'courseName',
-      key: 'courseName',
-      ellipsis: {
-        showTitle: false,
-      },
+      title: "Tên khóa học",
+      dataIndex: "courseName",
+      key: "courseName",
+      width: 150,
+      onCell: () => ({
+        style: {
+          whiteSpace: "normal",
+          wordBreak: "break-word",
+        },
+      }),
       render: (text) => (
-        <Tooltip title={text}>
-          <span>{text}</span>
-        </Tooltip>
+        <div style={{ whiteSpace: "normal", wordBreak: "break-word" }}>
+          <strong>{text}</strong>
+        </div>
       ),
     },
     {
-      title: 'Mô tả',
-      dataIndex: 'courseDescription',
-      key: 'courseDescription',
-      width: 200,
-      ellipsis: {
-        showTitle: false,
-      },
+      title: "Mô tả",
+      dataIndex: "courseDescription",
+      key: "courseDescription",
+      width: 250,
+      onCell: () => ({
+        style: {
+          whiteSpace: "normal",
+          wordBreak: "break-word",
+        },
+      }),
       render: (text) => (
-        <Tooltip title={text}>
-          <span>{text}</span>
-        </Tooltip>
+        <div
+          style={{
+            whiteSpace: "normal",
+            wordBreak: "break-word",
+            maxHeight: "100px",
+            overflow: "hidden",
+            position: "relative",
+          }}
+        >
+          <div
+            dangerouslySetInnerHTML={{
+              __html: text || "—",
+            }}
+            style={{
+              fontSize: "14px",
+              lineHeight: "1.5",
+            }}
+          />
+          {text?.length > 150 && (
+            <div
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: "24px",
+                background: "linear-gradient(transparent, white)",
+              }}
+            />
+          )}
+        </div>
       ),
     },
     {
-      title: 'Giá',
-      dataIndex: 'price',
-      key: 'price',
+      title: "Giá",
+      dataIndex: "coursePrice",
+      key: "coursePrice",
       width: 100,
-      render: (price) => (
+      render: (coursePrice) => (
         <span>
-          {price ? CourseService.formatCurrency(price) : 'Miễn phí'}
+          {coursePrice ? CourseService.formatCurrency(coursePrice) : "Miễn phí"}
         </span>
       ),
     },
     {
-      title: 'Trạng thái',
-      dataIndex: 'isPublished',
-      key: 'isPublished',
+      title: "Cấp độ",
+      dataIndex: "courseLevel",
+      key: "courseLevel",
       width: 100,
-      render: (isPublished) => (
-        <Tag color={isPublished ? 'green' : 'orange'}>
-          {isPublished ? 'Đã xuất bản' : 'Nháp'}
+      render: (courseLevel) => {
+        let color;
+        switch (courseLevel) {
+          case "BEGINNER":
+            color = "green";
+            break;
+          case "INTERMEDIATE":
+            color = "orange";
+            break; // Thêm 'break' vào đây
+          case "ADVANCED":
+            color = "red";
+            break;
+          default:
+            color = "gray";
+        }
+        return (
+          <Tag color={color}>
+            {courseLevel
+              ? courseLevel.charAt(0) + courseLevel.slice(1).toLowerCase()
+              : "Không xác định"}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "Trạng thái",
+      dataIndex: "published",
+      key: "published",
+      width: 100,
+      render: (published) => (
+        <Tag color={published ? "green" : "orange"}>
+          {published ? "Đã xuất bản" : "Nháp"}
         </Tag>
       ),
     },
     {
-      title: 'Số học viên',
-      dataIndex: 'enrollmentCount',
-      key: 'enrollmentCount',
-      width: 100,
-      render: (count) => (
-        <span>{count || 0} học viên</span>
-      ),
-    },
-    {
-      title: 'Lượt xem',
-      dataIndex: 'viewCount',
-      key: 'viewCount',
-      width: 100,
-      render: (count) => (
-        <span>{count || 0} lượt xem</span>
-      ),
-    },
-    {
-      title: 'Ngày tạo',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
+      title: "Ngày tạo",
+      dataIndex: "createdAt",
+      key: "createdAt",
       width: 120,
       render: (date) => CourseService.formatDate(date),
     },
     {
-      title: 'Thao tác',
-      key: 'actions',
+      title: "Thao tác",
+      key: "actions",
       width: 200,
-      fixed: 'right',
+      fixed: "right",
       render: (_, record) => (
-        <Space>
+        <Space wrap>
           <Tooltip title="Xem chi tiết">
-            <Button 
-              icon={<EyeOutlined />} 
+            <Button
+              icon={<EyeOutlined />}
               size="small"
               onClick={() => navigate(`/admin/courses/${record.id}`)}
             />
           </Tooltip>
           <Tooltip title="Xem học viên">
-            <Button 
-              icon={<UserOutlined />} 
+            <Button
+              icon={<UserOutlined />}
               size="small"
               onClick={() => showEnrollmentList(record)}
             />
           </Tooltip>
           <Tooltip title="Chỉnh sửa">
-            <Button 
-              icon={<EditOutlined />} 
+            <Button
+              icon={<EditOutlined />}
               size="small"
               onClick={() => showModal(record)}
             />
           </Tooltip>
-          <Tooltip title={record.isPublished ? "Hủy xuất bản" : "Xuất bản"}>
-            <Button 
-              icon={record.isPublished ? <ClockCircleOutlined /> : <CheckCircleOutlined />}
+          <Tooltip title={record.published ? "Hủy xuất bản" : "Xuất bản"}>
+            <Button
+              icon={
+                record.published ? (
+                  <ClockCircleOutlined />
+                ) : (
+                  <CheckCircleOutlined />
+                )
+              }
               size="small"
-              type={record.isPublished ? "default" : "primary"}
-              onClick={() => handleTogglePublish(record.id, record.isPublished)}
+              type={record.published ? "default" : "primary"}
+              onClick={() => handleTogglePublish(record.id, record.published)}
             />
           </Tooltip>
           <Tooltip title="Xóa">
@@ -378,11 +405,7 @@ const CourseManagement = () => {
               cancelText="Hủy"
               okType="danger"
             >
-              <Button 
-                icon={<DeleteOutlined />} 
-                size="small"
-                danger
-              />
+              <Button icon={<DeleteOutlined />} size="small" danger />
             </Popconfirm>
           </Tooltip>
         </Space>
@@ -390,16 +413,17 @@ const CourseManagement = () => {
     },
   ];
 
-  // Hiển thị lỗi nếu có
   if (error) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
+      <div style={{ padding: "20px", textAlign: "center" }}>
         <Card>
-          <p style={{ color: 'red' }}>Lỗi: {error}</p>
-          <Button onClick={() => {
-            clearError();
-            loadCourses();
-          }}>
+          <p style={{ color: "red" }}>Lỗi: {error}</p>
+          <Button
+            onClick={() => {
+              clearError();
+              loadCourses();
+            }}
+          >
             Thử lại
           </Button>
         </Card>
@@ -408,9 +432,9 @@ const CourseManagement = () => {
   }
 
   return (
-    <div style={{ padding: '24px' }}>
-      {/* Thống kê */}
-      <Row gutter={16} style={{ marginBottom: '24px' }}>
+    <div style={{ padding: 24 }}>
+      {/* ==== THỐNG KÊ ==== */}
+      <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col span={6}>
           <Card>
             <Statistic
@@ -426,7 +450,7 @@ const CourseManagement = () => {
               title="Đã xuất bản"
               value={stats.publishedCourses}
               prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: '#3f8600' }}
+              valueStyle={{ color: "#3f8600" }}
             />
           </Card>
         </Col>
@@ -436,7 +460,7 @@ const CourseManagement = () => {
               title="Chưa xuất bản"
               value={stats.unpublishedCourses}
               prefix={<ClockCircleOutlined />}
-              valueStyle={{ color: '#cf1322' }}
+              valueStyle={{ color: "#cf1322" }}
             />
           </Card>
         </Col>
@@ -451,12 +475,12 @@ const CourseManagement = () => {
         </Col>
       </Row>
 
-      {/* Header và các nút thao tác */}
-      <Card 
+      {/* ==== BẢNG KHÓA HỌC ==== */}
+      <Card
         title="Quản lý khóa học"
         extra={
           <Space>
-            <Button 
+            <Button
               icon={<ReloadOutlined />}
               onClick={() => loadCourses()}
               loading={loading}
@@ -473,15 +497,16 @@ const CourseManagement = () => {
           </Space>
         }
       >
-        {/* Thanh tìm kiếm */}
-        <div style={{ marginBottom: '16px' }}>
+        {/* Tìm kiếm */}
+        <div style={{ marginBottom: 16 }}>
           <Search
             placeholder="Tìm kiếm khóa học..."
             allowClear
             enterButton={<SearchOutlined />}
             size="large"
-            onSearch={searchCourses}
-            style={{ width: 400 }}
+            onSearch={(value) => searchCourses(value)}
+            onChange={(e) => e.target.value === "" && searchCourses("")}
+            style={{ maxWidth: 400, width: "100%" }}
           />
         </div>
 
@@ -491,7 +516,8 @@ const CourseManagement = () => {
           dataSource={courses}
           loading={loading}
           rowKey="id"
-          scroll={{ x: 1500 }}
+          tableLayout="fixed"
+          scroll={{ x: "max-content" }}
           pagination={{
             current: pagination.current,
             pageSize: pagination.pageSize,
@@ -506,15 +532,16 @@ const CourseManagement = () => {
         />
       </Card>
 
-      {/* Modal thêm/sửa khóa học */}
+      {/* ==== MODAL ==== */}
       <Modal
-        title={editingCourse ? 'Chỉnh sửa khóa học' : 'Thêm khóa học mới'}
+        title={editingCourse ? "Chỉnh sửa khóa học" : "Thêm khóa học mới"}
         open={isModalVisible}
         onCancel={handleCancel}
         footer={null}
         width={800}
         destroyOnClose
       >
+        {/* Giữ nguyên CreateForm gốc */}
         <Form
           form={form}
           layout="vertical"
@@ -523,17 +550,14 @@ const CourseManagement = () => {
         >
           <Row gutter={16}>
             <Col span={24}>
-              <Form.Item
-                label="Hình ảnh khóa học"
-                name="thumbnailUrl"
-              >
+              <Form.Item label="Hình ảnh khóa học" name="courseImageUrl">
                 <div>
                   {imageUrl && (
                     <Image
                       width={200}
                       height={120}
                       src={imageUrl}
-                      style={{ marginBottom: 16, objectFit: 'cover' }}
+                      style={{ marginBottom: 16, objectFit: "cover" }}
                     />
                   )}
                   <Upload
@@ -543,7 +567,7 @@ const CourseManagement = () => {
                     showUploadList={false}
                     beforeUpload={(file) => {
                       handleImageUpload(file);
-                      return false; // Prevent automatic upload
+                      return false;
                     }}
                   >
                     <Button icon={<UploadOutlined />} loading={uploadLoading}>
@@ -560,10 +584,7 @@ const CourseManagement = () => {
               <Form.Item
                 label="Tên khóa học"
                 name="courseName"
-                rules={[
-                  { required: true, message: 'Vui lòng nhập tên khóa học!' },
-                  { max: 100, message: 'Tên khóa học không được vượt quá 100 ký tự!' }
-                ]}
+                rules={[{ required: true, message: "Vui lòng nhập tên!" }]}
               >
                 <Input placeholder="Nhập tên khóa học" />
               </Form.Item>
@@ -572,17 +593,13 @@ const CourseManagement = () => {
 
           <Row gutter={16}>
             <Col span={24}>
-              <Form.Item
-                label="Mô tả khóa học"
-                name="courseDescription"
-                rules={[
-                  { required: true, message: 'Vui lòng nhập mô tả khóa học!' },
-                  { max: 1000, message: 'Mô tả không được vượt quá 1000 ký tự!' }
-                ]}
-              >
-                <TextArea
-                  rows={4}
-                  placeholder="Nhập mô tả khóa học"
+              <Form.Item label="Mô tả khóa học" name="courseDescription">
+                {/* Kết nối TinyMCE với AntD Form bằng cách lấy value từ form và cập nhật form khi editor thay đổi */}
+                <TinyEditor
+                  value={form.getFieldValue("courseDescription")}
+                  onChange={(val) =>
+                    form.setFieldsValue({ courseDescription: val })
+                  }
                 />
               </Form.Item>
             </Col>
@@ -590,24 +607,16 @@ const CourseManagement = () => {
 
           <Row gutter={16}>
             <Col span={8}>
-              <Form.Item
-                label="Giá khóa học (VND)"
-                name="price"
-              >
+              <Form.Item label="Giá (VND)" name="coursePrice">
                 <InputNumber
                   min={0}
                   placeholder="0"
-                  style={{ width: '100%' }}
-                  formatter={value => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  parser={value => value.replace(/\$\s?|(,*)/g, '')}
+                  style={{ width: "100%" }}
                 />
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item
-                label="Cấp độ"
-                name="level"
-              >
+              <Form.Item label="Cấp độ" name="courseLevel">
                 <Select placeholder="Chọn cấp độ" allowClear>
                   <Option value="BEGINNER">Cơ bản</Option>
                   <Option value="INTERMEDIATE">Trung cấp</Option>
@@ -616,62 +625,28 @@ const CourseManagement = () => {
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item
-                label="Thời lượng (giờ)"
-                name="duration"
-              >
+              <Form.Item label="Thời lượng (giờ)" name="duration">
                 <InputNumber
                   min={0}
                   step={0.5}
                   placeholder="0"
-                  style={{ width: '100%' }}
+                  style={{ width: "100%" }}
                 />
               </Form.Item>
             </Col>
           </Row>
 
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="Danh mục"
-                name="category"
-              >
-                <Select placeholder="Chọn danh mục khóa học" allowClear>
-                  <Option value="programming">Lập trình</Option>
-                  <Option value="design">Thiết kế</Option>
-                  <Option value="marketing">Marketing</Option>
-                  <Option value="business">Kinh doanh</Option>
-                  <Option value="language">Ngoại ngữ</Option>
-                  <Option value="other">Khác</Option>
-                </Select>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="Xuất bản ngay"
-                name="isPublished"
-                valuePropName="checked"
-                tooltip="Bật để xuất bản khóa học ngay sau khi tạo"
-              >
-                <Switch checkedChildren="Có" unCheckedChildren="Không" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item style={{ marginTop: '24px', textAlign: 'right' }}>
+          <Form.Item style={{ textAlign: "right" }}>
             <Space>
-              <Button onClick={handleCancel}>
-                Hủy
-              </Button>
+              <Button onClick={handleCancel}>Hủy</Button>
               <Button type="primary" htmlType="submit" loading={loading}>
-                {editingCourse ? 'Cập nhật' : 'Tạo mới'}
+                {editingCourse ? "Cập nhật" : "Tạo mới"}
               </Button>
             </Space>
           </Form.Item>
         </Form>
       </Modal>
 
-      {/* Modal danh sách học viên */}
       <CourseEnrollmentList
         visible={enrollmentModalVisible}
         onClose={closeEnrollmentModal}
@@ -679,7 +654,6 @@ const CourseManagement = () => {
         courseName={selectedCourse?.courseName}
       />
 
-      {/* Modal tạo khóa học mới */}
       <CreateCourseForm
         visible={createModalVisible}
         onClose={closeCreateModal}
