@@ -51,7 +51,7 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
   const [imageUrl, setImageUrl] = useState("");
   const [uploadLoading, setUploadLoading] = useState(false);
   const [fileList, setFileList] = useState([]);
-  const [errorMessage, setErrorMessage] = useState(""); // ✅ lỗi BE sẽ hiển thị ở đây
+  const [errorMessage, setErrorMessage] = useState(""); //lỗi BE sẽ hiển thị ở đây
 
   const handleSubmit = async (values) => {
     setErrorMessage(""); // clear lỗi cũ
