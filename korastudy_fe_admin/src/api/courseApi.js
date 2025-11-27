@@ -4,6 +4,9 @@ import axiosClient from "./axiosClient";
 const courseApi = {
   // ==================== ADMIN COURSE MANAGEMENT ====================
 
+  /**
+   * Lấy danh sách khóa học (Admin)
+   */
   getAllCoursesAdmin: (params = {}) => {
     const {
       page = 0,
@@ -19,38 +22,60 @@ const courseApi = {
         size,
         sortBy,
         sortDir,
-        ...(keyword && { keyword }), // ✅ Chỉ gửi khi có giá trị
+        keyword,
       },
     });
   },
 
+  /**
+   * Lấy chi tiết khóa học (Admin)
+   */
   getCourseByIdAdmin: (id) => {
     return axiosClient.get(`/api/v1/admin/courses/${id}`);
   },
 
+  /**
+   * Tạo khóa học mới (Admin)
+   */
   createCourse: (courseData) => {
     return axiosClient.post("/api/v1/admin/courses", courseData);
   },
 
+  /**
+   * Cập nhật khóa học (Admin)
+   */
   updateCourse: (id, courseData) => {
     return axiosClient.put(`/api/v1/admin/courses/${id}`, courseData);
   },
 
+  /**
+   * Xóa khóa học (Admin)
+   */
   deleteCourse: (id) => {
     return axiosClient.delete(`/api/v1/admin/courses/${id}`);
   },
 
+  /**
+   * Xuất bản/hủy xuất bản khóa học (Admin)
+   */
   togglePublishCourse: (id, isPublished) => {
     return axiosClient.put(`/api/v1/admin/courses/${id}/publish`, null, {
       params: { isPublished },
     });
   },
 
+  /**
+   * Lấy thống kê khóa học (Admin)
+   */
   getCourseStats: () => {
     return axiosClient.get("/api/v1/admin/courses/stats");
   },
 
-  // ✅ FIXED: Đổi tên cho rõ ràng hơn
+  // ==================== COURSE ENROLLMENTS (ADMIN) ====================
+
+  /**
+   * Lấy danh sách đăng ký của khóa học (Admin)
+   */
   getCourseEnrollmentsAdmin: (courseId, params = {}) => {
     const { page = 0, size = 10 } = params;
     return axiosClient.get(`/api/v1/admin/courses/${courseId}/enrollments`, {
@@ -58,137 +83,77 @@ const courseApi = {
     });
   },
 
+  // ==================== COURSE REVIEWS (ADMIN) ====================
+
+  /**
+   * Lấy danh sách đánh giá của khóa học (Admin)
+   */
+  getCourseReviewsAdmin: (courseId, params = {}) => {
+    const { page = 0, size = 10 } = params;
+    return axiosClient.get(`/api/v1/admin/courses/${courseId}/reviews`, {
+      params: { page, size },
+    });
+  },
+
+  /**
+   * Xóa đánh giá (Admin)
+   */
+  deleteReviewAdmin: (courseId, reviewId) => {
+    return axiosClient.delete(
+      `/api/v1/admin/courses/${courseId}/reviews/${reviewId}`
+    );
+  },
+
   // ==================== PUBLIC COURSE APIs ====================
 
+  /**
+   * Lấy danh sách khóa học đã xuất bản (Public)
+   */
   getAllPublishedCourses: () => {
     return axiosClient.get("/api/v1/courses");
   },
 
+  /**
+   * Lấy chi tiết khóa học (Public)
+   */
   getCourseById: (id) => {
     return axiosClient.get(`/api/v1/courses/${id}`);
   },
 
-  searchCourses: (keyword) => {
+  /**
+   * Tìm kiếm khóa học nâng cao (Public)
+   */
+  searchCoursesAdvanced: (searchParams = {}) => {
+    const {
+      keyword = "",
+      courseLevel = "",
+      minPrice = null,
+      maxPrice = null,
+      startDate = null,
+      endDate = null,
+      page = 0,
+      size = 10,
+    } = searchParams;
+
     return axiosClient.get("/api/v1/courses/search", {
-      params: { keyword },
+      params: {
+        keyword,
+        courseLevel,
+        minPrice,
+        maxPrice,
+        startDate,
+        endDate,
+        page,
+        size,
+      },
     });
   },
 
-  // ==================== SECTION MANAGEMENT ====================
+  // ==================== COURSE IMAGE UPLOAD ====================
 
-  getSectionsByCourseId: (courseId) => {
-    return axiosClient.get(`/api/v1/sections/course/${courseId}`);
-  },
-
-  getSectionById: (id) => {
-    return axiosClient.get(`/api/v1/sections/${id}`);
-  },
-
-  createSection: (sectionData) => {
-    return axiosClient.post("/api/v1/sections", sectionData);
-  },
-
-  updateSection: (id, sectionData) => {
-    return axiosClient.put(`/api/v1/sections/${id}`, sectionData);
-  },
-
-  deleteSection: (id) => {
-    return axiosClient.delete(`/api/v1/sections/${id}`);
-  },
-
-  // ==================== LESSON MANAGEMENT ====================
-
-  getLessonsBySectionId: (sectionId) => {
-    return axiosClient.get(`/api/v1/lessons/section/${sectionId}`);
-  },
-
-  getLessonById: (id) => {
-    return axiosClient.get(`/api/v1/lessons/${id}`);
-  },
-
-  createLesson: (lessonData) => {
-    return axiosClient.post("/api/v1/lessons", lessonData);
-  },
-
-  updateLesson: (id, lessonData) => {
-    return axiosClient.put(`/api/v1/lessons/${id}`, lessonData);
-  },
-
-  deleteLesson: (id) => {
-    return axiosClient.delete(`/api/v1/lessons/${id}`);
-  },
-
-  // ==================== ENROLLMENT MANAGEMENT ====================
-
-  enrollCourse: (enrollmentData) => {
-    return axiosClient.post("/api/v1/enrollments", enrollmentData);
-  },
-
-  getEnrollmentById: (id) => {
-    return axiosClient.get(`/api/v1/enrollments/${id}`);
-  },
-
-  getUserEnrollments: (userId) => {
-    return axiosClient.get(`/api/v1/enrollments/user/${userId}`);
-  },
-
-  // ✅ FIXED: Đổi tên để phân biệt với admin version
-  getCourseEnrollmentsPublic: (courseId) => {
-    return axiosClient.get(`/api/v1/enrollments/course/${courseId}`);
-  },
-
-  getMyEnrollments: () => {
-    return axiosClient.get("/api/v1/enrollments/my-courses");
-  },
-
-  updateProgress: (enrollmentId, progress) => {
-    return axiosClient.put(
-      `/api/v1/enrollments/${enrollmentId}/progress`,
-      null,
-      {
-        params: { progress },
-      }
-    );
-  },
-
-  cancelEnrollment: (id) => {
-    return axiosClient.delete(`/api/v1/enrollments/${id}`);
-  },
-
-  checkEnrollment: (userId, courseId) => {
-    return axiosClient.get("/api/v1/enrollments/check", {
-      params: { userId, courseId },
-    });
-  },
-
-  // ==================== REVIEW MANAGEMENT ====================
-
-  addReview: (reviewData) => {
-    return axiosClient.post("/api/v1/reviews", reviewData);
-  },
-
-  getReviewById: (id) => {
-    return axiosClient.get(`/api/v1/reviews/${id}`);
-  },
-
-  getCourseReviews: (courseId) => {
-    return axiosClient.get(`/api/v1/reviews/course/${courseId}`);
-  },
-
-  getAverageRating: (courseId) => {
-    return axiosClient.get(`/api/v1/reviews/course/${courseId}/rating`);
-  },
-
-  updateReview: (id, reviewData) => {
-    return axiosClient.put(`/api/v1/reviews/${id}`, reviewData);
-  },
-
-  deleteReview: (id) => {
-    return axiosClient.delete(`/api/v1/reviews/${id}`);
-  },
-
-  // ==================== UTILITY METHODS ====================
-
+  /**
+   * Upload ảnh khóa học
+   */
   uploadCourseImage: (file) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -197,34 +162,9 @@ const courseApi = {
       headers: {
         "Content-Type": "multipart/form-data",
       },
-      timeout: 30000, // ✅ Thêm timeout cho upload
+      timeout: 30000,
     });
   },
-
-  uploadLessonVideo: (file) => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    return axiosClient.post("/api/v1/upload/lesson-video", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-      timeout: 60000, // ✅ Timeout dài hơn cho video
-    });
-  },
-};
-
-// ✅ THÊM: Error handling wrapper (tùy chọn)
-export const withErrorHandling = (apiCall) => {
-  return async (...args) => {
-    try {
-      const response = await apiCall(...args);
-      return response;
-    } catch (error) {
-      console.error("API Call failed:", error);
-      throw error;
-    }
-  };
 };
 
 export default courseApi;

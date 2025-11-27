@@ -139,7 +139,7 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
       onCancel={handleCancel}
       footer={null}
       width={800}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form
         form={form}

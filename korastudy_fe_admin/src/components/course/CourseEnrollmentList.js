@@ -1,5 +1,5 @@
 // src/components/course/CourseEnrollmentList.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Modal,
   Table,
@@ -46,65 +46,47 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
   });
 
   // Load enrollments
-  const loadEnrollments = async (page = 1, size = 10) => {
-    if (!courseId) return;
+  const loadEnrollments = useCallback(
+    async (page = 1, size = 10) => {
+      if (!courseId) return;
 
-    setLoading(true);
-    try {
-      const response = await CourseService.getCourseEnrollments(courseId, {
-        page: page - 1,
-        size,
-      });
-
-      if (response.success) {
-        setEnrollments(response.data.content || response.data);
-        setPagination({
-          current: page,
-          pageSize: size,
-          total: response.data.totalElements || response.data.length,
+      setLoading(true);
+      try {
+        const response = await CourseService.getCourseEnrollments(courseId, {
+          page: page - 1,
+          size,
         });
-      } else {
-        message.error(response.message);
+
+        console.log("API Response:", response); // Debug
+
+        if (response.success) {
+          const enrollmentsData = response.data.content || [];
+          setEnrollments(enrollmentsData);
+          setPagination({
+            current: page,
+            pageSize: size,
+            total: response.data.totalElements || 0,
+          });
+        } else {
+          message.error(response.message);
+        }
+      } catch (error) {
+        console.error("Load enrollments error:", error);
+        message.error("Lỗi khi tải danh sách đăng ký");
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      message.error("Lỗi khi tải danh sách đăng ký");
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [courseId]
+  );
 
   useEffect(() => {
-    const fetchEnrollments = async () => {
-      if (visible && courseId) {
-        setLoading(true);
-        try {
-          const response = await CourseService.getCourseEnrollments(courseId, {
-            page: 0,
-            size: 10,
-          });
+    if (visible && courseId) {
+      loadEnrollments(1, 10);
+    }
+  }, [visible, courseId, loadEnrollments]);
 
-          if (response.success) {
-            setEnrollments(response.data.content || response.data);
-            setPagination({
-              current: 1,
-              pageSize: 10,
-              total: response.data.totalElements || response.data.length,
-            });
-          } else {
-            message.error(response.message);
-          }
-        } catch (error) {
-          message.error("Lỗi khi tải danh sách đăng ký");
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchEnrollments();
-  }, [visible, courseId]);
-
-  // ✅ FIXED: Table columns với safeFormatDate
+  // ✅ FIXED: Table columns theo đúng cấu trúc API
   const columns = [
     {
       title: "Học viên",
@@ -112,16 +94,16 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
       render: (_, record) => (
         <Space>
           <Avatar
-            src={record.user?.avatar}
-            icon={<UserOutlined />}
+            src={record.avatar} // ✅ SỬA: record.avatar (trực tiếp từ API)
+            icon={!record.avatar ? <UserOutlined /> : null}
             size="small"
           />
           <div>
             <div style={{ fontWeight: 500 }}>
-              {record.user?.fullName || record.user?.username}
+              {record.username} {/* ✅ SỬA: record.username từ API */}
             </div>
             <div style={{ fontSize: "12px", color: "#666" }}>
-              {record.user?.email}
+              ID: {record.userId} {/* Hiển thị ID user */}
             </div>
           </div>
         </Space>
@@ -129,13 +111,13 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
     },
     {
       title: "Ngày đăng ký",
-      dataIndex: "enrollmentDate",
-      key: "enrollmentDate",
+      dataIndex: "enrollDate", // ✅ SỬA: enrollDate (theo API)
+      key: "enrollDate",
       width: 120,
       render: (date) => (
         <Space>
           <CalendarOutlined />
-          {safeFormatDate(date)} {/* ✅ SỬA Ở ĐÂY */}
+          {safeFormatDate(date)}
         </Space>
       ),
     },
@@ -159,10 +141,9 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
     },
     {
       title: "Trạng thái",
-      dataIndex: "status",
       key: "status",
       width: 100,
-      render: (status, record) => {
+      render: (_, record) => {
         const progress = record.progress || 0;
         if (progress >= 100) {
           return <Tag color="green">Hoàn thành</Tag>;
@@ -174,11 +155,11 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
       },
     },
     {
-      title: "Ngày hoàn thành",
-      dataIndex: "completedAt",
-      key: "completedAt",
+      title: "Ngày hết hạn",
+      dataIndex: "expiryDate", // ✅ SỬA: expiryDate (theo API)
+      key: "expiryDate",
       width: 120,
-      render: (date) => (date ? safeFormatDate(date) : "-" /* ✅ SỬA Ở ĐÂY */),
+      render: (date) => (date ? safeFormatDate(date) : "-"),
     },
   ];
 
@@ -211,7 +192,7 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
       onCancel={onClose}
       width={1000}
       footer={null}
-      destroyOnClose
+      destroyOnHidden
     >
       {/* Statistics */}
       <Row gutter={16} style={{ marginBottom: "24px" }}>

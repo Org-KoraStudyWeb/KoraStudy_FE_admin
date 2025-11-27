@@ -539,7 +539,7 @@ const CourseManagement = () => {
         onCancel={handleCancel}
         footer={null}
         width={800}
-        destroyOnClose
+        destroyOnHidden
       >
         {/* Giữ nguyên CreateForm gốc */}
         <Form

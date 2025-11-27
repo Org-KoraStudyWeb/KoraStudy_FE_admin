@@ -31,10 +31,10 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import CourseService from "../../services/CourseService";
+import SectionService from "../../services/SectionService";
+import LessonService from "../../services/LessonService";
 import SectionForm from "../../components/course/SectionForm";
 import LessonForm from "../../components/course/LessonForm";
-
-const { Panel } = Collapse;
 
 const CourseDetail = () => {
   const { id } = useParams();
@@ -50,6 +50,7 @@ const CourseDetail = () => {
   const [editingLesson, setEditingLesson] = useState(null);
   const [selectedSectionId, setSelectedSectionId] = useState(null);
   const [publishLoading, setPublishLoading] = useState(false);
+  const [currentSection, setCurrentSection] = useState(null);
 
   // Load course detail data
   const loadCourseDetail = async () => {
@@ -64,11 +65,11 @@ const CourseDetail = () => {
       }
 
       // Load sections with lessons
-      const sectionsResponse = await CourseService.getSectionsByCourseId(id);
+      const sectionsResponse = await SectionService.getSectionsByCourseId(id);
       if (sectionsResponse.success) {
         const sectionsWithLessons = await Promise.all(
           sectionsResponse.data.map(async (section) => {
-            const lessonsResponse = await CourseService.getLessonsBySectionId(
+            const lessonsResponse = await LessonService.getLessonsBySectionId(
               section.id
             );
             return {
@@ -137,7 +138,7 @@ const CourseDetail = () => {
 
   const handleDeleteSection = async (sectionId) => {
     try {
-      const response = await CourseService.deleteSection(sectionId);
+      const response = await SectionService.deleteSection(sectionId);
       if (response.success) {
         message.success(response.message);
         loadCourseDetail();
@@ -169,7 +170,7 @@ const CourseDetail = () => {
 
   const handleDeleteLesson = async (lessonId) => {
     try {
-      const response = await CourseService.deleteLesson(lessonId);
+      const response = await LessonService.deleteLesson(lessonId);
       if (response.success) {
         message.success(response.message);
         loadCourseDetail();
@@ -180,6 +181,11 @@ const CourseDetail = () => {
       console.error("Delete lesson error:", error);
       message.error("Có lỗi xảy ra khi xóa bài học");
     }
+  };
+
+  // Handle section click for breadcrumb
+  const handleSectionClick = (section) => {
+    setCurrentSection(section);
   };
 
   // Content type icons and labels
@@ -221,19 +227,38 @@ const CourseDetail = () => {
 
   return (
     <div style={{ padding: "24px" }}>
-      {/* Breadcrumb */}
-      <Breadcrumb style={{ marginBottom: "16px" }}>
-        <Breadcrumb.Item>
-          <Button
-            type="link"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate("/admin/courses")}
-          >
-            Quản lý khóa học
-          </Button>
-        </Breadcrumb.Item>
-        <Breadcrumb.Item>{course.courseName}</Breadcrumb.Item>
-      </Breadcrumb>
+      {/* Breadcrumb với Section Name */}
+      <Breadcrumb
+        style={{ marginBottom: "16px" }}
+        items={[
+          {
+            title: (
+              <Button
+                type="link"
+                icon={<ArrowLeftOutlined />}
+                onClick={() => navigate("/admin/courses")}
+              >
+                Quản lý khóa học
+              </Button>
+            ),
+          },
+          {
+            title: course.courseName,
+          },
+          ...(currentSection
+            ? [
+                {
+                  title: (
+                    <>
+                      <BookOutlined style={{ marginRight: 4 }} />
+                      {currentSection.sectionName}
+                    </>
+                  ),
+                },
+              ]
+            : []),
+        ]}
+      />
 
       {/* Course Info */}
       <Row gutter={16} style={{ marginBottom: "24px" }}>
@@ -356,11 +381,11 @@ const CourseDetail = () => {
             </Button>
           </div>
         ) : (
-          <Collapse defaultActiveKey={sections.map((s) => s.id.toString())}>
-            {sections.map((section) => (
-              <Panel
-                key={section.id}
-                header={
+          <>
+            <Collapse
+              items={sections.map((section) => ({
+                key: section.id,
+                label: (
                   <div
                     style={{
                       display: "flex",
@@ -368,17 +393,18 @@ const CourseDetail = () => {
                       alignItems: "center",
                       width: "100%",
                     }}
+                    onClick={() => handleSectionClick(section)}
                   >
                     <span>
                       <BookOutlined style={{ marginRight: "8px" }} />
-                      {section.sectionTitle}
+                      {section.sectionName}
                       <Tag style={{ marginLeft: "8px" }}>
                         {section.lessons?.length || 0} bài học
                       </Tag>
                     </span>
                   </div>
-                }
-                extra={
+                ),
+                extra: (
                   <Space onClick={(e) => e.stopPropagation()}>
                     <Tooltip title="Thêm bài học">
                       <Button
@@ -409,105 +435,115 @@ const CourseDetail = () => {
                       </Tooltip>
                     </Popconfirm>
                   </Space>
-                }
-              >
-                {section.sectionDescription && (
-                  <div
-                    style={{
-                      marginBottom: "16px",
-                      padding: "12px",
-                      backgroundColor: "#fafafa",
-                      borderRadius: "6px",
-                      fontSize: "14px",
-                      lineHeight: "1.5",
-                      color: "#666",
-                    }}
-                    dangerouslySetInnerHTML={{
-                      __html: section.sectionDescription || "Chưa có mô tả",
-                    }}
-                  />
-                )}
-
-                {section.lessons && section.lessons.length > 0 ? (
-                  <List
-                    dataSource={section.lessons.sort(
-                      (a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)
-                    )}
-                    renderItem={(lesson, index) => (
-                      <List.Item
-                        actions={[
-                          <Tooltip title="Chỉnh sửa" key="edit">
-                            <Button
-                              size="small"
-                              icon={<EditOutlined />}
-                              onClick={() => showLessonForm(section.id, lesson)}
-                            />
-                          </Tooltip>,
-                          <Popconfirm
-                            key="delete"
-                            title="Xóa bài học này?"
-                            onConfirm={() => handleDeleteLesson(lesson.id)}
-                            okText="Xóa"
-                            cancelText="Hủy"
-                            okType="danger"
-                          >
-                            <Tooltip title="Xóa">
+                ),
+                children:
+                  section.lessons && section.lessons.length > 0 ? (
+                    <List
+                      dataSource={section.lessons.sort(
+                        (a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)
+                      )}
+                      renderItem={(lesson, index) => (
+                        <List.Item
+                          actions={[
+                            <Tooltip title="Chỉnh sửa" key="edit">
                               <Button
                                 size="small"
-                                icon={<DeleteOutlined />}
-                                danger
+                                icon={<EditOutlined />}
+                                onClick={() =>
+                                  showLessonForm(section.id, lesson)
+                                }
                               />
-                            </Tooltip>
-                          </Popconfirm>,
-                        ]}
-                      >
-                        <List.Item.Meta
-                          avatar={getContentTypeIcon(lesson.contentType)}
-                          title={
-                            <Space>
-                              <span>
-                                {index + 1}. {lesson.lessonTitle}
-                              </span>
-                              <Tag size="small">
-                                {getContentTypeLabel(lesson.contentType)}
-                              </Tag>
-                              {lesson.videoUrl && (
-                                <Tag size="small" color="blue">
-                                  Có video
+                            </Tooltip>,
+                            <Popconfirm
+                              key="delete"
+                              title="Xóa bài học này?"
+                              onConfirm={() => handleDeleteLesson(lesson.id)}
+                              okText="Xóa"
+                              cancelText="Hủy"
+                              okType="danger"
+                            >
+                              <Tooltip title="Xóa">
+                                <Button
+                                  size="small"
+                                  icon={<DeleteOutlined />}
+                                  danger
+                                />
+                              </Tooltip>
+                            </Popconfirm>,
+                          ]}
+                        >
+                          <List.Item.Meta
+                            avatar={getContentTypeIcon(lesson.contentType)}
+                            title={
+                              <Space>
+                                <span>
+                                  {index + 1}. {lesson.lessonTitle}
+                                </span>
+                                <Tag size="small">
+                                  {getContentTypeLabel(lesson.contentType)}
                                 </Tag>
-                              )}
-                            </Space>
-                          }
-                          description={lesson.content}
-                        />
-                      </List.Item>
-                    )}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      padding: "20px",
-                      color: "#999",
-                    }}
-                  >
-                    <FileTextOutlined
-                      style={{ fontSize: "24px", marginBottom: "8px" }}
+                                {lesson.videoUrl && (
+                                  <Tag size="small" color="blue">
+                                    Có video
+                                  </Tag>
+                                )}
+                              </Space>
+                            }
+                            description={lesson.content}
+                          />
+                        </List.Item>
+                      )}
                     />
-                    <p>Chưa có bài học nào trong chương này</p>
-                    <Button
-                      size="small"
-                      type="dashed"
-                      icon={<PlusOutlined />}
-                      onClick={() => showLessonForm(section.id)}
+                  ) : (
+                    <div
+                      style={{
+                        textAlign: "center",
+                        padding: "20px",
+                        color: "#999",
+                      }}
                     >
-                      Thêm bài học đầu tiên
-                    </Button>
-                  </div>
-                )}
-              </Panel>
-            ))}
-          </Collapse>
+                      <FileTextOutlined
+                        style={{ fontSize: "24px", marginBottom: "8px" }}
+                      />
+                      <p>Chưa có bài học nào trong chương này</p>
+                      <Button
+                        size="small"
+                        type="dashed"
+                        icon={<PlusOutlined />}
+                        onClick={() => showLessonForm(section.id)}
+                      >
+                        Thêm bài học đầu tiên
+                      </Button>
+                    </div>
+                  ),
+              }))}
+              defaultActiveKey={sections.map((s) => s.id.toString())}
+              onChange={(keys) => {
+                if (keys.length > 0) {
+                  const activeSectionId = keys[0];
+                  const activeSection = sections.find(
+                    (s) => s.id.toString() === activeSectionId
+                  );
+                  if (activeSection) {
+                    handleSectionClick(activeSection);
+                  }
+                } else {
+                  setCurrentSection(null);
+                }
+              }}
+            />
+            {/* Nút Thêm chương học ở cuối */}
+            <div style={{ textAlign: "center", marginTop: "16px" }}>
+              <Button
+                type="dashed"
+                icon={<PlusOutlined />}
+                onClick={() => showSectionForm()}
+                size="large"
+              >
+                Thêm chương học mới
+              </Button>
+            </div>
+          </>
         )}
       </Card>
 
