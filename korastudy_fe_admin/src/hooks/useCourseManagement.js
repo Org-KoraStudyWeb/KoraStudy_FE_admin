@@ -9,7 +9,7 @@ const useCourseManagement = () => {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     current: 1,
-    pageSize: 10,
+    pageSize: 5,
     total: 0,
     totalPages: 0,
   });

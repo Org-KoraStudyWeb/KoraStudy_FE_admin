@@ -3,7 +3,7 @@ import courseApi from "../api/courseApi";
 
 class CourseService {
   // ==================== ADMIN COURSE MANAGEMENT ====================
-  
+
   /**
    * Lấy danh sách tất cả khóa học với pagination
    * @param {Object} params - Tham số phân trang và sắp xếp
@@ -15,7 +15,7 @@ class CourseService {
       return {
         success: true,
         data: response.data,
-        message: "Lấy danh sách khóa học thành công"
+        message: "Lấy danh sách khóa học thành công",
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi lấy danh sách khóa học");
@@ -33,7 +33,7 @@ class CourseService {
       return {
         success: true,
         data: response.data,
-        message: "Lấy thông tin khóa học thành công"
+        message: "Lấy thông tin khóa học thành công",
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi lấy thông tin khóa học");
@@ -52,7 +52,7 @@ class CourseService {
       if (validationError) {
         return {
           success: false,
-          message: validationError
+          message: validationError,
         };
       }
 
@@ -60,7 +60,7 @@ class CourseService {
       return {
         success: true,
         data: response.data,
-        message: "Tạo khóa học thành công"
+        message: "Tạo khóa học thành công",
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi tạo khóa học");
@@ -79,7 +79,7 @@ class CourseService {
       if (validationError) {
         return {
           success: false,
-          message: validationError
+          message: validationError,
         };
       }
 
@@ -87,7 +87,7 @@ class CourseService {
       return {
         success: true,
         data: response.data,
-        message: "Cập nhật khóa học thành công"
+        message: "Cập nhật khóa học thành công",
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi cập nhật khóa học");
@@ -104,7 +104,7 @@ class CourseService {
       await courseApi.deleteCourse(id);
       return {
         success: true,
-        message: "Xóa khóa học thành công"
+        message: "Xóa khóa học thành công",
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi xóa khóa học");
@@ -123,7 +123,9 @@ class CourseService {
       return {
         success: true,
         data: response.data,
-        message: `${isPublished ? 'Xuất bản' : 'Hủy xuất bản'} khóa học thành công`
+        message: `${
+          isPublished ? "Xuất bản" : "Hủy xuất bản"
+        } khóa học thành công`,
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi thay đổi trạng thái xuất bản");
@@ -140,7 +142,7 @@ class CourseService {
       return {
         success: true,
         data: response.data,
-        message: "Lấy thống kê thành công"
+        message: "Lấy thống kê thành công",
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi lấy thống kê khóa học");
@@ -148,7 +150,7 @@ class CourseService {
   }
 
   // ==================== SECTION MANAGEMENT ====================
-  
+
   /**
    * Lấy danh sách sections của khóa học
    * @param {number} courseId - ID khóa học
@@ -160,7 +162,7 @@ class CourseService {
       return {
         success: true,
         data: response.data,
-        message: "Lấy danh sách chương học thành công"
+        message: "Lấy danh sách chương học thành công",
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi lấy danh sách chương học");
@@ -178,7 +180,7 @@ class CourseService {
       if (validationError) {
         return {
           success: false,
-          message: validationError
+          message: validationError,
         };
       }
 
@@ -186,7 +188,7 @@ class CourseService {
       return {
         success: true,
         data: response.data,
-        message: "Tạo chương học thành công"
+        message: "Tạo chương học thành công",
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi tạo chương học");
@@ -205,7 +207,7 @@ class CourseService {
       if (validationError) {
         return {
           success: false,
-          message: validationError
+          message: validationError,
         };
       }
 
@@ -213,7 +215,7 @@ class CourseService {
       return {
         success: true,
         data: response.data,
-        message: "Cập nhật chương học thành công"
+        message: "Cập nhật chương học thành công",
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi cập nhật chương học");
@@ -230,7 +232,7 @@ class CourseService {
       await courseApi.deleteSection(id);
       return {
         success: true,
-        message: "Xóa chương học thành công"
+        message: "Xóa chương học thành công",
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi xóa chương học");
@@ -238,7 +240,7 @@ class CourseService {
   }
 
   // ==================== LESSON MANAGEMENT ====================
-  
+
   /**
    * Lấy danh sách lessons của section
    * @param {number} sectionId - ID section
@@ -250,7 +252,7 @@ class CourseService {
       return {
         success: true,
         data: response.data,
-        message: "Lấy danh sách bài học thành công"
+        message: "Lấy danh sách bài học thành công",
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi lấy danh sách bài học");
@@ -268,7 +270,7 @@ class CourseService {
       if (validationError) {
         return {
           success: false,
-          message: validationError
+          message: validationError,
         };
       }
 
@@ -276,7 +278,7 @@ class CourseService {
       return {
         success: true,
         data: response.data,
-        message: "Tạo bài học thành công"
+        message: "Tạo bài học thành công",
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi tạo bài học");
@@ -295,7 +297,7 @@ class CourseService {
       if (validationError) {
         return {
           success: false,
-          message: validationError
+          message: validationError,
         };
       }
 
@@ -303,7 +305,7 @@ class CourseService {
       return {
         success: true,
         data: response.data,
-        message: "Cập nhật bài học thành công"
+        message: "Cập nhật bài học thành công",
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi cập nhật bài học");
@@ -320,7 +322,7 @@ class CourseService {
       await courseApi.deleteLesson(id);
       return {
         success: true,
-        message: "Xóa bài học thành công"
+        message: "Xóa bài học thành công",
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi xóa bài học");
@@ -328,7 +330,7 @@ class CourseService {
   }
 
   // ==================== ENROLLMENT MANAGEMENT ====================
-  
+
   /**
    * Lấy danh sách đăng ký của khóa học
    * @param {number} courseId - ID khóa học
@@ -337,19 +339,21 @@ class CourseService {
    */
   async getCourseEnrollments(courseId, params = {}) {
     try {
-      const response = await courseApi.getCourseEnrollments(courseId, params);
+      const response = await courseApi.getCourseEnrollmentsAdmin(
+        courseId,
+        params
+      );
       return {
         success: true,
         data: response.data,
-        message: "Lấy danh sách đăng ký thành công"
+        message: "Lấy danh sách đăng ký thành công",
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi lấy danh sách đăng ký");
     }
   }
-
   // ==================== REVIEW MANAGEMENT ====================
-  
+
   /**
    * Lấy danh sách đánh giá của khóa học
    * @param {number} courseId - ID khóa học
@@ -361,7 +365,7 @@ class CourseService {
       return {
         success: true,
         data: response.data,
-        message: "Lấy danh sách đánh giá thành công"
+        message: "Lấy danh sách đánh giá thành công",
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi lấy danh sách đánh giá");
@@ -369,7 +373,7 @@ class CourseService {
   }
 
   // ==================== VALIDATION METHODS ====================
-  
+
   /**
    * Validate dữ liệu khóa học
    * @param {Object} courseData - Dữ liệu khóa học
@@ -377,7 +381,7 @@ class CourseService {
    * @returns {string|null} - Thông báo lỗi hoặc null
    */
   validateCourseData(courseData, isCreate = true) {
-    if (!courseData.courseName || courseData.courseName.trim() === '') {
+    if (!courseData.courseName || courseData.courseName.trim() === "") {
       return "Tên khóa học không được để trống";
     }
 
@@ -385,7 +389,10 @@ class CourseService {
       return "Tên khóa học không được vượt quá 100 ký tự";
     }
 
-    if (!courseData.courseDescription || courseData.courseDescription.trim() === '') {
+    if (
+      !courseData.courseDescription ||
+      courseData.courseDescription.trim() === ""
+    ) {
       return "Mô tả khóa học không được để trống";
     }
 
@@ -407,7 +414,7 @@ class CourseService {
    * @returns {string|null} - Thông báo lỗi hoặc null
    */
   validateSectionData(sectionData, isCreate = true) {
-    if (!sectionData.sectionTitle || sectionData.sectionTitle.trim() === '') {
+    if (!sectionData.sectionTitle || sectionData.sectionTitle.trim() === "") {
       return "Tiêu đề chương học không được để trống";
     }
 
@@ -429,7 +436,7 @@ class CourseService {
    * @returns {string|null} - Thông báo lỗi hoặc null
    */
   validateLessonData(lessonData, isCreate = true) {
-    if (!lessonData.lessonTitle || lessonData.lessonTitle.trim() === '') {
+    if (!lessonData.lessonTitle || lessonData.lessonTitle.trim() === "") {
       return "Tiêu đề bài học không được để trống";
     }
 
@@ -441,7 +448,10 @@ class CourseService {
       return "ID chương học không được để trống";
     }
 
-    if (lessonData.contentType && !['VIDEO', 'TEXT', 'QUIZ', 'ASSIGNMENT'].includes(lessonData.contentType)) {
+    if (
+      lessonData.contentType &&
+      !["VIDEO", "TEXT", "QUIZ", "ASSIGNMENT"].includes(lessonData.contentType)
+    ) {
       return "Loại nội dung không hợp lệ";
     }
 
@@ -449,7 +459,7 @@ class CourseService {
   }
 
   // ==================== UTILITY METHODS ====================
-  
+
   /**
    * Xử lý lỗi API
    * @param {Object} error - Lỗi từ API
@@ -458,15 +468,16 @@ class CourseService {
    */
   handleError(error, defaultMessage) {
     console.error("CourseService Error:", error);
-    
+
     let message = defaultMessage;
     let status = 500;
 
     if (error.response) {
       status = error.response.status;
-      message = error.response.data?.message || 
-                error.response.data?.error || 
-                defaultMessage;
+      message =
+        error.response.data?.message ||
+        error.response.data?.error ||
+        defaultMessage;
     } else if (error.request) {
       message = "Không thể kết nối đến server";
     }
@@ -475,7 +486,7 @@ class CourseService {
       success: false,
       message,
       status,
-      data: null
+      data: null,
     };
   }
 
@@ -485,9 +496,9 @@ class CourseService {
    * @returns {string} - Formatted currency
    */
   formatCurrency(amount) {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(amount);
   }
 
@@ -497,12 +508,12 @@ class CourseService {
    * @returns {string} - Formatted date
    */
   formatDate(dateString) {
-    return new Intl.DateTimeFormat('vi-VN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Intl.DateTimeFormat("vi-VN", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(new Date(dateString));
   }
 }

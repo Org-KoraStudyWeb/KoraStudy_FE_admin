@@ -14,13 +14,14 @@ import {
   message,
   Image,
   Space,
+  Alert,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import CourseService from "../../services/CourseService";
 import courseApi from "../../api/courseApi";
 import { Editor } from "@tinymce/tinymce-react";
 
-// TinyMCE wrapper để dễ bind với AntD Form
+// TinyMCE wrapper để bind với Form
 const TinyEditor = ({ value = "", onChange }) => {
   return (
     <Editor
@@ -50,27 +51,23 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
   const [imageUrl, setImageUrl] = useState("");
   const [uploadLoading, setUploadLoading] = useState(false);
   const [fileList, setFileList] = useState([]);
+  const [errorMessage, setErrorMessage] = useState(""); //lỗi BE sẽ hiển thị ở đây
 
   const handleSubmit = async (values) => {
-    console.log("Form submitted with values:", values);
-
+    setErrorMessage(""); // clear lỗi cũ
     setLoading(true);
     try {
-      // ✅ GỬI ĐÚNG KEY mà BE mong đợi (CourseCreateRequest)
       const courseData = {
         courseName: values.courseName,
         courseDescription: values.courseDescription,
-        courseImageUrl: imageUrl || null, // ✅ Đúng key
-        courseLevel: values.level || null, // ✅ Đúng key (String)
-        coursePrice: values.price || 0, // ✅ Đúng key (Double)
-        isFree: false, // hoặc thêm field trong form nếu cần
+        courseImageUrl: imageUrl || null,
+        courseLevel: values.level || null,
+        coursePrice: values.price || 0,
+        isFree: false,
         published: values.published || false,
       };
 
-      console.log("Sending course data:", courseData);
-
       const response = await CourseService.createCourse(courseData);
-      console.log("Service response:", response);
 
       if (response.success) {
         message.success(response.message || "Tạo khóa học thành công!");
@@ -80,20 +77,21 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
         onClose();
         onSuccess && onSuccess();
       } else {
-        message.error(response.message || "Có lỗi xảy ra");
+        setErrorMessage(response.message || "Có lỗi xảy ra khi tạo khóa học.");
       }
     } catch (error) {
-      console.error("Create course error:", error);
-      message.error("Có lỗi xảy ra khi tạo khóa học");
+      // ✅ Lỗi hiển thị đỏ thay vì console.log
+      const msg =
+        error.response?.data?.message ||
+        error.message ||
+        "Không thể kết nối đến máy chủ.";
+      setErrorMessage(msg);
     } finally {
       setLoading(false);
     }
   };
 
   const handleImageUpload = async (file) => {
-    console.log("Uploading file:", file);
-
-    // Validate file
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
       message.error("Chỉ chấp nhận file hình ảnh!");
@@ -108,23 +106,16 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
 
     try {
       setUploadLoading(true);
-      setFileList([file]); // hiển thị file đang upload
-
-      // Gọi API để upload hình ảnh
+      setFileList([file]);
       const response = await courseApi.uploadCourseImage(file);
 
-      // ✅ Đọc đúng cấu trúc response từ UploadController: { url: "https://..." }
       const uploadedImageUrl = response?.data?.url;
-      if (!uploadedImageUrl) {
-        throw new Error("API không trả về URL của hình ảnh.");
-      }
+      if (!uploadedImageUrl) throw new Error("API không trả về URL hình ảnh.");
 
       setImageUrl(uploadedImageUrl);
-      console.log("Image URL set:", uploadedImageUrl);
       message.success("Upload hình ảnh thành công!");
       return false;
     } catch (error) {
-      console.error("Upload error:", error);
       message.error("Lỗi khi upload hình ảnh");
       setFileList([]);
       return false;
@@ -137,6 +128,7 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
     form.resetFields();
     setImageUrl("");
     setFileList([]);
+    setErrorMessage("");
     onClose();
   };
 
@@ -155,6 +147,17 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
         onFinish={handleSubmit}
         autoComplete="off"
       >
+        {/* Hiển thị lỗi toàn form */}
+        {errorMessage && (
+          <Alert
+            message="Lỗi"
+            description={errorMessage}
+            type="error"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+        )}
+
         {/* Hình ảnh */}
         <Form.Item label="Hình ảnh khóa học">
           <div>
@@ -176,7 +179,7 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
               onRemove={() => setFileList([])}
               beforeUpload={(file) => {
                 handleImageUpload(file);
-                return false; // chặn upload tự động của antd
+                return false;
               }}
             >
               <Button icon={<UploadOutlined />} loading={uploadLoading}>
@@ -201,14 +204,11 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
           <Input placeholder="Nhập tên khóa học" />
         </Form.Item>
 
-        {/* Mô tả (TinyMCE) */}
+        {/* Mô tả */}
         <Form.Item
           label="Mô tả khóa học"
           name="courseDescription"
-          rules={[
-            { required: true, message: "Vui lòng nhập mô tả khóa học!" },
-            { max: 10000, message: "Mô tả quá dài!" },
-          ]}
+          rules={[{ required: true, message: "Vui lòng nhập mô tả khóa học!" }]}
         >
           <TinyEditor
             value={form.getFieldValue("courseDescription")}
@@ -221,14 +221,14 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
             <Form.Item label="Giá khóa học (VND)" name="price" initialValue={0}>
               <InputNumber
                 min={0}
-                precision={0} //  không có phần thập phân
-                stringMode // tránh lỗi chính xác số lớn
+                precision={0}
+                stringMode
                 style={{ width: "100%" }}
                 formatter={(v) =>
                   (v ?? "").toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                 }
                 parser={(v) => (v ?? "").toString().replace(/,/g, "")}
-                onWheel={(e) => e.currentTarget.blur()} // tránh lăn chuột làm nhảy số
+                onWheel={(e) => e.currentTarget.blur()}
               />
             </Form.Item>
           </Col>
@@ -244,8 +244,6 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
           </Col>
 
           <Col span={8}>
-            {/* Giữ lại UI thời lượng nếu bạn cần cho FE, 
-                nhưng KHÔNG gửi lên BE trong payload */}
             <Form.Item
               label="Thời lượng (giờ)"
               name="duration"
@@ -254,9 +252,9 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
               <InputNumber
                 min={0}
                 step={0.5}
-                precision={1} //  hiển thị & giữ 1 chữ số thập phân (0.5)
+                precision={1}
                 style={{ width: "100%" }}
-                onWheel={(e) => e.currentTarget.blur()} //  tránh lăn chuột
+                onWheel={(e) => e.currentTarget.blur()}
               />
             </Form.Item>
           </Col>
@@ -264,7 +262,6 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
 
         <Row gutter={16}>
           <Col span={12}>
-            {/* Tương tự, chỉ dùng nội bộ FE – không gửi lên BE */}
             <Form.Item label="Danh mục" name="category">
               <Select placeholder="Chọn danh mục khóa học" allowClear>
                 <Option value="programming">Lập trình</Option>
@@ -289,7 +286,6 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
           </Col>
         </Row>
 
-        {/* Buttons */}
         <Form.Item style={{ marginTop: "24px", textAlign: "right" }}>
           <Space>
             <Button onClick={handleCancel}>Hủy</Button>
