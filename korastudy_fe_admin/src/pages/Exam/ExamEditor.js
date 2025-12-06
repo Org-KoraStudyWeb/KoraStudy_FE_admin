@@ -437,6 +437,7 @@ const ExamEditor = () => {
               >
                 <option value="TOPIK I">TOPIK I</option>
                 <option value="TOPIK II">TOPIK II</option>
+                <option value="TOPIK EPS">TOPIK EPS</option>
                 <option value="Sơ cấp">Sơ cấp</option>
                 <option value="Trung cấp">Trung cấp</option>
                 <option value="Cao cấp">Cao cấp</option>

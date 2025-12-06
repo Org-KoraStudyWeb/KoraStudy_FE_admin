@@ -1,5 +1,5 @@
 // src/hooks/useCourseManagement.js
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import CourseService from "../services/CourseService";
 
 const useCourseManagement = () => {
@@ -25,58 +25,66 @@ const useCourseManagement = () => {
     totalEnrollments: 0,
   });
 
-  // src/hooks/useCourseManagement.js
+  //  FIX: Dùng ref để tránh dependency warnings
+  const paginationRef = useRef(pagination);
+  const filtersRef = useRef(filters);
+
+  // Update refs khi state thay đổi
+  useEffect(() => {
+    paginationRef.current = pagination;
+  }, [pagination]);
+
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  // Load courses - ĐÃ FIX với ref
   const loadCourses = useCallback(
-    async (page = 1, params = {}) => {
+    async (page = paginationRef.current.current, params = {}) => {
       setLoading(true);
       setError(null);
       try {
+        const currentFilters = filtersRef.current;
+        const currentPagination = paginationRef.current;
+
         const keyword = (
           params.keyword ??
           params.search ??
-          filters.search ??
+          currentFilters.search ??
           ""
         ).trim();
 
         const queryParams = {
           page: page - 1,
-          size: pagination.pageSize,
-          sortBy: params.sortBy || filters.sortBy,
-          sortDir: params.sortDir || filters.sortDir,
+          size: currentPagination.pageSize,
+          sortBy: params.sortBy || currentFilters.sortBy,
+          sortDir: params.sortDir || currentFilters.sortDir,
           keyword,
         };
 
         const response = await CourseService.getAllCoursesAdmin(queryParams);
-        console.log("API Response:", response); // Log response
 
         if (response.success) {
           const data = response.data;
-          console.log("Course Data:", data); // Log raw data
 
-          // ✅ Ép kiểu published (0/1, "0"/"1", boolean) thành true/false
-          const normalizedCourses = (data.content || data).map((course) => {
-            // Convert từ boolean thành số (1/0)
-            const normalized = {
-              ...course,
-              published: course.published === true ? 1 : 0,
-            };
-            console.log(
-              `Course ${course.id}:`,
-              course.published,
-              "→",
-              normalized.published,
-              `(type: ${typeof normalized.published})`
-            );
-            return normalized;
-          });
+          const coursesData = Array.isArray(data) ? data : data.content || [];
+          const totalElements =
+            data.totalElements || data.total || coursesData.length;
+          const totalPages =
+            data.totalPages ||
+            Math.ceil(totalElements / currentPagination.pageSize);
+
+          const normalizedCourses = coursesData.map((course) => ({
+            ...course,
+            published: Boolean(course.published),
+          }));
 
           setCourses(normalizedCourses);
           setPagination((prev) => ({
             ...prev,
             current: page,
-            total: data.totalElements ?? data.length ?? 0,
-            totalPages:
-              data.totalPages ?? Math.ceil((data.length ?? 0) / prev.pageSize),
+            total: totalElements,
+            totalPages: totalPages,
           }));
         } else {
           throw new Error(response.message);
@@ -88,7 +96,7 @@ const useCourseManagement = () => {
         setLoading(false);
       }
     },
-    [filters, pagination.pageSize]
+    [] //  KHÔNG CÒN DEPENDENCIES!
   );
 
   // Load course stats
@@ -97,20 +105,22 @@ const useCourseManagement = () => {
       const response = await CourseService.getCourseStats();
       if (response.success) {
         setStats(response.data);
+      } else {
+        console.error("Stats API error:", response.message);
       }
     } catch (err) {
       console.error("Error loading stats:", err);
     }
   }, []);
 
-  // Create course
+  // Create course - ĐÃ FIX
   const createCourse = useCallback(
     async (courseData) => {
       setLoading(true);
       try {
         const response = await CourseService.createCourse(courseData);
         if (response.success) {
-          await loadCourses(pagination.current);
+          await loadCourses(1);
           await loadStats();
           return {
             success: true,
@@ -126,17 +136,17 @@ const useCourseManagement = () => {
         setLoading(false);
       }
     },
-    [loadCourses, loadStats, pagination]
+    [loadCourses, loadStats]
   );
 
-  // Update course
+  // Update course - ĐÃ FIX
   const updateCourse = useCallback(
     async (id, courseData) => {
       setLoading(true);
       try {
         const response = await CourseService.updateCourse(id, courseData);
         if (response.success) {
-          await loadCourses(pagination.current);
+          await loadCourses(); // Dùng current page từ ref
           return {
             success: true,
             data: response.data,
@@ -151,17 +161,17 @@ const useCourseManagement = () => {
         setLoading(false);
       }
     },
-    [loadCourses, pagination]
+    [loadCourses]
   );
 
-  // Delete course
+  // Delete course - ĐÃ FIX
   const deleteCourse = useCallback(
     async (id) => {
       setLoading(true);
       try {
         const response = await CourseService.deleteCourse(id);
         if (response.success) {
-          await loadCourses(pagination.current);
+          await loadCourses(1);
           await loadStats();
           return { success: true, message: response.message };
         } else {
@@ -173,32 +183,25 @@ const useCourseManagement = () => {
         setLoading(false);
       }
     },
-    [loadCourses, loadStats, pagination]
+    [loadCourses, loadStats]
   );
 
-  // Toggle publish status
+  // Toggle publish status - ĐÃ FIX
   const togglePublishCourse = useCallback(
-    async (id, currentStatus) => {
+    async (id, isPublished) => {
       setLoading(true);
       try {
-        // Convert số sang boolean cho API
-        const newStatus = currentStatus !== 1;
-        console.log("Toggle status:", {
+        const response = await CourseService.togglePublishCourse(
           id,
-          currentStatus,
-          newStatus,
-          currentType: typeof currentStatus,
-          newType: typeof newStatus,
-        });
-
-        const response = await CourseService.togglePublishCourse(id, newStatus);
+          isPublished
+        );
         if (response.success) {
-          await loadCourses(pagination.current);
+          await loadCourses();
           await loadStats();
           return {
             success: true,
             message: `Khóa học đã được ${
-              newStatus ? "xuất bản" : "chuyển về nháp"
+              isPublished ? "xuất bản" : "chuyển về nháp"
             }`,
           };
         } else {
@@ -211,7 +214,7 @@ const useCourseManagement = () => {
         setLoading(false);
       }
     },
-    [loadCourses, loadStats, pagination]
+    [loadCourses, loadStats]
   );
 
   // Get course by ID
@@ -227,14 +230,14 @@ const useCourseManagement = () => {
     }
   }, []);
 
-  // Search courses
+  // Search courses - ĐÃ FIX
   const searchCourses = useCallback(
-    async (kw) => {
+    async (keyword) => {
       setLoading(true);
       try {
-        const keyword = (kw || "").trim();
-        setFilters((prev) => ({ ...prev, search: keyword })); // giữ state
-        await loadCourses(1, { keyword }); // <— QUAN TRỌNG: gọi với keyword
+        const searchTerm = (keyword || "").trim();
+        setFilters((prev) => ({ ...prev, search: searchTerm }));
+        await loadCourses(1, { keyword: searchTerm });
       } catch (err) {
         setError(err.message);
       } finally {
@@ -243,7 +246,8 @@ const useCourseManagement = () => {
     },
     [loadCourses]
   );
-  // Change page
+
+  // Change page - ĐÃ FIX
   const changePage = useCallback(
     (page, pageSize) => {
       setPagination((prev) => ({
@@ -256,7 +260,7 @@ const useCourseManagement = () => {
     [loadCourses]
   );
 
-  // Change filters
+  // Change filters - ĐÃ FIX
   const changeFilters = useCallback(
     (newFilters) => {
       setFilters((prev) => ({ ...prev, ...newFilters }));
