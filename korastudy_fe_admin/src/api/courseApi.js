@@ -65,7 +65,7 @@ const courseApi = {
   },
 
   /**
-   * Lấy thống kê khóa học (Admin)
+   * Lấy thống kê khóa học (Admin) - ✅ ĐÃ CẬP NHẬT
    */
   getCourseStats: () => {
     return axiosClient.get("/api/v1/admin/courses/stats");

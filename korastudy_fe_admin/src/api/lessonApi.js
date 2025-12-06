@@ -80,7 +80,7 @@ const lessonApi = {
       headers: {
         "Content-Type": "multipart/form-data",
       },
-      timeout: 60000,
+      timeout: 120000, // Tăng timeout lên 2 phút cho upload document
     });
   },
 
@@ -116,38 +116,23 @@ const lessonApi = {
     return axiosClient.get(`/api/v1/lessons/course/${courseId}/progress`);
   },
 
-  // ==================== CÁC ENDPOINT SAU KHÔNG TỒN TẠI TRONG BACKEND - CẦN XÓA ====================
-  /*
-  reorderLessons: (sectionId, lessonOrder) => {
-    return axiosClient.put(`/api/v1/lessons/section/${sectionId}/reorder`, lessonOrder);
+  /**
+   * Lấy tiến độ của tất cả users trong khóa học (admin)
+   */
+  getAllUsersProgressByCourse: (courseId) => {
+    return axiosClient.get(
+      `/api/v1/lessons/admin/course/${courseId}/progress/all`
+    );
   },
 
-  uploadLessonFile: (lessonId, fileData) => {
-    const formData = new FormData();
-    formData.append("file", fileData);
-    return axiosClient.post(`/api/v1/lessons/${lessonId}/files`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-      timeout: 60000,
-    });
+  /**
+   * Lấy tiến độ của user cụ thể trong khóa học (admin)
+   */
+  getUserProgressByCourseForAdmin: (courseId, userId) => {
+    return axiosClient.get(
+      `/api/v1/lessons/admin/course/${courseId}/user/${userId}/progress`
+    );
   },
-
-  deleteLessonFile: (fileId) => {
-    return axiosClient.delete(`/api/v1/lessons/files/${fileId}`);
-  },
-
-  uploadLessonVideo: (file) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    return axiosClient.post("/api/v1/upload/lesson-video", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-      timeout: 60000,
-    });
-  },
-
-  markLessonComplete: (lessonId) => {
-    return axiosClient.put(`/api/v1/lessons/${lessonId}/complete`);
-  },
-  */
 };
 
 export default lessonApi;

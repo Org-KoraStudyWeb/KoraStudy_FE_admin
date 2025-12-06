@@ -15,10 +15,10 @@ import {
   Image,
   Space,
   Alert,
+  Card,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import CourseService from "../../services/CourseService";
-import courseApi from "../../api/courseApi";
 import { Editor } from "@tinymce/tinymce-react";
 
 // TinyMCE wrapper để bind với Form
@@ -31,9 +31,23 @@ const TinyEditor = ({ value = "", onChange }) => {
         height: 300,
         menubar: false,
         plugins: [
-          "advlist autolink lists link image charmap preview anchor",
-          "searchreplace visualblocks code fullscreen",
-          "insertdatetime media table paste code help wordcount",
+          "advlist",
+          "autolink",
+          "lists",
+          "link",
+          "image",
+          "charmap",
+          "preview",
+          "anchor",
+          "searchreplace",
+          "visualblocks",
+          "code",
+          "fullscreen",
+          "insertdatetime",
+          "media",
+          "table",
+          "help",
+          "wordcount",
         ],
         toolbar:
           "undo redo | formatselect | bold italic underline | alignleft aligncenter alignright | bullist numlist outdent indent | removeformat | help",
@@ -51,10 +65,10 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
   const [imageUrl, setImageUrl] = useState("");
   const [uploadLoading, setUploadLoading] = useState(false);
   const [fileList, setFileList] = useState([]);
-  const [errorMessage, setErrorMessage] = useState(""); //lỗi BE sẽ hiển thị ở đây
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (values) => {
-    setErrorMessage(""); // clear lỗi cũ
+    setErrorMessage("");
     setLoading(true);
     try {
       const courseData = {
@@ -80,7 +94,6 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
         setErrorMessage(response.message || "Có lỗi xảy ra khi tạo khóa học.");
       }
     } catch (error) {
-      // ✅ Lỗi hiển thị đỏ thay vì console.log
       const msg =
         error.response?.data?.message ||
         error.message ||
@@ -107,7 +120,7 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
     try {
       setUploadLoading(true);
       setFileList([file]);
-      const response = await courseApi.uploadCourseImage(file);
+      const response = await CourseService.uploadCourseImage(file);
 
       const uploadedImageUrl = response?.data?.url;
       if (!uploadedImageUrl) throw new Error("API không trả về URL hình ảnh.");
@@ -138,8 +151,8 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
       open={visible}
       onCancel={handleCancel}
       footer={null}
-      width={800}
-      destroyOnHidden
+      width={700}
+      destroyOnClose
     >
       <Form
         form={form}
@@ -158,138 +171,149 @@ const CreateCourseForm = ({ visible, onClose, onSuccess }) => {
           />
         )}
 
-        {/* Hình ảnh */}
-        <Form.Item label="Hình ảnh khóa học">
-          <div>
-            {imageUrl && (
-              <div style={{ marginBottom: 16 }}>
-                <Image
-                  width={200}
-                  height={120}
-                  src={imageUrl}
-                  style={{ objectFit: "cover", borderRadius: 8 }}
+        {/* Card thông tin cơ bản */}
+        <Card
+          title="Thông tin cơ bản"
+          size="small"
+          style={{ marginBottom: 16 }}
+        >
+          {/* Hình ảnh */}
+          <Form.Item label="Hình ảnh khóa học">
+            <div>
+              {imageUrl && (
+                <div style={{ marginBottom: 16 }}>
+                  <Image
+                    width={200}
+                    height={120}
+                    src={imageUrl}
+                    style={{ objectFit: "cover", borderRadius: 8 }}
+                    alt="Course preview"
+                  />
+                </div>
+              )}
+              <Upload
+                name="file"
+                listType="picture"
+                maxCount={1}
+                fileList={fileList}
+                onRemove={() => {
+                  setFileList([]);
+                  setImageUrl("");
+                }}
+                beforeUpload={(file) => {
+                  handleImageUpload(file);
+                  return false;
+                }}
+                accept="image/*"
+              >
+                <Button icon={<UploadOutlined />} loading={uploadLoading}>
+                  {imageUrl ? "Thay đổi hình ảnh" : "Upload hình ảnh"}
+                </Button>
+              </Upload>
+            </div>
+          </Form.Item>
+
+          {/* Tên khóa học */}
+          <Form.Item
+            label="Tên khóa học"
+            name="courseName"
+            rules={[
+              { required: true, message: "Vui lòng nhập tên khóa học!" },
+              {
+                max: 100,
+                message: "Tên khóa học không được vượt quá 100 ký tự!",
+              },
+            ]}
+          >
+            <Input placeholder="Nhập tên khóa học" />
+          </Form.Item>
+        </Card>
+
+        {/* Card mô tả chi tiết */}
+        <Card title="Mô tả chi tiết" size="small" style={{ marginBottom: 16 }}>
+          <Form.Item
+            label="Mô tả khóa học"
+            name="courseDescription"
+            rules={[
+              { required: true, message: "Vui lòng nhập mô tả khóa học!" },
+            ]}
+          >
+            <TinyEditor
+              value={form.getFieldValue("courseDescription")}
+              onChange={(val) =>
+                form.setFieldsValue({ courseDescription: val })
+              }
+            />
+          </Form.Item>
+        </Card>
+
+        {/* Card cài đặt khóa học */}
+        <Card
+          title="Cài đặt khóa học"
+          size="small"
+          style={{ marginBottom: 16 }}
+        >
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Giá khóa học (VND)"
+                name="price"
+                initialValue={0}
+                tooltip="Để 0 nếu khóa học miễn phí"
+              >
+                <InputNumber
+                  min={0}
+                  precision={0}
+                  style={{ width: "100%" }}
+                  formatter={(value) =>
+                    `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                  }
+                  parser={(value) => value.replace(/,/g, "")}
+                  onWheel={(e) => e.currentTarget.blur()}
+                  placeholder="0"
                 />
-              </div>
-            )}
-            <Upload
-              name="file"
-              listType="picture"
-              maxCount={1}
-              fileList={fileList}
-              onRemove={() => setFileList([])}
-              beforeUpload={(file) => {
-                handleImageUpload(file);
-                return false;
-              }}
-            >
-              <Button icon={<UploadOutlined />} loading={uploadLoading}>
-                {imageUrl ? "Thay đổi hình ảnh" : "Upload hình ảnh"}
-              </Button>
-            </Upload>
-          </div>
-        </Form.Item>
+              </Form.Item>
+            </Col>
 
-        {/* Tên khóa học */}
-        <Form.Item
-          label="Tên khóa học"
-          name="courseName"
-          rules={[
-            { required: true, message: "Vui lòng nhập tên khóa học!" },
-            {
-              max: 100,
-              message: "Tên khóa học không được vượt quá 100 ký tự!",
-            },
-          ]}
-        >
-          <Input placeholder="Nhập tên khóa học" />
-        </Form.Item>
+            <Col span={12}>
+              <Form.Item
+                label="Cấp độ"
+                name="level"
+                tooltip="Chọn cấp độ phù hợp cho khóa học"
+              >
+                <Select placeholder="Chọn cấp độ" allowClear>
+                  <Option value="BEGINNER">Cơ bản</Option>
+                  <Option value="INTERMEDIATE">Trung cấp</Option>
+                  <Option value="ADVANCED">Nâng cao</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
 
-        {/* Mô tả */}
-        <Form.Item
-          label="Mô tả khóa học"
-          name="courseDescription"
-          rules={[{ required: true, message: "Vui lòng nhập mô tả khóa học!" }]}
-        >
-          <TinyEditor
-            value={form.getFieldValue("courseDescription")}
-            onChange={(val) => form.setFieldsValue({ courseDescription: val })}
-          />
-        </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Xuất bản ngay"
+                name="published"
+                valuePropName="checked"
+                tooltip="Bật để xuất bản khóa học ngay sau khi tạo"
+              >
+                <Switch checkedChildren="Có" unCheckedChildren="Không" />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Card>
 
-        <Row gutter={16}>
-          <Col span={8}>
-            <Form.Item label="Giá khóa học (VND)" name="price" initialValue={0}>
-              <InputNumber
-                min={0}
-                precision={0}
-                stringMode
-                style={{ width: "100%" }}
-                formatter={(v) =>
-                  (v ?? "").toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                }
-                parser={(v) => (v ?? "").toString().replace(/,/g, "")}
-                onWheel={(e) => e.currentTarget.blur()}
-              />
-            </Form.Item>
-          </Col>
-
-          <Col span={8}>
-            <Form.Item label="Cấp độ" name="level">
-              <Select placeholder="Chọn cấp độ" allowClear>
-                <Option value="BEGINNER">Cơ bản</Option>
-                <Option value="INTERMEDIATE">Trung cấp</Option>
-                <Option value="ADVANCED">Nâng cao</Option>
-              </Select>
-            </Form.Item>
-          </Col>
-
-          <Col span={8}>
-            <Form.Item
-              label="Thời lượng (giờ)"
-              name="duration"
-              initialValue={0}
-            >
-              <InputNumber
-                min={0}
-                step={0.5}
-                precision={1}
-                style={{ width: "100%" }}
-                onWheel={(e) => e.currentTarget.blur()}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item label="Danh mục" name="category">
-              <Select placeholder="Chọn danh mục khóa học" allowClear>
-                <Option value="programming">Lập trình</Option>
-                <Option value="design">Thiết kế</Option>
-                <Option value="marketing">Marketing</Option>
-                <Option value="business">Kinh doanh</Option>
-                <Option value="language">Ngoại ngữ</Option>
-                <Option value="other">Khác</Option>
-              </Select>
-            </Form.Item>
-          </Col>
-
-          <Col span={12}>
-            <Form.Item
-              label="Xuất bản ngay"
-              name="published"
-              valuePropName="checked"
-              tooltip="Bật để xuất bản khóa học ngay sau khi tạo"
-            >
-              <Switch checkedChildren="Có" unCheckedChildren="Không" />
-            </Form.Item>
-          </Col>
-        </Row>
-
+        {/* Actions */}
         <Form.Item style={{ marginTop: "24px", textAlign: "right" }}>
           <Space>
             <Button onClick={handleCancel}>Hủy</Button>
-            <Button type="primary" htmlType="submit" loading={loading}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              disabled={!imageUrl}
+            >
               Tạo khóa học
             </Button>
           </Space>

@@ -27,7 +27,7 @@ class LessonService {
         return { success: false, message: "Section ID không được để trống" };
       }
 
-      console.log("📖 Fetching lessons for section:", sectionId);
+      console.log("Fetching lessons for section:", sectionId);
 
       const response = await lessonApi.getLessonsBySectionId(sectionId);
 
@@ -37,10 +37,7 @@ class LessonService {
         message: "Lấy danh sách bài học thành công",
       };
     } catch (error) {
-      console.error(
-        `❌ Failed to fetch lessons for section ${sectionId}:`,
-        error
-      );
+      console.error(`Failed to fetch lessons for section ${sectionId}:`, error);
       return this.handleError(error, "Lỗi khi lấy danh sách bài học");
     }
   }
@@ -54,7 +51,7 @@ class LessonService {
         return { success: false, message: "Course ID không được để trống" };
       }
 
-      console.log("📚 Fetching lessons for course:", courseId);
+      console.log("Fetching lessons for course:", courseId);
 
       const response = await lessonApi.getLessonsByCourseId(courseId);
 
@@ -64,10 +61,7 @@ class LessonService {
         message: "Lấy danh sách bài học thành công",
       };
     } catch (error) {
-      console.error(
-        `❌ Failed to fetch lessons for course ${courseId}:`,
-        error
-      );
+      console.error(`Failed to fetch lessons for course ${courseId}:`, error);
       return this.handleError(error, "Lỗi khi lấy danh sách bài học");
     }
   }
@@ -81,7 +75,7 @@ class LessonService {
         return { success: false, message: "Lesson ID không được để trống" };
       }
 
-      console.log("🔍 Fetching lesson details for ID:", id);
+      console.log("Fetching lesson details for ID:", id);
 
       const response = await lessonApi.getLessonById(id);
 
@@ -91,7 +85,7 @@ class LessonService {
         message: "Lấy thông tin bài học thành công",
       };
     } catch (error) {
-      console.error(`❌ Failed to fetch lesson ${id}:`, error);
+      console.error(`Failed to fetch lesson ${id}:`, error);
       return this.handleError(error, "Lỗi khi lấy thông tin bài học");
     }
   }
@@ -101,7 +95,7 @@ class LessonService {
    */
   async createLesson(lessonData) {
     try {
-      console.log("🆕 Creating new lesson:", lessonData);
+      console.log("Creating new lesson:", lessonData);
 
       // Validate dữ liệu
       const validationResult = this.validateLessonData(lessonData);
@@ -115,7 +109,7 @@ class LessonService {
       const payload = this.prepareLessonPayload(lessonData);
       const response = await lessonApi.createLesson(payload);
 
-      console.log("✅ Lesson created successfully");
+      console.log("Lesson created successfully");
 
       return {
         success: true,
@@ -123,7 +117,7 @@ class LessonService {
         message: "Tạo bài học thành công",
       };
     } catch (error) {
-      console.error("❌ Failed to create lesson:", error);
+      console.error("Failed to create lesson:", error);
       return this.handleError(error, "Lỗi khi tạo bài học");
     }
   }
@@ -137,7 +131,7 @@ class LessonService {
         return { success: false, message: "Lesson ID không được để trống" };
       }
 
-      console.log("📝 Updating lesson:", id, lessonData);
+      console.log("Updating lesson:", id, lessonData);
 
       // Validate dữ liệu
       const validationResult = this.validateLessonData(lessonData, false);
@@ -151,7 +145,7 @@ class LessonService {
       const payload = this.prepareLessonPayload(lessonData);
       const response = await lessonApi.updateLesson(id, payload);
 
-      console.log("✅ Lesson updated successfully");
+      console.log("Lesson updated successfully");
 
       return {
         success: true,
@@ -159,7 +153,7 @@ class LessonService {
         message: "Cập nhật bài học thành công",
       };
     } catch (error) {
-      console.error(`❌ Failed to update lesson ${id}:`, error);
+      console.error(`Failed to update lesson ${id}:`, error);
       return this.handleError(error, "Lỗi khi cập nhật bài học");
     }
   }
@@ -173,18 +167,18 @@ class LessonService {
         return { success: false, message: "Lesson ID không được để trống" };
       }
 
-      console.log("🗑️ Deleting lesson:", id);
+      console.log("Deleting lesson:", id);
 
       await lessonApi.deleteLesson(id);
 
-      console.log("✅ Lesson deleted successfully");
+      console.log("Lesson deleted successfully");
 
       return {
         success: true,
         message: "Xóa bài học thành công",
       };
     } catch (error) {
-      console.error(`❌ Failed to delete lesson ${id}:`, error);
+      console.error(`Failed to delete lesson ${id}:`, error);
       return this.handleError(error, "Lỗi khi xóa bài học");
     }
   }
@@ -218,11 +212,11 @@ class LessonService {
         };
       }
 
-      console.log("🎥 Uploading video:", file.name);
+      console.log("Uploading video:", file.name);
 
       const response = await lessonApi.uploadVideo(file, title);
 
-      console.log("✅ Video uploaded successfully");
+      console.log("Video uploaded successfully");
 
       return {
         success: true,
@@ -230,7 +224,7 @@ class LessonService {
         message: "Tải lên video thành công",
       };
     } catch (error) {
-      console.error("❌ Failed to upload video:", error);
+      console.error("Failed to upload video:", error);
       return this.handleError(error, "Lỗi khi tải lên video");
     }
   }
@@ -271,11 +265,11 @@ class LessonService {
         };
       }
 
-      console.log("📄 Uploading document:", file.name);
+      console.log("Uploading document:", file.name);
 
       const response = await lessonApi.uploadDocument(file, title);
 
-      console.log("✅ Document uploaded successfully");
+      console.log("Document uploaded successfully");
 
       return {
         success: true,
@@ -283,7 +277,7 @@ class LessonService {
         message: "Tải lên tài liệu thành công",
       };
     } catch (error) {
-      console.error("❌ Failed to upload document:", error);
+      console.error("Failed to upload document:", error);
       return this.handleError(error, "Lỗi khi tải lên tài liệu");
     }
   }
@@ -297,18 +291,18 @@ class LessonService {
         return { success: false, message: "File URL không được để trống" };
       }
 
-      console.log("🗑️ Deleting file:", fileUrl);
+      console.log("Deleting file:", fileUrl);
 
       await lessonApi.deleteFile(fileUrl);
 
-      console.log("✅ File deleted successfully");
+      console.log("File deleted successfully");
 
       return {
         success: true,
         message: "Xóa file thành công",
       };
     } catch (error) {
-      console.error("❌ Failed to delete file:", error);
+      console.error("Failed to delete file:", error);
       return this.handleError(error, "Lỗi khi xóa file");
     }
   }
@@ -328,7 +322,7 @@ class LessonService {
         };
       }
 
-      console.log("📈 Updating lesson progress:", progressData);
+      console.log("Updating lesson progress:", progressData);
 
       const response = await lessonApi.updateLessonProgress(progressData);
 
@@ -338,7 +332,7 @@ class LessonService {
         message: "Cập nhật tiến độ thành công",
       };
     } catch (error) {
-      console.error("❌ Failed to update lesson progress:", error);
+      console.error("Failed to update lesson progress:", error);
       return this.handleError(error, "Lỗi khi cập nhật tiến độ");
     }
   }
@@ -352,7 +346,7 @@ class LessonService {
         return { success: false, message: "Lesson ID không được để trống" };
       }
 
-      console.log("📊 Fetching lesson progress for:", lessonId);
+      console.log("Fetching lesson progress for:", lessonId);
 
       const response = await lessonApi.getLessonProgress(lessonId);
 
@@ -362,10 +356,7 @@ class LessonService {
         message: "Lấy tiến độ bài học thành công",
       };
     } catch (error) {
-      console.error(
-        `❌ Failed to fetch progress for lesson ${lessonId}:`,
-        error
-      );
+      console.error(`Failed to fetch progress for lesson ${lessonId}:`, error);
       return this.handleError(error, "Lỗi khi lấy tiến độ bài học");
     }
   }
@@ -379,7 +370,7 @@ class LessonService {
         return { success: false, message: "Course ID không được để trống" };
       }
 
-      console.log("📈 Fetching user progress for course:", courseId);
+      console.log("Fetching user progress for course:", courseId);
 
       const response = await lessonApi.getUserProgressByCourse(courseId);
 
@@ -390,10 +381,75 @@ class LessonService {
       };
     } catch (error) {
       console.error(
-        `❌ Failed to fetch user progress for course ${courseId}:`,
+        `Failed to fetch user progress for course ${courseId}:`,
         error
       );
       return this.handleError(error, "Lỗi khi lấy tiến độ khóa học");
+    }
+  }
+
+  /**
+   * Lấy tiến độ của tất cả users trong course (cho admin)
+   */
+  async getAllUsersProgressByCourse(courseId) {
+    try {
+      if (!courseId) {
+        return { success: false, message: "Course ID không được để trống" };
+      }
+
+      console.log("[ADMIN] Fetching all users progress for course:", courseId);
+
+      const response = await lessonApi.getAllUsersProgressByCourse(courseId);
+
+      return {
+        success: true,
+        data: response.data,
+        message: "Lấy tiến độ tất cả học viên thành công",
+      };
+    } catch (error) {
+      console.error(
+        `[ADMIN] Failed to fetch all users progress for course ${courseId}:`,
+        error
+      );
+      return this.handleError(error, "Lỗi khi lấy tiến độ học viên");
+    }
+  }
+
+  /**
+   * Lấy tiến độ của user cụ thể trong course (cho admin)
+   */
+  async getUserProgressByCourseForAdmin(courseId, userId) {
+    try {
+      if (!courseId || !userId) {
+        return {
+          success: false,
+          message: "Course ID và User ID không được để trống",
+        };
+      }
+
+      console.log(
+        "[ADMIN] Fetching progress for user",
+        userId,
+        "in course:",
+        courseId
+      );
+
+      const response = await lessonApi.getUserProgressByCourseForAdmin(
+        courseId,
+        userId
+      );
+
+      return {
+        success: true,
+        data: response.data,
+        message: "Lấy tiến độ học viên thành công",
+      };
+    } catch (error) {
+      console.error(
+        `[ADMIN] Failed to fetch progress for user ${userId} in course ${courseId}:`,
+        error
+      );
+      return this.handleError(error, "Lỗi khi lấy tiến độ học viên");
     }
   }
 
@@ -552,19 +608,13 @@ class LessonService {
    */
   getContentTypeLabel(contentType) {
     const typeLabels = {
-      VIDEO: { label: "Video", color: "primary", icon: "🎥" },
-      TEXT: { label: "Văn bản", color: "secondary", icon: "📄" },
-      QUIZ: { label: "Bài quiz", color: "warning", icon: "📝" },
-      ASSIGNMENT: { label: "Bài tập", color: "info", icon: "📚" },
+      VIDEO: { label: "Video", color: "primary" },
+      TEXT: { label: "Văn bản", color: "secondary" },
+      QUIZ: { label: "Bài quiz", color: "warning" },
+      ASSIGNMENT: { label: "Bài tập", color: "info" },
     };
 
-    return (
-      typeLabels[contentType] || {
-        label: contentType,
-        color: "default",
-        icon: "📖",
-      }
-    );
+    return typeLabels[contentType] || { label: contentType, color: "default" };
   }
 
   /**
