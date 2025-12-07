@@ -1,4 +1,3 @@
-// src/components/course/LessonForm.js
 import React, { useState } from "react";
 import {
   Modal,
@@ -16,6 +15,11 @@ import {
 } from "antd";
 import { UploadOutlined, DeleteOutlined } from "@ant-design/icons";
 import LessonService from "../../services/LessonService";
+import {
+  getSafeUploadTitle,
+  validateFileType,
+  formatFileSize,
+} from "../../utils/fileHelper";
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -35,8 +39,6 @@ const LessonForm = ({
   const [uploadProgress, setUploadProgress] = useState(0);
 
   const handleSubmit = async (values) => {
-    console.log("Lesson form submitted:", values);
-
     setLoading(true);
     try {
       const lessonData = {
@@ -50,8 +52,6 @@ const LessonForm = ({
         sectionId: sectionId,
       };
 
-      console.log("Lesson data:", lessonData);
-
       let response;
       if (editingLesson) {
         response = await LessonService.updateLesson(
@@ -61,8 +61,6 @@ const LessonForm = ({
       } else {
         response = await LessonService.createLesson(lessonData);
       }
-
-      console.log("Lesson API response:", response);
 
       if (response.success) {
         message.success(response.message || "Lưu bài học thành công!");
@@ -82,21 +80,29 @@ const LessonForm = ({
     }
   };
 
-  //  Upload video thật lên server
+  // Upload video
   const handleVideoUpload = async (file) => {
-    console.log("Uploading video to server:", file);
-
     // Validate file type
-    const isVideo = file.type.startsWith("video/");
-    if (!isVideo) {
-      message.error("Chỉ chấp nhận file video!");
+    const allowedVideoTypes = [
+      "video/mp4",
+      "video/avi",
+      "video/mov",
+      "video/wmv",
+      "video/mkv",
+    ];
+    const allowedExtensions = [".mp4", ".avi", ".mov", ".wmv", ".mkv"];
+
+    if (!validateFileType(file, allowedVideoTypes, allowedExtensions)) {
+      message.error("Chỉ chấp nhận video định dạng MP4, AVI, MOV, WMV, MKV!");
       return false;
     }
 
     // Validate file size (max 500MB)
-    const isLt500M = file.size / 1024 / 1024 < 500;
-    if (!isLt500M) {
-      message.error("Video phải nhỏ hơn 500MB!");
+    const maxSize = 500 * 1024 * 1024;
+    if (file.size > maxSize) {
+      message.error(
+        `Video phải nhỏ hơn 500MB (Hiện tại: ${formatFileSize(file.size)})!`
+      );
       return false;
     }
 
@@ -104,51 +110,34 @@ const LessonForm = ({
       setUploadLoading(true);
       setUploadProgress(0);
 
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 200);
+      // Tạo title an toàn từ filename
+      const safeTitle = getSafeUploadTitle(file.name);
 
-      // UPLOAD THẬT LÊN SERVER
-      const response = await LessonService.uploadVideo(file, file.name);
-
-      clearInterval(progressInterval);
-      setUploadProgress(100);
+      // Upload thật lên server
+      const response = await LessonService.uploadVideo(file, safeTitle);
 
       if (response.success) {
         const uploadedVideoUrl = response.data;
         setVideoUrl(uploadedVideoUrl);
-        message.success("Upload video lên thành công!");
-
-        // TỰ ĐỘNG TÍNH THỜI LƯỢNG (nếu backend trả về duration)
-        // Có thể gọi API để lấy video metadata hoặc để backend tính
-        console.log("Video uploaded to:", uploadedVideoUrl);
+        message.success("Upload video thành công!");
       } else {
         message.error(response.message || "Upload video thất bại");
       }
     } catch (error) {
       console.error("Upload video error:", error);
-      message.error("Lỗi khi upload video");
+      message.error("Lỗi khi upload video: " + error.message);
     } finally {
       setUploadLoading(false);
       setUploadProgress(0);
     }
 
-    return false; // Prevent default upload
+    return false;
   };
 
-  //Upload document thật lên server
+  // Upload document
   const handleDocumentUpload = async (file) => {
-    console.log("Uploading document to server:", file);
-
     // Validate file type
-    const allowedTypes = [
+    const allowedDocTypes = [
       "application/pdf",
       "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -157,7 +146,16 @@ const LessonForm = ({
       "application/vnd.openxmlformats-officedocument.presentationml.presentation",
     ];
 
-    if (!allowedTypes.includes(file.type)) {
+    const allowedExtensions = [
+      ".pdf",
+      ".doc",
+      ".docx",
+      ".txt",
+      ".ppt",
+      ".pptx",
+    ];
+
+    if (!validateFileType(file, allowedDocTypes, allowedExtensions)) {
       message.error(
         "Chỉ chấp nhận file tài liệu (PDF, DOC, DOCX, TXT, PPT, PPTX)"
       );
@@ -165,9 +163,11 @@ const LessonForm = ({
     }
 
     // Validate file size (max 50MB)
-    const isLt50M = file.size / 1024 / 1024 < 50;
-    if (!isLt50M) {
-      message.error("Tài liệu phải nhỏ hơn 50MB!");
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
+      message.error(
+        `Tài liệu phải nhỏ hơn 50MB (Hiện tại: ${formatFileSize(file.size)})!`
+      );
       return false;
     }
 
@@ -175,40 +175,28 @@ const LessonForm = ({
       setUploadLoading(true);
       setUploadProgress(0);
 
-      // Simulate upload progress
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 200);
+      // Tạo title an toàn từ filename
+      const safeTitle = getSafeUploadTitle(file.name);
 
-      // UPLOAD THẬT LÊN SERVER
-      const response = await LessonService.uploadDocument(file, file.name);
-
-      clearInterval(progressInterval);
-      setUploadProgress(100);
+      // Upload thật lên server
+      const response = await LessonService.uploadDocument(file, safeTitle);
 
       if (response.success) {
         const uploadedDocumentUrl = response.data;
         setDocumentUrl(uploadedDocumentUrl);
-        message.success("Upload tài liệu lên thành công!");
-        console.log("Document uploaded to:", uploadedDocumentUrl);
+        message.success("Upload tài liệu thành công!");
       } else {
         message.error(response.message || "Upload tài liệu thất bại");
       }
     } catch (error) {
       console.error("Upload document error:", error);
-      message.error("Lỗi khi upload tài liệu");
+      message.error("Lỗi khi upload tài liệu: " + error.message);
     } finally {
       setUploadLoading(false);
       setUploadProgress(0);
     }
 
-    return false; // Prevent default upload
+    return false;
   };
 
   // Xóa file khỏi Cloudinary
@@ -219,7 +207,7 @@ const LessonForm = ({
       const response = await LessonService.deleteFile(videoUrl);
       if (response.success) {
         setVideoUrl("");
-        message.success("Đã xóa video khỏi Cloudinary");
+        message.success("Đã xóa video");
       } else {
         message.error(response.message || "Xóa video thất bại");
       }
@@ -236,7 +224,7 @@ const LessonForm = ({
       const response = await LessonService.deleteFile(documentUrl);
       if (response.success) {
         setDocumentUrl("");
-        message.success("Đã xóa tài liệu khỏi Cloudinary");
+        message.success("Đã xóa tài liệu");
       } else {
         message.error(response.message || "Xóa tài liệu thất bại");
       }
@@ -394,9 +382,9 @@ const LessonForm = ({
                     marginBottom: 8,
                   }}
                 >
-                  <span style={{ color: "#52c41a", marginRight: 8 }}>✅</span>
                   <span style={{ color: "#666" }}>
-                    Video đã upload: {videoUrl.split("/").pop()}
+                    Video đã upload:{" "}
+                    {decodeURIComponent(videoUrl.split("/").pop())}
                   </span>
                 </div>
                 <video
@@ -441,7 +429,7 @@ const LessonForm = ({
                 loading={uploadLoading}
                 type={videoUrl ? "default" : "primary"}
               >
-                {videoUrl ? "Thay đổi video" : "Upload video "}
+                {videoUrl ? "Thay đổi video" : "Upload video"}
               </Button>
             </Upload>
             <div style={{ fontSize: "12px", color: "#666", marginTop: 4 }}>
@@ -462,9 +450,9 @@ const LessonForm = ({
                     marginBottom: 8,
                   }}
                 >
-                  <span style={{ color: "#52c41a", marginRight: 8 }}>✅</span>
                   <span style={{ color: "#666" }}>
-                    Tài liệu đã upload: {documentUrl.split("/").pop()}
+                    Tài liệu đã upload:{" "}
+                    {decodeURIComponent(documentUrl.split("/").pop())}
                   </span>
                 </div>
                 <Button
