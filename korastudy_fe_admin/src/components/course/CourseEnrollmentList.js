@@ -15,7 +15,6 @@ import {
   Progress,
   Empty,
   Input,
-  Tooltip,
 } from "antd";
 import {
   UserOutlined,
@@ -25,26 +24,25 @@ import {
   MailOutlined,
   IdcardOutlined,
   PlayCircleOutlined,
+  CheckCircleOutlined,
 } from "@ant-design/icons";
 import EnrollmentService from "../../services/EnrollmentService";
-import LessonService from "../../services/LessonService"; // Import LessonService
+import LessonService from "../../services/LessonService";
 
 const { Search } = Input;
 
-// Hàm format date an toàn
 const safeFormatDate = (date) => {
   if (!date) return "Chưa có ngày";
   try {
     const dateObj = new Date(date);
     return isNaN(dateObj.getTime())
       ? "Chưa có ngày"
-      : EnrollmentService.formatDate(date);
+      : new Date(date).toLocaleDateString("vi-VN");
   } catch {
     return "Chưa có ngày";
   }
 };
 
-// Hàm generate avatar color từ userId
 const generateAvatarColor = (userId) => {
   const colors = [
     "#f56a00",
@@ -70,8 +68,6 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
   });
 
   // Load enrollments và progress
-
-  // Load enrollments và progress - FIXED VERSION
   const loadEnrollmentsWithProgress = useCallback(
     async (page = 1, size = 5) => {
       if (!courseId) {
@@ -97,32 +93,13 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
             0;
 
           if (!Array.isArray(enrollmentsData)) {
-            console.warn(
-              "Invalid enrollments data structure:",
-              enrollmentsData
-            );
+            console.warn("Invalid enrollments data structure");
             setEnrollments([]);
             setFilteredEnrollments([]);
             return;
           }
 
-          // 2. Load progress cho tất cả users trong course
-          let allUsersProgress = [];
-          try {
-            const progressResponse =
-              await LessonService.getAllUsersProgressByCourse(courseId);
-            if (progressResponse.success && progressResponse.data) {
-              allUsersProgress = Array.isArray(progressResponse.data)
-                ? progressResponse.data
-                : [progressResponse.data];
-            }
-          } catch (progressError) {
-            console.error("Error loading all users progress:", progressError);
-            // Nếu API admin không hoạt động, thử load từng cái một
-            console.log("Falling back to individual progress loading...");
-          }
-
-          // 3. Kết hợp enrollment data với progress data
+          // 2. Kết hợp enrollment data với progress data
           const enrollmentsWithProgress = await Promise.all(
             enrollmentsData.map(async (enrollment) => {
               try {
@@ -136,114 +113,96 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
                   completedLessons: 0,
                   totalLessons: 0,
                   lastActivity: null,
+                  totalDuration: 0,
+                  // Thêm trường để xác định hoàn thành khóa học
+                  isCourseCompleted: false,
                 };
 
-                // Tìm progress từ allUsersProgress trước
-                const foundProgress = allUsersProgress.find(
-                  (progress) => progress.userId === enrollment.userId
-                );
+                // Load progress cho user cụ thể trong khóa học này
+                try {
+                  const progressResponse =
+                    await LessonService.getUserProgressByCourseForAdmin(
+                      courseId,
+                      enrollment.userId
+                    );
 
-                if (foundProgress) {
-                  // Sử dụng progress từ allUsersProgress
-                  userProgress = {
-                    progress:
-                      foundProgress.progressPercentage ||
-                      foundProgress.progress ||
-                      0,
-                    completedLessons: foundProgress.completedLessons || 0,
-                    totalLessons: foundProgress.totalLessons || 0,
-                    lastActivity:
-                      foundProgress.lastActivityDate ||
-                      foundProgress.updatedAt ||
-                      foundProgress.lastAccessed,
-                  };
-                } else {
-                  // Fallback: Load progress cho từng user
-                  try {
-                    const individualProgressResponse =
-                      await LessonService.getUserProgressByCourseForAdmin(
-                        courseId,
-                        enrollment.userId
+                  if (progressResponse.success && progressResponse.data) {
+                    const progressData = progressResponse.data;
+
+                    // Xử lý dữ liệu progress: API trả về array của từng bài học
+                    if (Array.isArray(progressData)) {
+                      // Tính toán tổng hợp từ danh sách bài học
+                      const totalLessons = progressData.length;
+                      const completedLessons = progressData.filter(
+                        (item) => item.status === "COMPLETED"
+                      ).length;
+                      const progressPercentage =
+                        totalLessons > 0
+                          ? (completedLessons / totalLessons) * 100
+                          : 0;
+
+                      // Tính tổng thời gian
+                      const totalDuration = progressData.reduce(
+                        (sum, item) => sum + (item.timeSpent || 0),
+                        0
                       );
 
-                    if (
-                      individualProgressResponse.success &&
-                      individualProgressResponse.data
-                    ) {
-                      const progressData = individualProgressResponse.data;
+                      // Lấy thời gian hoạt động cuối
+                      const lastActivity =
+                        progressData.length > 0
+                          ? progressData.reduce(
+                              (latest, item) =>
+                                new Date(item.lastAccessed) > new Date(latest)
+                                  ? item.lastAccessed
+                                  : latest,
+                              progressData[0].lastAccessed
+                            )
+                          : null;
+
                       userProgress = {
-                        progress:
-                          progressData.progressPercentage ||
-                          progressData.progress ||
-                          0,
+                        progress: progressPercentage,
+                        completedLessons,
+                        totalLessons,
+                        lastActivity,
+                        totalDuration,
+                        // Xác định hoàn thành khóa học: tất cả bài học đều COMPLETED
+                        isCourseCompleted:
+                          totalLessons > 0 && completedLessons === totalLessons,
+                      };
+                    } else if (progressData.progressPercentage !== undefined) {
+                      // Nếu API trả về trực tiếp tổng hợp
+                      userProgress = {
+                        progress: progressData.progressPercentage,
                         completedLessons: progressData.completedLessons || 0,
                         totalLessons: progressData.totalLessons || 0,
                         lastActivity:
-                          progressData.lastActivityDate ||
-                          progressData.updatedAt ||
+                          progressData.lastActivity ||
                           progressData.lastAccessed,
+                        totalDuration: progressData.totalDuration || 0,
+                        isCourseCompleted: progressData.isCompleted || false,
                       };
                     }
-                  } catch (individualError) {
-                    console.error(
-                      `Error loading individual progress for user ${enrollment.userId}:`,
-                      individualError
-                    );
-
-                    // Final fallback: Thử API thông thường
-                    try {
-                      const fallbackProgressResponse =
-                        await LessonService.getUserProgressByCourse(courseId);
-
-                      if (
-                        fallbackProgressResponse.success &&
-                        fallbackProgressResponse.data
-                      ) {
-                        let fallbackProgress;
-                        if (Array.isArray(fallbackProgressResponse.data)) {
-                          fallbackProgress = fallbackProgressResponse.data.find(
-                            (p) => p.userId === enrollment.userId
-                          );
-                        } else {
-                          fallbackProgress = fallbackProgressResponse.data;
-                        }
-
-                        if (fallbackProgress) {
-                          userProgress = {
-                            progress:
-                              fallbackProgress.progressPercentage ||
-                              fallbackProgress.progress ||
-                              0,
-                            completedLessons:
-                              fallbackProgress.completedLessons || 0,
-                            totalLessons: fallbackProgress.totalLessons || 0,
-                            lastActivity:
-                              fallbackProgress.lastActivityDate ||
-                              fallbackProgress.updatedAt ||
-                              fallbackProgress.lastAccessed,
-                          };
-                        }
-                      }
-                    } catch (fallbackError) {
-                      console.error(
-                        `Fallback progress loading failed for user ${enrollment.userId}:`,
-                        fallbackError
-                      );
-                    }
                   }
+                } catch (progressError) {
+                  console.error(
+                    `Error loading progress for user ${enrollment.userId}:`,
+                    progressError
+                  );
                 }
 
                 return {
                   ...enrollment,
                   ...userProgress,
-                  progress: Math.min(100, Math.max(0, userProgress.progress)), // Đảm bảo progress trong khoảng 0-100
+                  progress: Math.min(100, Math.max(0, userProgress.progress)),
                   completedLessons: userProgress.completedLessons,
                   totalLessons: userProgress.totalLessons,
                   lastActivity: userProgress.lastActivity,
+                  totalDuration: userProgress.totalDuration,
+                  isCourseCompleted: userProgress.isCourseCompleted,
                 };
               } catch (error) {
                 console.error(
-                  `Error loading progress for user ${enrollment.userId}:`,
+                  `Error processing enrollment for user ${enrollment.userId}:`,
                   error
                 );
                 return {
@@ -252,6 +211,8 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
                   completedLessons: 0,
                   totalLessons: 0,
                   lastActivity: null,
+                  totalDuration: 0,
+                  isCourseCompleted: false,
                 };
               } finally {
                 setProgressLoading((prev) => ({
@@ -284,7 +245,7 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
     [courseId]
   );
 
-  // Refresh progress cho một user cụ thể - FIXED VERSION
+  // Refresh progress cho một user cụ thể
   const refreshUserProgress = useCallback(
     async (userId) => {
       if (!courseId) return;
@@ -292,60 +253,85 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
       setProgressLoading((prev) => ({ ...prev, [userId]: true }));
 
       try {
-        let progressData = null;
+        const response = await LessonService.getUserProgressByCourseForAdmin(
+          courseId,
+          userId
+        );
 
-        // Thử API admin trước
-        try {
-          const adminResponse =
-            await LessonService.getUserProgressByCourseForAdmin(
-              courseId,
-              userId
-            );
-          if (adminResponse.success) {
-            progressData = adminResponse.data;
-          }
-        } catch (adminError) {
-          console.error("Admin API failed, trying regular API:", adminError);
+        if (response.success && response.data) {
+          const progressData = response.data;
+          let progressInfo = {
+            progress: 0,
+            completedLessons: 0,
+            totalLessons: 0,
+            lastActivity: null,
+            isCourseCompleted: false,
+          };
 
-          // Fallback to regular API
-          const regularResponse = await LessonService.getUserProgressByCourse(
-            courseId
-          );
-          if (regularResponse.success && regularResponse.data) {
-            if (Array.isArray(regularResponse.data)) {
-              progressData = regularResponse.data.find(
-                (p) => p.userId === userId
+          if (Array.isArray(progressData)) {
+            const totalLessons = progressData.length;
+            const completedLessons = progressData.filter(
+              (item) => item.status === "COMPLETED"
+            ).length;
+            const progressPercentage =
+              totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
+
+            // FIX: Tìm lastAccessed hoặc completedDate hoặc startedDate
+            let lastActivity = null;
+            if (progressData.length > 0) {
+              // Tìm ngày gần nhất trong các trường timestamp
+              const allDates = progressData.flatMap((item) =>
+                [
+                  item.lastAccessed,
+                  item.completedDate,
+                  item.startedDate,
+                  item.updatedAt,
+                ].filter(Boolean)
               );
-            } else {
-              progressData =
-                regularResponse.data.userId === userId
-                  ? regularResponse.data
-                  : null;
-            }
-          }
-        }
 
-        if (progressData) {
+              if (allDates.length > 0) {
+                // Tìm ngày mới nhất
+                lastActivity = allDates.reduce((latest, date) => {
+                  const date1 = new Date(latest);
+                  const date2 = new Date(date);
+                  return date2 > date1 ? date : latest;
+                }, allDates[0]);
+              }
+            }
+
+            progressInfo = {
+              progress: progressPercentage,
+              completedLessons,
+              totalLessons,
+              lastActivity,
+              isCourseCompleted:
+                totalLessons > 0 && completedLessons === totalLessons,
+            };
+          } else if (progressData.progressPercentage !== undefined) {
+            // Nếu API trả về trực tiếp tổng hợp
+            progressInfo = {
+              progress: progressData.progressPercentage,
+              completedLessons: progressData.completedLessons || 0,
+              totalLessons: progressData.totalLessons || 0,
+              lastActivity:
+                progressData.lastActivity ||
+                progressData.lastAccessed ||
+                progressData.updatedAt,
+              isCourseCompleted: progressData.isCompleted || false,
+            };
+          }
+
           setEnrollments((prev) =>
             prev.map((enrollment) =>
               enrollment.userId === userId
                 ? {
                     ...enrollment,
-                    progress: Math.min(
-                      100,
-                      Math.max(
-                        0,
-                        progressData.progressPercentage ||
-                          progressData.progress ||
-                          0
-                      )
-                    ),
-                    completedLessons: progressData.completedLessons || 0,
-                    totalLessons: progressData.totalLessons || 0,
+                    progress: Math.min(100, Math.max(0, progressInfo.progress)),
+                    completedLessons: progressInfo.completedLessons,
+                    totalLessons: progressInfo.totalLessons,
                     lastActivity:
-                      progressData.lastActivityDate ||
-                      progressData.updatedAt ||
-                      progressData.lastAccessed,
+                      progressInfo.lastActivity || enrollment.lastActivity, // Giữ lại nếu null
+                    isCourseCompleted: progressInfo.isCourseCompleted,
                   }
                 : enrollment
             )
@@ -390,7 +376,7 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
     }
   }, [visible, courseId, loadEnrollmentsWithProgress, pagination.pageSize]);
 
-  // Table columns với thông tin progress chi tiết
+  // Table columns
   const columns = [
     {
       title: "Học viên",
@@ -417,41 +403,37 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
               >
                 {record.username || `Học viên ${record.userId}`}
               </div>
-              <Tooltip title="Email">
-                <div
-                  style={{
-                    fontSize: "12px",
-                    color: "#1890ff",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                    marginTop: "2px",
-                  }}
-                >
-                  <MailOutlined style={{ fontSize: "11px" }} />
-                  {record.email || `user${record.userId}@example.com`}
-                </div>
-              </Tooltip>
+              <div
+                style={{
+                  fontSize: "12px",
+                  color: "#1890ff",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "4px",
+                  marginTop: "2px",
+                }}
+              >
+                <MailOutlined style={{ fontSize: "11px" }} />
+                {record.email || `user${record.userId}@example.com`}
+              </div>
             </div>
           </Space>
-          <Tooltip title="Mã học viên">
-            <div
-              style={{
-                fontSize: "11px",
-                color: "#666",
-                display: "flex",
-                alignItems: "center",
-                gap: "4px",
-                background: "#f5f5f5",
-                padding: "2px 8px",
-                borderRadius: "4px",
-                marginLeft: "40px",
-              }}
-            >
-              <IdcardOutlined style={{ fontSize: "10px" }} />
-              ID: {record.userId}
-            </div>
-          </Tooltip>
+          <div
+            style={{
+              fontSize: "11px",
+              color: "#666",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              background: "#f5f5f5",
+              padding: "2px 8px",
+              borderRadius: "4px",
+              marginLeft: "40px",
+            }}
+          >
+            <IdcardOutlined style={{ fontSize: "10px" }} />
+            ID: {record.userId}
+          </div>
         </Space>
       ),
     },
@@ -518,9 +500,9 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
               <PlayCircleOutlined style={{ marginRight: 4 }} />
               {record.completedLessons || 0}/{record.totalLessons || 0} bài học
             </div>
-            {record.lastActivity && (
+            {record.totalDuration > 0 && (
               <div style={{ fontSize: "10px", color: "#999" }}>
-                Hoạt động: {safeFormatDate(record.lastActivity)}
+                Tổng thời gian: {Math.floor(record.totalDuration / 60)} phút
               </div>
             )}
           </Space>
@@ -531,8 +513,17 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
-      width: 100,
+      width: 120,
       render: (status, record) => {
+        // Ưu tiên xác định trạng thái dựa trên tiến độ học tập
+        if (record.isCourseCompleted || record.progress >= 100) {
+          return (
+            <Tag icon={<CheckCircleOutlined />} color="green">
+              Hoàn thành
+            </Tag>
+          );
+        }
+
         const statusConfig = {
           ACTIVE: {
             color: record.isExpired ? "orange" : "blue",
@@ -574,9 +565,30 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
         </Space>
       ),
     },
+    {
+      title: "Hoạt động cuối",
+      dataIndex: "lastActivity",
+      key: "lastActivity",
+      width: 120,
+      render: (date) => (
+        <Space direction="vertical" size={2}>
+          <div style={{ fontSize: "12px", fontWeight: 500 }}>
+            {safeFormatDate(date)}
+          </div>
+          {date && (
+            <div style={{ fontSize: "10px", color: "#999" }}>
+              {new Date(date).toLocaleTimeString("vi-VN", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </div>
+          )}
+        </Space>
+      ),
+    },
   ];
 
-  // Statistics với progress thực tế
+  // Statistics
   const stats = useMemo(() => {
     const data = searchText ? filteredEnrollments : enrollments;
 
@@ -588,12 +600,19 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
         avgProgress: 0,
         expired: 0,
         totalLessonsCompleted: 0,
+        totalDuration: 0,
       };
     }
 
-    const completed = data.filter((e) => e.status === "COMPLETED").length;
+    const completed = data.filter(
+      (e) => e.isCourseCompleted || e.progress >= 100
+    ).length;
     const inProgress = data.filter(
-      (e) => e.status === "ACTIVE" && !e.isExpired && (e.progress || 0) > 0
+      (e) =>
+        e.status === "ACTIVE" &&
+        !e.isExpired &&
+        (e.progress || 0) > 0 &&
+        (e.progress || 0) < 100
     ).length;
     const notStarted = data.filter(
       (e) => e.status === "ACTIVE" && (e.progress || 0) === 0
@@ -602,9 +621,12 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
 
     const avgProgress =
       data.reduce((sum, e) => sum + (e.progress || 0), 0) / data.length;
-
     const totalLessonsCompleted = data.reduce(
       (sum, e) => sum + (e.completedLessons || 0),
+      0
+    );
+    const totalDuration = data.reduce(
+      (sum, e) => sum + (e.totalDuration || 0),
       0
     );
 
@@ -615,6 +637,7 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
       avgProgress,
       expired,
       totalLessonsCompleted,
+      totalDuration,
     };
   }, [enrollments, filteredEnrollments, searchText]);
 
@@ -644,7 +667,7 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
       }
       open={visible}
       onCancel={onClose}
-      width={1200}
+      width={1300}
       footer={null}
       destroyOnClose
       style={{ top: 20 }}
@@ -730,13 +753,9 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
         />
         <Button
           icon={<ReloadOutlined />}
-          onClick={() => {
-            loadEnrollmentsWithProgress(
-              pagination.current,
-              pagination.pageSize
-            );
-            setSearchText("");
-          }}
+          onClick={() =>
+            loadEnrollmentsWithProgress(pagination.current, pagination.pageSize)
+          }
           loading={loading}
         >
           Tải lại
@@ -749,18 +768,14 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
         dataSource={displayData}
         loading={loading}
         rowKey="id"
-        scroll={{ x: 1000 }}
+        scroll={{ x: 1100 }}
         locale={{
           emptyText: searchText ? (
             <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
               description={`Không tìm thấy học viên phù hợp với "${searchText}"`}
             />
           ) : (
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="Chưa có học viên đăng ký"
-            />
+            <Empty description="Chưa có học viên đăng ký" />
           ),
         }}
         pagination={{
