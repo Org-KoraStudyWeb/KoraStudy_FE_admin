@@ -3,6 +3,7 @@ import quizApi from "../../api/quizApi";
 import { QUESTION_TYPES, QUESTION_TYPE_LABELS } from "./constants";
 import quizValidationService from "./QuizValidationService";
 import quizUtilityService from "./QuizUtilityService";
+import cloudinaryService from "../../services/CloudinaryService";
 
 class QuizService {
   // Export constants for external use
@@ -378,6 +379,56 @@ class QuizService {
       return this.handleError(error, "Lỗi khi lấy danh sách lựa chọn");
     }
   }
+  // ==================== UPLOAD FILE (ADMIN ONLY) ====================
+  async uploadQuestionImage(questionId, imageFile) {
+    try {
+      console.log(
+        `Uploading image for question ${questionId}:`,
+        imageFile.name
+      );
+
+      // 1. Upload lên Cloudinary
+      const cloudinaryResult = await cloudinaryService.uploadImage(imageFile);
+
+      // 2. Cập nhật URL ảnh vào câu hỏi
+      const updateData = {
+        imageUrl: cloudinaryResult.url,
+      };
+
+      const response = await this.updateQuestion(questionId, updateData);
+      return response;
+    } catch (error) {
+      console.error("Upload question image error:", error);
+      return {
+        success: false,
+        message: `Lỗi upload ảnh: ${error.message}`,
+      };
+    }
+  }
+
+  async uploadOptionImage(optionId, imageFile) {
+    try {
+      console.log(`Uploading image for option ${optionId}:`, imageFile.name);
+
+      // 1. Upload lên Cloudinary
+      const cloudinaryResult = await cloudinaryService.uploadImage(imageFile);
+
+      // 2. Cập nhật URL ảnh vào option
+      const updateData = {
+        optionText: `[IMAGE]${cloudinaryResult.url}`, // Hoặc có trường riêng cho image
+        imageUrl: cloudinaryResult.url,
+      };
+
+      const response = await this.updateOption(optionId, updateData);
+      return response;
+    } catch (error) {
+      console.error("Upload option image error:", error);
+      return {
+        success: false,
+        message: `Lỗi upload ảnh: ${error.message}`,
+      };
+    }
+  }
 
   // ==================== RESULTS & ANALYTICS (ADMIN ONLY) ====================
 
@@ -398,26 +449,6 @@ class QuizService {
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi lấy kết quả bài làm");
-    }
-  }
-
-  async getQuizResultDetail(resultId) {
-    try {
-      if (!resultId) {
-        return { success: false, message: "Result ID không được để trống" };
-      }
-
-      console.log("[ADMIN] Fetching quiz result detail:", resultId);
-      const response = await quizApi.getQuizResultDetail(resultId);
-      const data = this._extractDataFromResponse(response);
-
-      return {
-        success: true,
-        data: data,
-        message: "Lấy chi tiết kết quả thành công",
-      };
-    } catch (error) {
-      return this.handleError(error, "Lỗi khi lấy chi tiết kết quả");
     }
   }
 
@@ -461,25 +492,8 @@ class QuizService {
     }
   }
 
-  async getAllQuizResults(quizId) {
-    try {
-      if (!quizId) {
-        return { success: false, message: "Quiz ID không được để trống" };
-      }
-
-      console.log("[ADMIN] Fetching all results for quiz:", quizId);
-      const response = await quizApi.getAllQuizResults(quizId);
-      const data = this._extractDataFromResponse(response);
-
-      return {
-        success: true,
-        data: data,
-        message: "Lấy tất cả kết quả thành công",
-      };
-    } catch (error) {
-      return this.handleError(error, "Lỗi khi lấy kết quả");
-    }
-  }
+  // XÓA PHƯƠNG THỨC NÀY VÌ KHÔNG CÓ TRONG API
+  // async getAllQuizResults(quizId) { ... }
 
   async getQuizStatistics(quizId) {
     try {
@@ -498,26 +512,6 @@ class QuizService {
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi lấy thống kê quiz");
-    }
-  }
-
-  async getQuizStatisticsBySectionId(sectionId) {
-    try {
-      if (!sectionId) {
-        return { success: false, message: "Section ID không được để trống" };
-      }
-
-      console.log("[ADMIN] Fetching statistics for section:", sectionId);
-      const response = await quizApi.getQuizStatisticsBySectionId(sectionId);
-      const data = this._extractDataFromResponse(response);
-
-      return {
-        success: true,
-        data: Array.isArray(data) ? data : [],
-        message: "Lấy thống kê section thành công",
-      };
-    } catch (error) {
-      return this.handleError(error, "Lỗi khi lấy thống kê section");
     }
   }
 
@@ -543,26 +537,6 @@ class QuizService {
     }
   }
 
-  async countQuizzesBySectionId(sectionId) {
-    try {
-      if (!sectionId) {
-        return { success: false, message: "Section ID không được để trống" };
-      }
-
-      console.log("[ADMIN] Counting quizzes for section:", sectionId);
-      const response = await quizApi.countQuizzesBySectionId(sectionId);
-      const data = this._extractDataFromResponse(response);
-
-      return {
-        success: true,
-        data: data,
-        message: "Đếm số quiz thành công",
-      };
-    } catch (error) {
-      return this.handleError(error, "Lỗi khi đếm số quiz");
-    }
-  }
-
   async checkQuizExists(quizId) {
     try {
       if (!quizId) {
@@ -583,19 +557,26 @@ class QuizService {
     }
   }
 
-  async searchQuizzes(params) {
+  // XÓA PHƯƠNG THỨC NÀY VÌ KHÔNG CÓ TRONG API
+  // async searchQuizzes(params) { ... }
+
+  async canUserAccessQuiz(quizId) {
     try {
-      console.log("[ADMIN] Searching quizzes with params:", params);
-      const response = await quizApi.searchQuizzes(params);
+      if (!quizId) {
+        return { success: false, message: "Quiz ID không được để trống" };
+      }
+
+      console.log("[ADMIN] Checking user access to quiz:", quizId);
+      const response = await quizApi.canUserAccessQuiz(quizId);
       const data = this._extractDataFromResponse(response);
 
       return {
         success: true,
-        data: Array.isArray(data) ? data : [],
-        message: "Tìm kiếm quiz thành công",
+        data: data,
+        message: "Kiểm tra quyền truy cập thành công",
       };
     } catch (error) {
-      return this.handleError(error, "Lỗi khi tìm kiếm quiz");
+      return this.handleError(error, "Lỗi khi kiểm tra quyền truy cập");
     }
   }
 

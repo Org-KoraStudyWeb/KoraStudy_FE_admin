@@ -4,7 +4,7 @@ export const QUESTION_TYPES = {
   MULTIPLE_CHOICE: "MULTIPLE_CHOICE",
   TRUE_FALSE: "TRUE_FALSE",
   FILL_IN_BLANK: "FILL_IN_BLANK",
-  ESSAY: "ESSAY",
+  // XÓA ESSAY vì backend không hỗ trợ
 };
 
 export const QUESTION_TYPE_LABELS = {
@@ -12,7 +12,6 @@ export const QUESTION_TYPE_LABELS = {
   MULTIPLE_CHOICE: { label: "Chọn nhiều đáp án", color: "secondary" },
   TRUE_FALSE: { label: "Đúng/Sai", color: "info" },
   FILL_IN_BLANK: { label: "Điền từ", color: "warning" },
-  ESSAY: { label: "Tự luận", color: "success" },
 };
 
 export const QUIZ_STATUS = {

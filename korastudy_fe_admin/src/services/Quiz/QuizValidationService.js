@@ -130,11 +130,6 @@ class QuizValidationService {
         }
         break;
 
-      case QUESTION_TYPES.ESSAY:
-        // ESSAY không cần options (hoặc có thể có 1 option làm đáp án mẫu)
-        // Không validate options cho ESSAY
-        break;
-
       default:
         break;
     }

@@ -1,42 +1,42 @@
-// src/api/quizApi.js
+// src/api/quizApi.js (Admin only)
 import axiosClient from "./axiosClient";
 
 const quizApi = {
   // ==================== QUIZ MANAGEMENT ====================
 
-  // Tạo quiz mới (Admin/Content Manager)
+  // Tạo quiz mới
   createQuiz: (quizData) => {
     return axiosClient.post("/api/v1/quizzes", quizData);
   },
 
-  // Cập nhật quiz (Admin/Content Manager)
+  // Cập nhật quiz
   updateQuiz: (quizId, quizData) => {
     return axiosClient.put(`/api/v1/quizzes/${quizId}`, quizData);
   },
 
-  // Xóa quiz (Admin/Content Manager)
+  // Xóa quiz
   deleteQuiz: (quizId) => {
     return axiosClient.delete(`/api/v1/quizzes/${quizId}`);
   },
 
-  // Lấy chi tiết quiz (Admin/Content Manager)
+  // Lấy chi tiết quiz (Admin view - có đáp án)
   getQuizById: (quizId) => {
     return axiosClient.get(`/api/v1/quizzes/${quizId}`);
   },
 
-  // Lấy danh sách quiz theo section (Admin/Content Manager)
+  // Lấy danh sách quiz theo section
   getQuizzesBySectionId: (sectionId) => {
     return axiosClient.get(`/api/v1/quizzes/section/${sectionId}`);
   },
 
-  // Publish/Unpublish quiz (Admin/Content Manager)
+  // Publish/Unpublish quiz
   publishQuiz: (quizId, publish) => {
     return axiosClient.put(`/api/v1/quizzes/${quizId}/publish/${publish}`);
   },
 
   // ==================== QUESTION MANAGEMENT ====================
 
-  // Thêm câu hỏi vào quiz (Admin/Content Manager)
+  // Thêm câu hỏi vào quiz
   addQuestionToQuiz: (quizId, questionData) => {
     return axiosClient.post(
       `/api/v1/quizzes/${quizId}/questions`,
@@ -44,7 +44,7 @@ const quizApi = {
     );
   },
 
-  // Cập nhật câu hỏi (Admin/Content Manager)
+  // Cập nhật câu hỏi
   updateQuestion: (questionId, questionData) => {
     return axiosClient.put(
       `/api/v1/quizzes/questions/${questionId}`,
@@ -52,19 +52,19 @@ const quizApi = {
     );
   },
 
-  // Xóa câu hỏi (Admin/Content Manager)
+  // Xóa câu hỏi
   deleteQuestion: (questionId) => {
     return axiosClient.delete(`/api/v1/quizzes/questions/${questionId}`);
   },
 
-  // Lấy danh sách câu hỏi của quiz (Admin/Content Manager)
+  // Lấy danh sách câu hỏi của quiz (Admin view - có đáp án)
   getQuestionsByQuizId: (quizId) => {
     return axiosClient.get(`/api/v1/quizzes/${quizId}/questions`);
   },
 
   // ==================== OPTION MANAGEMENT ====================
 
-  // Thêm option vào câu hỏi (Admin/Content Manager)
+  // Thêm option vào câu hỏi
   addOptionToQuestion: (questionId, optionData) => {
     return axiosClient.post(
       `/api/v1/quizzes/questions/${questionId}/options`,
@@ -72,78 +72,58 @@ const quizApi = {
     );
   },
 
-  // Cập nhật option (Admin/Content Manager)
+  // Cập nhật option
   updateOption: (optionId, optionData) => {
     return axiosClient.put(`/api/v1/quizzes/options/${optionId}`, optionData);
   },
 
-  // Xóa option (Admin/Content Manager)
+  // Xóa option
   deleteOption: (optionId) => {
     return axiosClient.delete(`/api/v1/quizzes/options/${optionId}`);
   },
 
-  // Lấy danh sách option của câu hỏi (Admin/Content Manager)
+  // Lấy danh sách option của câu hỏi
   getOptionsByQuestionId: (questionId) => {
     return axiosClient.get(`/api/v1/quizzes/questions/${questionId}/options`);
   },
 
   // ==================== RESULTS & ANALYTICS ====================
 
-  // Lấy kết quả quiz theo ID (Admin/Content Manager)
+  // Lấy kết quả quiz theo ID
   getQuizResult: (resultId) => {
     return axiosClient.get(`/api/v1/quizzes/results/${resultId}`);
   },
 
-  // Lấy chi tiết kết quả quiz (Admin/Content Manager)
-  getQuizResultDetail: (resultId) => {
-    return axiosClient.get(`/api/v1/quizzes/results/${resultId}/details`);
-  },
-
-  // Lấy kết quả quiz cho giáo viên (Admin/Content Manager)
+  // Lấy chi tiết kết quả quiz cho giáo viên
   getQuizResultForTeacher: (resultId) => {
     return axiosClient.get(`/api/v1/quizzes/results/${resultId}/teacher`);
   },
 
-  // Lấy danh sách kết quả của quiz (Admin/Content Manager)
+  // Lấy danh sách kết quả của quiz
   getQuizResults: (quizId) => {
     return axiosClient.get(`/api/v1/quizzes/${quizId}/results`);
   },
 
-  // Lấy tất cả kết quả chi tiết của quiz (Admin/Content Manager)
-  getAllQuizResults: (quizId) => {
-    return axiosClient.get(`/api/v1/quizzes/${quizId}/results/all`);
-  },
-
-  // Lấy thống kê quiz (Admin/Content Manager)
+  // Lấy thống kê quiz
   getQuizStatistics: (quizId) => {
     return axiosClient.get(`/api/v1/quizzes/${quizId}/statistics`);
   },
 
-  // Lấy thống kê quiz theo section (Admin/Content Manager)
-  getQuizStatisticsBySectionId: (sectionId) => {
-    return axiosClient.get(`/api/v1/quizzes/section/${sectionId}/statistics`);
-  },
-
   // ==================== VALIDATION & UTILITIES ====================
 
-  // Kiểm tra quiz có tồn tại trong section (Admin/Content Manager)
+  // Kiểm tra quiz có tồn tại trong section
   checkQuizExistsBySectionId: (sectionId) => {
     return axiosClient.get(`/api/v1/quizzes/section/${sectionId}/exists`);
   },
 
-  // Đếm số quiz trong section (Admin/Content Manager)
-  countQuizzesBySectionId: (sectionId) => {
-    return axiosClient.get(`/api/v1/quizzes/section/${sectionId}/count`);
-  },
-
-  // Kiểm tra quiz có tồn tại (Admin/Content Manager)
+  // Kiểm tra quiz có tồn tại
   checkQuizExists: (quizId) => {
     return axiosClient.get(`/api/v1/quizzes/${quizId}/exists`);
   },
 
-  // Tìm kiếm quiz (Admin/Content Manager)
-  searchQuizzes: (params) => {
-    return axiosClient.get("/api/v1/quizzes/search", { params });
+  // Kiểm tra user có quyền truy cập quiz
+  canUserAccessQuiz: (quizId) => {
+    return axiosClient.get(`/api/v1/quizzes/${quizId}/can-access`);
   },
 };
 

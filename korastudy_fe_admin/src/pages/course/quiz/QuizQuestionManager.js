@@ -1,5 +1,5 @@
 // src/pages/admin/quiz/QuizQuestionManager.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
@@ -18,6 +18,7 @@ import {
   Empty,
   Typography,
   Badge,
+  FloatButton,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -29,6 +30,7 @@ import {
   FileTextOutlined,
   TrophyOutlined,
   ClockCircleOutlined,
+  UpOutlined,
 } from "@ant-design/icons";
 import QuizService from "../../../services/Quiz/QuizService";
 import QuestionForm from "../../../components/quiz/QuestionForm";
@@ -44,9 +46,13 @@ const QuizQuestionManager = () => {
   const [loading, setLoading] = useState(false);
   const [questionFormVisible, setQuestionFormVisible] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
 
-  // Load quiz và questions
-  const loadQuizData = async () => {
+  // ==================== FIX ESLINT WARNING ====================
+  // Dùng useCallback để wrap loadQuizData
+  const loadQuizData = useCallback(async () => {
+    if (!quizId) return;
+
     setLoading(true);
     try {
       // Load quiz info
@@ -69,15 +75,27 @@ const QuizQuestionManager = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [quizId]); // Chỉ phụ thuộc vào quizId
 
   useEffect(() => {
-    if (quizId) {
-      loadQuizData();
-    }
-  }, [quizId]);
+    loadQuizData();
+  }, [loadQuizData]); // Sửa từ [quizId] thành [loadQuizData]
 
-  // Question handlers
+  // ==================== BACK TO TOP FUNCTION ====================
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 400);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // ==================== QUESTION HANDLERS ====================
   const showQuestionForm = (question = null) => {
     setEditingQuestion(question);
     setQuestionFormVisible(true);
@@ -113,7 +131,7 @@ const QuizQuestionManager = () => {
     }
   };
 
-  // Publish/Unpublish quiz
+  // ==================== QUIZ PUBLISH HANDLER ====================
   const handleTogglePublish = async (checked) => {
     try {
       const response = await QuizService.publishQuiz(quizId, checked);
@@ -129,7 +147,7 @@ const QuizQuestionManager = () => {
     }
   };
 
-  // Format text for display
+  // ==================== FORMAT TEXT FOR DISPLAY ====================
   const renderFormattedText = (text) => {
     if (!text) return text;
     const html = text
@@ -140,6 +158,7 @@ const QuizQuestionManager = () => {
     return <span dangerouslySetInnerHTML={{ __html: html }} />;
   };
 
+  // ==================== RENDER ====================
   if (loading && !quiz) {
     return (
       <div style={{ padding: "24px", textAlign: "center" }}>
@@ -168,6 +187,8 @@ const QuizQuestionManager = () => {
       </div>
     );
   }
+
+  const totalPoints = questions.reduce((sum, q) => sum + (q.score || 0), 0);
 
   return (
     <div style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto" }}>
@@ -256,6 +277,7 @@ const QuizQuestionManager = () => {
                   </Button>
                 </Tooltip>
               </div>
+              {/* NÚT THÊM CÂU HỎI TẠI ĐÂY (CHO NGƯỜI DÙNG SCROLL LÊN) */}
               <Button
                 type="primary"
                 icon={<PlusOutlined />}
@@ -274,7 +296,7 @@ const QuizQuestionManager = () => {
         title={
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <FileTextOutlined />
-            Danh sách câu hỏi
+            <span>Danh sách câu hỏi</span>
             <Badge
               count={questions.length}
               style={{ backgroundColor: "#1890ff", marginLeft: 8 }}
@@ -282,22 +304,13 @@ const QuizQuestionManager = () => {
           </div>
         }
         extra={
-          <Space>
-            <Statistic
-              title="Tổng điểm"
-              value={questions.reduce((sum, q) => sum + (q.score || 0), 0)}
-              precision={1}
-              suffix="điểm"
-              valueStyle={{ fontSize: 16 }}
-            />
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => showQuestionForm()}
-            >
-              Thêm câu hỏi
-            </Button>
-          </Space>
+          <Statistic
+            title="Tổng điểm"
+            value={totalPoints}
+            precision={1}
+            suffix="điểm"
+            valueStyle={{ fontSize: 16 }}
+          />
         }
       >
         {questions.length === 0 ? (
@@ -316,108 +329,157 @@ const QuizQuestionManager = () => {
             </Button>
           </Empty>
         ) : (
-          <List
-            dataSource={questions}
-            renderItem={(question, index) => (
-              <List.Item
-                key={question.id || index}
-                actions={[
-                  <Tooltip title="Chỉnh sửa" key="edit">
-                    <Button
-                      type="text"
-                      icon={<EditOutlined />}
-                      onClick={() => showQuestionForm(question)}
-                    />
-                  </Tooltip>,
-                  <Popconfirm
-                    key="delete"
-                    title="Xóa câu hỏi này?"
-                    onConfirm={() => handleDeleteQuestion(question.id)}
-                    okText="Xóa"
-                    cancelText="Hủy"
-                    okType="danger"
-                  >
-                    <Tooltip title="Xóa">
-                      <Button type="text" icon={<DeleteOutlined />} danger />
-                    </Tooltip>
-                  </Popconfirm>,
-                ]}
-                style={{
-                  padding: "16px",
-                  borderBottom: "1px solid #f0f0f0",
-                  backgroundColor: index % 2 === 0 ? "#fafafa" : "white",
-                }}
-              >
-                <List.Item.Meta
-                  avatar={
-                    <div
-                      style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 18,
-                        backgroundColor: "#1890ff",
-                        color: "white",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: "bold",
-                        fontSize: 16,
-                      }}
+          <>
+            <List
+              dataSource={questions}
+              renderItem={(question, index) => (
+                <List.Item
+                  key={question.id || index}
+                  actions={[
+                    <Tooltip title="Chỉnh sửa" key="edit">
+                      <Button
+                        type="text"
+                        icon={<EditOutlined />}
+                        onClick={() => showQuestionForm(question)}
+                      />
+                    </Tooltip>,
+                    <Popconfirm
+                      key="delete"
+                      title="Xóa câu hỏi này?"
+                      description="Các đáp án và dữ liệu liên quan sẽ bị xóa."
+                      onConfirm={() => handleDeleteQuestion(question.id)}
+                      okText="Xóa"
+                      cancelText="Hủy"
+                      okType="danger"
                     >
-                      {index + 1}
-                    </div>
-                  }
-                  title={
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 8 }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 500, marginBottom: 4 }}>
-                          {renderFormattedText(question.questionText)}
-                        </div>
-                        <Space size={[8, 8]} wrap>
-                          <Tag color="blue">
-                            {QuizService.getQuestionTypeLabel(
-                              question.questionType
-                            )?.label || question.questionType}
-                          </Tag>
-                          <Tag color="green">{question.score} điểm</Tag>
-                          {question.imageUrl && (
-                            <Tag color="purple" icon={<EyeOutlined />}>
-                              Có ảnh
-                            </Tag>
-                          )}
-                          {question.options && question.options.length > 0 && (
-                            <Tag color="orange">
-                              {question.options.length} đáp án
-                            </Tag>
-                          )}
-                        </Space>
+                      <Tooltip title="Xóa">
+                        <Button type="text" icon={<DeleteOutlined />} danger />
+                      </Tooltip>
+                    </Popconfirm>,
+                  ]}
+                  style={{
+                    padding: "16px",
+                    borderBottom: "1px solid #f0f0f0",
+                    backgroundColor: index % 2 === 0 ? "#fafafa" : "white",
+                    transition: "background-color 0.3s",
+                  }}
+                >
+                  <List.Item.Meta
+                    avatar={
+                      <div
+                        style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: 18,
+                          backgroundColor: "#1890ff",
+                          color: "white",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontWeight: "bold",
+                          fontSize: 16,
+                        }}
+                      >
+                        {index + 1}
                       </div>
-                    </div>
-                  }
-                  description={
-                    question.explanation && (
-                      <div style={{ marginTop: 8 }}>
-                        <div
-                          style={{
-                            fontSize: 12,
-                            color: "#666",
-                            marginBottom: 4,
-                          }}
-                        >
-                          Giải thích:
-                        </div>
-                        <div style={{ fontSize: 13, color: "#333" }}>
-                          {renderFormattedText(question.explanation)}
+                    }
+                    title={
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                            {renderFormattedText(question.questionText)}
+                          </div>
+                          <Space size={[8, 8]} wrap>
+                            <Tag color="blue">
+                              {QuizService.getQuestionTypeLabel(
+                                question.questionType
+                              )?.label || question.questionType}
+                            </Tag>
+                            <Tag color="green">{question.score} điểm</Tag>
+                            {question.imageUrl && (
+                              <Tag color="purple" icon={<EyeOutlined />}>
+                                Có ảnh
+                              </Tag>
+                            )}
+                            {question.options &&
+                              question.options.length > 0 && (
+                                <Tag color="orange">
+                                  {question.options.length} đáp án
+                                </Tag>
+                              )}
+                          </Space>
                         </div>
                       </div>
-                    )
-                  }
-                />
-              </List.Item>
-            )}
-          />
+                    }
+                    description={
+                      question.explanation && (
+                        <div style={{ marginTop: 8 }}>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: "#666",
+                              marginBottom: 4,
+                            }}
+                          >
+                            Giải thích:
+                          </div>
+                          <div style={{ fontSize: 13, color: "#333" }}>
+                            {renderFormattedText(question.explanation)}
+                          </div>
+                        </div>
+                      )
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+
+            {/*  NÚT THÊM CÂU HỎI Ở DƯỚI DANH SÁCH */}
+            <div
+              style={{
+                marginTop: 24,
+                padding: 16,
+                textAlign: "center",
+                borderTop: "1px dashed #d9d9d9",
+              }}
+            >
+              <div style={{ marginBottom: 16 }}>
+                <div
+                  style={{
+                    fontSize: 14,
+                    color: "#666",
+                    marginBottom: 8,
+                  }}
+                >
+                  Đã có {questions.length} câu hỏi • Tổng {totalPoints} điểm
+                </div>
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => showQuestionForm()}
+                  size="large"
+                  style={{ minWidth: 200 }}
+                >
+                  Thêm câu hỏi mới
+                </Button>
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: "#999",
+                    marginTop: 8,
+                  }}
+                >
+                  Câu hỏi mới sẽ được thêm vào cuối danh sách
+                </div>
+              </div>
+            </div>
+          </>
         )}
       </Card>
 
@@ -462,6 +524,25 @@ const QuizQuestionManager = () => {
           editingQuestion={editingQuestion}
         />
       </Modal>
+
+      {/*  BACK TO TOP */}
+      {showBackToTop && (
+        <FloatButton
+          icon={<UpOutlined />}
+          onClick={scrollToTop}
+          tooltip="Lên đầu trang"
+          style={{ right: 24, bottom: 100 }}
+        />
+      )}
+
+      {/* ADD QUESTION (LUÔN HIỂN THỊ) */}
+      <FloatButton
+        icon={<PlusOutlined />}
+        onClick={() => showQuestionForm()}
+        tooltip="Thêm câu hỏi"
+        type="primary"
+        style={{ right: 24, bottom: 40 }}
+      />
     </div>
   );
 };

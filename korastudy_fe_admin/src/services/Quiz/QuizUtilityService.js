@@ -31,7 +31,6 @@ class QuizUtilityService {
       orderIndex: questionData.orderIndex || 0,
       imageUrl: questionData.imageUrl || "",
       explanation: questionData.explanation || "",
-      // ⚠️ KHÔNG CÓ correctAnswer nữa
     };
 
     // Xử lý options dựa trên loại câu hỏi
@@ -43,18 +42,7 @@ class QuizUtilityService {
         orderIndex: opt.orderIndex || index + 1,
       }));
     } else if (questionData.questionType === QUESTION_TYPES.FILL_IN_BLANK) {
-      // Tạo options mặc định cho FILL_IN_BLANK từ correctAnswer cũ
-      if (questionData.correctAnswer) {
-        payload.options = [
-          {
-            optionText: questionData.correctAnswer.trim(),
-            isCorrect: true,
-            orderIndex: 1,
-          },
-        ];
-      }
-    } else if (questionData.questionType === QUESTION_TYPES.ESSAY) {
-      // ESSAY có thể không có options, hoặc có 1 option làm đáp án mẫu
+      // Tạo options mặc định cho FILL_IN_BLANK
       if (questionData.correctAnswer) {
         payload.options = [
           {
@@ -122,15 +110,6 @@ class QuizUtilityService {
           { optionText: "đáp án 2", isCorrect: true, orderIndex: 2 },
           { optionText: "đáp án 3", isCorrect: true, orderIndex: 3 },
         ];
-      case QUESTION_TYPES.ESSAY:
-        // ESSAY có thể có 1 đáp án mẫu
-        return [
-          {
-            optionText: "Câu trả lời mẫu cho bài luận",
-            isCorrect: true,
-            orderIndex: 1,
-          },
-        ];
       default:
         return [];
     }
@@ -179,6 +158,31 @@ class QuizUtilityService {
 
   isQuizPassed(score, passingScore) {
     return score >= passingScore;
+  }
+
+  // FIX: Thiếu phương thức này
+  formatTimeSpent(timeSpentInSeconds) {
+    if (!timeSpentInSeconds) return "0 giây";
+
+    const hours = Math.floor(timeSpentInSeconds / 3600);
+    const minutes = Math.floor((timeSpentInSeconds % 3600) / 60);
+    const seconds = timeSpentInSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours} giờ ${minutes} phút ${seconds} giây`;
+    } else if (minutes > 0) {
+      return `${minutes} phút ${seconds} giây`;
+    } else {
+      return `${seconds} giây`;
+    }
+  }
+
+  calculateTimeRemaining(timeLimitInMinutes, timeSpentInSeconds) {
+    if (!timeLimitInMinutes) return 0;
+
+    const timeLimitInSeconds = timeLimitInMinutes * 60;
+    const remaining = timeLimitInSeconds - timeSpentInSeconds;
+    return Math.max(0, remaining);
   }
 
   sortQuestionsByOrder(questions) {
@@ -244,30 +248,6 @@ class QuizUtilityService {
         },
       ],
     };
-  }
-
-  // Helper để chuyển đổi từ format cũ (có correctAnswer) sang format mới (options)
-  convertLegacyQuestionToNewFormat(questionData) {
-    const newData = { ...questionData };
-
-    // Nếu có correctAnswer cũ, chuyển thành options
-    if (newData.correctAnswer && !newData.options) {
-      if (
-        newData.questionType === QUESTION_TYPES.FILL_IN_BLANK ||
-        newData.questionType === QUESTION_TYPES.ESSAY
-      ) {
-        newData.options = [
-          {
-            optionText: newData.correctAnswer,
-            isCorrect: true,
-            orderIndex: 1,
-          },
-        ];
-      }
-      delete newData.correctAnswer;
-    }
-
-    return newData;
   }
 
   // Helper để lấy tất cả đáp án đúng từ options (dùng cho FILL_IN_BLANK)
