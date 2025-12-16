@@ -34,8 +34,10 @@ import {
 import CourseService from "../../services/CourseService";
 import SectionService from "../../services/SectionService";
 import LessonService from "../../services/LessonService";
+import QuizService from "../../services/Quiz/QuizService";
 import SectionForm from "../../components/course/SectionForm";
 import LessonForm from "../../components/course/LessonForm";
+import QuizForm from "../../components/quiz/QuizForm";
 
 const CourseDetail = () => {
   const { id } = useParams();
@@ -51,8 +53,10 @@ const CourseDetail = () => {
   const [uiState, setUiState] = useState({
     sectionFormVisible: false,
     lessonFormVisible: false,
+    quizFormVisible: false,
     editingSection: null,
     editingLesson: null,
+    editingQuiz: null,
     selectedSectionId: null,
     publishLoading: false,
   });
@@ -79,31 +83,60 @@ const CourseDetail = () => {
         return;
       }
 
-      // Load sections với lessons - ĐÃ GOM VÀO ĐÂY
+      // Load sections với lessons và quizzes - ĐÃ GOM VÀO ĐÂY
       setSectionsLoading(true);
       try {
         const sectionsResponse = await SectionService.getSectionsByCourseId(id);
         if (sectionsResponse.success) {
-          const sectionsWithLessons = await Promise.all(
+          const sectionsWithContent = await Promise.all(
             sectionsResponse.data.map(async (section) => {
               try {
-                const lessonsResponse =
-                  await LessonService.getLessonsBySectionId(section.id);
+                // Load lessons và quizzes song song
+                const [lessonsResponse, quizzesResponse] = await Promise.all([
+                  LessonService.getLessonsBySectionId(section.id),
+                  QuizService.getQuizzesBySectionId(section.id),
+                ]);
+
+                // Load questions cho mỗi quiz
+                const quizzesWithQuestions = await Promise.all(
+                  (quizzesResponse.success ? quizzesResponse.data : []).map(
+                    async (quiz) => {
+                      try {
+                        const questionsResponse =
+                          await QuizService.getQuestionsByQuizId(quiz.id);
+                        return {
+                          ...quiz,
+                          questions: questionsResponse.success
+                            ? questionsResponse.data
+                            : [],
+                        };
+                      } catch (error) {
+                        console.error(
+                          `Error loading questions for quiz ${quiz.id}:`,
+                          error
+                        );
+                        return { ...quiz, questions: [] };
+                      }
+                    }
+                  )
+                );
+
                 return {
                   ...section,
                   lessons: lessonsResponse.success ? lessonsResponse.data : [],
+                  quizzes: quizzesWithQuestions,
                 };
               } catch (error) {
                 console.error(
-                  `Error loading lessons for section ${section.id}:`,
+                  `Error loading content for section ${section.id}:`,
                   error
                 );
-                return { ...section, lessons: [] };
+                return { ...section, lessons: [], quizzes: [] };
               }
             })
           );
 
-          const sortedSections = sectionsWithLessons.sort(
+          const sortedSections = sectionsWithContent.sort(
             (a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)
           );
           setSections(sortedSections);
@@ -124,35 +157,61 @@ const CourseDetail = () => {
     }
   }, [id]);
 
-  // Load sections với lessons - ĐÃ TỐI ƯU (tránh N+1)
+  // Load sections với lessons và quizzes - ĐÃ TỐI ƯU (tránh N+1)
   const loadSections = useCallback(async () => {
     setSectionsLoading(true);
     try {
-      // Giả sử có API lấy sections kèm lessons
       const sectionsResponse = await SectionService.getSectionsByCourseId(id);
       if (sectionsResponse.success) {
-        // Nếu API chưa hỗ trợ lấy lessons, dùng cách cũ nhưng tối ưu hơn
-        const sectionsWithLessons = await Promise.all(
+        const sectionsWithContent = await Promise.all(
           sectionsResponse.data.map(async (section) => {
             try {
-              const lessonsResponse = await LessonService.getLessonsBySectionId(
-                section.id
+              // Load lessons và quizzes song song
+              const [lessonsResponse, quizzesResponse] = await Promise.all([
+                LessonService.getLessonsBySectionId(section.id),
+                QuizService.getQuizzesBySectionId(section.id),
+              ]);
+
+              // Load questions cho mỗi quiz
+              const quizzesWithQuestions = await Promise.all(
+                (quizzesResponse.success ? quizzesResponse.data : []).map(
+                  async (quiz) => {
+                    try {
+                      const questionsResponse =
+                        await QuizService.getQuestionsByQuizId(quiz.id);
+                      return {
+                        ...quiz,
+                        questions: questionsResponse.success
+                          ? questionsResponse.data
+                          : [],
+                      };
+                    } catch (error) {
+                      console.error(
+                        `Error loading questions for quiz ${quiz.id}:`,
+                        error
+                      );
+                      return { ...quiz, questions: [] };
+                    }
+                  }
+                )
               );
+
               return {
                 ...section,
                 lessons: lessonsResponse.success ? lessonsResponse.data : [],
+                quizzes: quizzesWithQuestions,
               };
             } catch (error) {
               console.error(
-                `Error loading lessons for section ${section.id}:`,
+                `Error loading content for section ${section.id}:`,
                 error
               );
-              return { ...section, lessons: [] };
+              return { ...section, lessons: [], quizzes: [] };
             }
           })
         );
 
-        const sortedSections = sectionsWithLessons.sort(
+        const sortedSections = sectionsWithContent.sort(
           (a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)
         );
         setSections(sortedSections);
@@ -279,6 +338,43 @@ const CourseDetail = () => {
     } catch (error) {
       console.error("Delete lesson error:", error);
       message.error("Có lỗi xảy ra khi xóa bài học");
+    }
+  };
+
+  // Quiz Handlers
+  const showQuizForm = (sectionId, quiz = null) => {
+    updateUiState({
+      quizFormVisible: true,
+      selectedSectionId: sectionId,
+      editingQuiz: quiz,
+    });
+  };
+
+  const closeQuizForm = () => {
+    updateUiState({
+      quizFormVisible: false,
+      selectedSectionId: null,
+      editingQuiz: null,
+    });
+  };
+
+  const handleQuizSuccess = () => {
+    closeQuizForm();
+    loadSections();
+  };
+
+  const handleDeleteQuiz = async (quizId) => {
+    try {
+      const response = await QuizService.deleteQuiz(quizId);
+      if (response.success) {
+        message.success(response.message);
+        loadSections();
+      } else {
+        message.error(response.message);
+      }
+    } catch (error) {
+      console.error("Delete quiz error:", error);
+      message.error("Có lỗi xảy ra khi xóa quiz");
     }
   };
 
@@ -549,6 +645,16 @@ const CourseDetail = () => {
                       Thêm bài học
                     </Button>
                   </Tooltip>
+                  <Tooltip title="Thêm quiz">
+                    <Button
+                      size="small"
+                      type="dashed"
+                      icon={<PlusOutlined />}
+                      onClick={() => showQuizForm(section.id)}
+                    >
+                      Thêm quiz
+                    </Button>
+                  </Tooltip>
                   <Tooltip title="Sửa chương">
                     <Button
                       size="small"
@@ -570,94 +676,238 @@ const CourseDetail = () => {
                   </Popconfirm>
                 </Space>
               ),
-              children:
-                section.lessons && section.lessons.length > 0 ? (
-                  <List
-                    dataSource={section.lessons.sort(
-                      (a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)
-                    )}
-                    renderItem={(lesson, index) => (
-                      <List.Item
-                        actions={[
-                          <Tooltip title="Chỉnh sửa" key="edit">
-                            <Button
-                              size="small"
-                              icon={<EditOutlined />}
-                              onClick={() => showLessonForm(section.id, lesson)}
-                            />
-                          </Tooltip>,
-                          <Popconfirm
-                            key="delete"
-                            title="Xóa bài học này?"
-                            onConfirm={() => handleDeleteLesson(lesson.id)}
-                            okText="Xóa"
-                            cancelText="Hủy"
-                            okType="danger"
-                          >
-                            <Tooltip title="Xóa">
-                              <Button
-                                size="small"
-                                icon={<DeleteOutlined />}
-                                danger
-                              />
-                            </Tooltip>
-                          </Popconfirm>,
-                        ]}
-                      >
-                        <List.Item.Meta
-                          avatar={getContentTypeIcon(lesson.contentType)}
-                          title={
-                            <Space>
-                              <span>
-                                {index + 1}. {lesson.lessonTitle}
-                              </span>
-                              <Tag size="small">
-                                {getContentTypeLabel(lesson.contentType)}
-                              </Tag>
-                              {lesson.videoUrl && (
-                                <Tag size="small" color="blue">
-                                  Có video
-                                </Tag>
-                              )}
-                            </Space>
-                          }
-                          description={
-                            <div
-                              style={{
-                                maxHeight: "60px",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                              }}
-                            >
-                              {lesson.content || "Chưa có nội dung"}
-                            </div>
-                          }
-                        />
-                      </List.Item>
-                    )}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      textAlign: "center",
-                      padding: "20px",
-                      color: "#999",
-                    }}
-                  >
-                    <FileTextOutlined
-                      style={{ fontSize: "24px", marginBottom: "8px" }}
-                    />
-                    <p>Chưa có bài học nào trong chương này</p>
-                    <Button
-                      size="small"
-                      type="dashed"
-                      icon={<PlusOutlined />}
-                      onClick={() => showLessonForm(section.id)}
+              children: (() => {
+                const hasLessons =
+                  section.lessons && section.lessons.length > 0;
+                const hasQuizzes =
+                  section.quizzes && section.quizzes.length > 0;
+
+                if (!hasLessons && !hasQuizzes) {
+                  return (
+                    <div
+                      style={{
+                        textAlign: "center",
+                        padding: "20px",
+                        color: "#999",
+                      }}
                     >
-                      Thêm bài học đầu tiên
-                    </Button>
+                      <FileTextOutlined
+                        style={{ fontSize: "24px", marginBottom: "8px" }}
+                      />
+                      <p>Chưa có bài học hoặc quiz nào trong chương này</p>
+                      <Space>
+                        <Button
+                          size="small"
+                          type="dashed"
+                          icon={<PlusOutlined />}
+                          onClick={() => showLessonForm(section.id)}
+                        >
+                          Thêm bài học
+                        </Button>
+                        <Button
+                          size="small"
+                          type="dashed"
+                          icon={<PlusOutlined />}
+                          onClick={() => showQuizForm(section.id)}
+                        >
+                          Thêm quiz
+                        </Button>
+                      </Space>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div>
+                    {/* Bài học */}
+                    {hasLessons && (
+                      <div>
+                        <h4 style={{ marginTop: 0, marginBottom: "12px" }}>
+                          Bài học ({section.lessons.length})
+                        </h4>
+                        <List
+                          dataSource={section.lessons.sort(
+                            (a, b) => (a.orderIndex || 0) - (b.orderIndex || 0)
+                          )}
+                          renderItem={(lesson, index) => (
+                            <List.Item
+                              actions={[
+                                <Tooltip title="Chỉnh sửa" key="edit">
+                                  <Button
+                                    size="small"
+                                    icon={<EditOutlined />}
+                                    onClick={() =>
+                                      showLessonForm(section.id, lesson)
+                                    }
+                                  />
+                                </Tooltip>,
+                                <Popconfirm
+                                  key="delete"
+                                  title="Xóa bài học này?"
+                                  onConfirm={() =>
+                                    handleDeleteLesson(lesson.id)
+                                  }
+                                  okText="Xóa"
+                                  cancelText="Hủy"
+                                  okType="danger"
+                                >
+                                  <Tooltip title="Xóa">
+                                    <Button
+                                      size="small"
+                                      icon={<DeleteOutlined />}
+                                      danger
+                                    />
+                                  </Tooltip>
+                                </Popconfirm>,
+                              ]}
+                            >
+                              <List.Item.Meta
+                                avatar={getContentTypeIcon(lesson.contentType)}
+                                title={
+                                  <Space>
+                                    <span>
+                                      {index + 1}. {lesson.lessonTitle}
+                                    </span>
+                                    <Tag size="small">
+                                      {getContentTypeLabel(lesson.contentType)}
+                                    </Tag>
+                                    {lesson.videoUrl && (
+                                      <Tag size="small" color="blue">
+                                        Có video
+                                      </Tag>
+                                    )}
+                                  </Space>
+                                }
+                                description={
+                                  <div
+                                    style={{
+                                      maxHeight: "60px",
+                                      overflow: "hidden",
+                                      textOverflow: "ellipsis",
+                                    }}
+                                  >
+                                    {lesson.content || "Chưa có nội dung"}
+                                  </div>
+                                }
+                              />
+                            </List.Item>
+                          )}
+                        />
+                      </div>
+                    )}
+                    {/* Divider giữa Bài học và Quiz */}
+                    {hasLessons && hasQuizzes && (
+                      <Divider style={{ margin: "16px 0" }} />
+                    )}
+                    {/* Quiz */}
+                    {hasQuizzes && (
+                      <div>
+                        <h4 style={{ marginBottom: "12px" }}>
+                          Quiz ({section.quizzes.length})
+                        </h4>
+                        <List
+                          dataSource={section.quizzes}
+                          renderItem={(quiz, index) => (
+                            <List.Item
+                              actions={[
+                                <Tooltip title="Quản lý câu hỏi" key="manage">
+                                  <Button
+                                    size="small"
+                                    type="primary"
+                                    icon={<QuestionCircleOutlined />}
+                                    onClick={() =>
+                                      navigate(
+                                        `/admin/quizzes/${quiz.id}/questions`
+                                      )
+                                    }
+                                  >
+                                    Quản lý câu hỏi
+                                  </Button>
+                                </Tooltip>,
+                                <Tooltip title="Chỉnh sửa" key="edit">
+                                  <Button
+                                    size="small"
+                                    icon={<EditOutlined />}
+                                    onClick={() =>
+                                      showQuizForm(section.id, quiz)
+                                    }
+                                  />
+                                </Tooltip>,
+                                <Popconfirm
+                                  key="delete"
+                                  title="Xóa quiz này?"
+                                  onConfirm={() => handleDeleteQuiz(quiz.id)}
+                                  okText="Xóa"
+                                  cancelText="Hủy"
+                                  okType="danger"
+                                >
+                                  <Tooltip title="Xóa">
+                                    <Button
+                                      size="small"
+                                      icon={<DeleteOutlined />}
+                                      danger
+                                    />
+                                  </Tooltip>
+                                </Popconfirm>,
+                              ]}
+                            >
+                              <List.Item.Meta
+                                avatar={
+                                  <QuestionCircleOutlined
+                                    style={{
+                                      fontSize: "18px",
+                                      color: "#1890ff",
+                                    }}
+                                  />
+                                }
+                                title={
+                                  <Space>
+                                    <span>{quiz.title}</span>
+                                    <Tag color="blue">
+                                      {quiz.questionCount || 0} câu hỏi
+                                    </Tag>
+                                    <Tag
+                                      color={
+                                        quiz.isPublished ? "green" : "orange"
+                                      }
+                                    >
+                                      {quiz.isPublished
+                                        ? "Đã public"
+                                        : "Bản nháp"}
+                                    </Tag>
+                                  </Space>
+                                }
+                                description={
+                                  <Space size="small" wrap>
+                                    {quiz.timeLimit && (
+                                      <Tag size="small">
+                                        ⏱️ {quiz.timeLimit} phút
+                                      </Tag>
+                                    )}
+                                    {quiz.passingScore && (
+                                      <Tag size="small" color="success">
+                                        Điểm cần đạt: {quiz.passingScore}%
+                                      </Tag>
+                                    )}
+                                    <div
+                                      style={{
+                                        display: "block",
+                                        marginTop: "4px",
+                                      }}
+                                    >
+                                      {quiz.description || "Chưa có mô tả"}
+                                    </div>
+                                  </Space>
+                                }
+                              />
+                            </List.Item>
+                          )}
+                        />
+                      </div>
+                    )}
                   </div>
-                ),
+                );
+              })(),
             }))}
             defaultActiveKey={sections.map((s) => s.id.toString())}
             onChange={(keys) => {
@@ -693,6 +943,15 @@ const CourseDetail = () => {
         onSuccess={handleLessonSuccess}
         sectionId={uiState.selectedSectionId}
         editingLesson={uiState.editingLesson}
+      />
+
+      {/* Quiz Form Modal */}
+      <QuizForm
+        visible={uiState.quizFormVisible}
+        onClose={closeQuizForm}
+        onSuccess={handleQuizSuccess}
+        sectionId={uiState.selectedSectionId}
+        editingQuiz={uiState.editingQuiz}
       />
     </div>
   );
