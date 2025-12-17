@@ -12,8 +12,8 @@ import ExamEditor from "./pages/Exam/ExamEditor";
 import ExamDetail from "./pages/Exam/ExamDetail";
 import CourseContainer from "./containers/course/CourseContainer";
 import AddCourseContainer from "./containers/course/AddCourseContainer";
-import UserDetail from "./pages/user/UserDetails"; // ✅ Import mới
-import UserEdit from "./pages/user/UserEdit"; // ✅ Import mới
+import UserDetail from "./pages/user/UserDetails";
+import UserEdit from "./pages/user/UserEdit";
 
 // Import course management components
 import CourseManagement from "./pages/course/CourseManagement";
@@ -32,6 +32,7 @@ import CreateBlog from "./pages/blog/CreateBlog";
 
 // Import User Management components
 import UserList from "./pages/user/UserList";
+import QuizQuestionManager from "./pages/course/quiz/QuizQuestionManager";
 
 function App() {
   return (
@@ -152,6 +153,10 @@ function App() {
             <CourseDetail />
           </AdminLayout>
         }
+      />
+      <Route
+        path="/admin/quizzes/:quizId/questions"
+        element={<QuizQuestionManager />}
       />
       <Route
         path="/admin/courses-old"
