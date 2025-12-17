@@ -1,5 +1,7 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./pages/Dashboard";
 import TestList from "./pages/Exam/TestList";
@@ -34,9 +36,10 @@ import QuizQuestionManager from "./pages/course/quiz/QuizQuestionManager";
 
 function App() {
   return (
-    <Routes>
-      {/* Login Route */}
-      <Route path="/login" element={<LoginPages />} />
+    <>
+      <Routes>
+        {/* Login Route */}
+        <Route path="/login" element={<LoginPages />} />
 
       {/* Dashboard routes */}
       <Route
@@ -271,6 +274,19 @@ function App() {
         }
       />
     </Routes>
+    <ToastContainer
+      position="top-right"
+      autoClose={3000}
+      hideProgressBar={false}
+      newestOnTop={false}
+      closeOnClick
+      rtl={false}
+      pauseOnFocusLoss
+      draggable
+      pauseOnHover
+      theme="light"
+    />
+    </>
   );
 }
 

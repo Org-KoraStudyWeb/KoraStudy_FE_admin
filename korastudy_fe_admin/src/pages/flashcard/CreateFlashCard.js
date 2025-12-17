@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Trash2, Save, Eye, Image } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Save, Eye, Image, Languages, Volume2, Loader } from 'lucide-react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import flashCardApi from '../../api/flashCardApi';
+import { translateKoreanToVietnamese, generateKoreanSpeech, playAudioFromBase64 } from '../../api/azureService';
+import { toast } from 'react-toastify';
 
 const CreateFlashCard = () => {
   const { id } = useParams();
@@ -17,6 +19,8 @@ const CreateFlashCard = () => {
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [translatingCardIndex, setTranslatingCardIndex] = useState(null);
+  const [playingAudioIndex, setPlayingAudioIndex] = useState(null);
 
   // Quick add vocabulary templates
   const quickAddTemplates = [
@@ -80,6 +84,58 @@ const CreateFlashCard = () => {
     const newCards = [...flashCardSet.cards];
     newCards[index][field] = value;
     setFlashCardSet({ ...flashCardSet, cards: newCards });
+  };
+
+  // Auto-translate Korean to Vietnamese using Azure
+  const handleAutoTranslate = async (index, koreanText) => {
+    if (!koreanText || !koreanText.trim()) {
+      toast.warning('Vui lòng nhập từ tiếng Hàn trước');
+      return;
+    }
+
+    setTranslatingCardIndex(index);
+    
+    try {
+      const result = await translateKoreanToVietnamese(koreanText);
+      
+      if (result.success) {
+        updateCard(index, 'definition', result.translatedText);
+        toast.success('Đã dịch tự động!');
+      } else {
+        toast.error('Không thể dịch văn bản');
+      }
+    } catch (error) {
+      console.error('Translation error:', error);
+      toast.error('Lỗi khi dịch văn bản');
+    } finally {
+      setTranslatingCardIndex(null);
+    }
+  };
+
+  // Generate and play audio pronunciation using Azure Text-to-Speech
+  const handlePlayAudio = async (index, koreanText) => {
+    if (!koreanText || !koreanText.trim()) {
+      toast.warning('Vui lòng nhập từ tiếng Hàn trước');
+      return;
+    }
+
+    setPlayingAudioIndex(index);
+    
+    try {
+      const result = await generateKoreanSpeech(koreanText);
+      
+      if (result.success && result.audioData) {
+        playAudioFromBase64(result.audioData);
+        toast.success('Đang phát âm...');
+      } else {
+        toast.error('Không thể tạo audio');
+      }
+    } catch (error) {
+      console.error('Speech generation error:', error);
+      toast.error('Lỗi khi tạo audio phát âm');
+    } finally {
+      setPlayingAudioIndex(null);
+    }
   };
 
   const addQuickVocabulary = (template) => {
@@ -256,27 +312,61 @@ const CreateFlashCard = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Tiếng Hàn <span className="text-red-500">*</span>
                         </label>
-                        <input
-                          type="text"
-                          value={card.term || ''}
-                          onChange={(e) => updateCard(index, 'term', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="안녕하세요"
-                          disabled={isView}
-                        />
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={card.term || ''}
+                            onChange={(e) => updateCard(index, 'term', e.target.value)}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="안녕하세요"
+                            disabled={isView}
+                          />
+                          {!isView && (
+                            <button
+                              type="button"
+                              onClick={() => handlePlayAudio(index, card.term)}
+                              disabled={playingAudioIndex === index}
+                              className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+                              title="Phát âm"
+                            >
+                              {playingAudioIndex === index ? (
+                                <Loader size={20} className="animate-spin" />
+                              ) : (
+                                <Volume2 size={20} />
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Tiếng Việt <span className="text-red-500">*</span>
                         </label>
-                        <input
-                          type="text"
-                          value={card.definition || ''}
-                          onChange={(e) => updateCard(index, 'definition', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="Xin chào"
-                          disabled={isView}
-                        />
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={card.definition || ''}
+                            onChange={(e) => updateCard(index, 'definition', e.target.value)}
+                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Xin chào"
+                            disabled={isView}
+                          />
+                          {!isView && (
+                            <button
+                              type="button"
+                              onClick={() => handleAutoTranslate(index, card.term)}
+                              disabled={translatingCardIndex === index}
+                              className="px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50"
+                              title="Dịch tự động"
+                            >
+                              {translatingCardIndex === index ? (
+                                <Loader size={20} className="animate-spin" />
+                              ) : (
+                                <Languages size={20} />
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                     
@@ -332,9 +422,9 @@ const CreateFlashCard = () => {
                     disabled={isView}
                   >
                     <option value="">Chọn danh mục</option>
-                    <option value="TOEIC">TOEIC</option>
                     <option value="vocabulary">Từ vựng cơ bản</option>
-                    <option value="grammar">Ngữ pháp</option>
+                    <option value="Topik">Từ vựng ôn topik</option>
+                    {/* <option value="grammar">Ngữ pháp</option> */}
                     <option value="business">Business</option>
                     <option value="travel">Du lịch</option>
                     <option value="daily">Hàng ngày</option>
