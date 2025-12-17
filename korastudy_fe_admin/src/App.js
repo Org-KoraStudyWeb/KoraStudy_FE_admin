@@ -35,9 +35,10 @@ import UserList from "./pages/user/UserList";
 
 function App() {
   return (
-    <Routes>
-      {/* Login Route */}
-      <Route path="/login" element={<LoginPages />} />
+    <>
+      <Routes>
+        {/* Login Route */}
+        <Route path="/login" element={<LoginPages />} />
 
       {/* Dashboard routes */}
       <Route
@@ -280,7 +281,8 @@ function App() {
       pauseOnHover
       theme="light"
     />
-  </>;
+    </>
+  );
 }
 
 export default App;

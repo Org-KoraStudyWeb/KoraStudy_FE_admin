@@ -242,12 +242,13 @@ const FlashCardList = () => {
                 className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">Tất cả danh mục</option>
-                <option value="TOEIC">TOEIC</option>
-                <option value="vocabulary">Từ vựng</option>
-                <option value="grammar">Ngữ pháp</option>
-                <option value="business">Business</option>
-                <option value="travel">Du lịch</option>
-                <option value="daily">Hàng ngày</option>
+                <option value="">Chọn danh mục</option>
+                    <option value="vocabulary">Từ vựng cơ bản</option>
+                    <option value="Topik">Từ vựng ôn topik</option>
+                    {/* <option value="grammar">Ngữ pháp</option> */}
+                    <option value="business">Business</option>
+                    <option value="travel">Du lịch</option>
+                    <option value="daily">Hàng ngày</option>
               </select>
             </div>
             

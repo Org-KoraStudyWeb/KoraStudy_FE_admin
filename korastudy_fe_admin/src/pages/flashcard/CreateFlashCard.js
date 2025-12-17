@@ -422,9 +422,9 @@ const CreateFlashCard = () => {
                     disabled={isView}
                   >
                     <option value="">Chọn danh mục</option>
-                    <option value="TOEIC">TOEIC</option>
                     <option value="vocabulary">Từ vựng cơ bản</option>
-                    <option value="grammar">Ngữ pháp</option>
+                    <option value="Topik">Từ vựng ôn topik</option>
+                    {/* <option value="grammar">Ngữ pháp</option> */}
                     <option value="business">Business</option>
                     <option value="travel">Du lịch</option>
                     <option value="daily">Hàng ngày</option>
