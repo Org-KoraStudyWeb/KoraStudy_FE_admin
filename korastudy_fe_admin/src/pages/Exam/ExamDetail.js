@@ -9,10 +9,12 @@ const ExamDetail = () => {
   const [exam, setExam] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    fetchExamDetail();
-  }, [id]);
+  useEffect(
+    () => {
+      fetchExamDetail();
+    },
+    [id] // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   const fetchExamDetail = async () => {
     setLoading(true);

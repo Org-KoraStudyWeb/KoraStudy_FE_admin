@@ -37,13 +37,15 @@ const TextEditor = ({
 
   // Đồng bộ giá trị từ prop
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (value !== undefined && value !== text) {
-      setText(value);
-      addToHistory(value);
-    }
-  }, [value]);
+  useEffect(
+    () => {
+      if (value !== undefined && value !== text) {
+        setText(value);
+        addToHistory(value);
+      }
+    },
+    [value] // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   const handleChange = (e) => {
     const newValue = e.target.value;
