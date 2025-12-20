@@ -29,10 +29,12 @@ const UserEdit = () => {
 
   const [validationErrors, setValidationErrors] = useState({});
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    fetchUserDetail();
-  }, [id]);
+  useEffect(
+    () => {
+      fetchUserDetail();
+    },
+    [id] // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   const fetchUserDetail = async () => {
     try {
