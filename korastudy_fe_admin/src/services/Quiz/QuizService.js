@@ -452,6 +452,42 @@ class QuizService {
     }
   }
 
+  async getQuizzesWithStatusBySection(sectionId, userId) {
+    try {
+      // 1. Lấy danh sách quiz trong section
+      const quizzesResponse = await this.getQuizzesBySectionId(sectionId);
+
+      if (!quizzesResponse.success) {
+        return {
+          success: false,
+          message: quizzesResponse.message,
+          data: [],
+        };
+      }
+
+      const quizzes = quizzesResponse.data || [];
+      const quizzesWithStatus = [];
+
+      // 2. Lấy trạng thái của từng quiz cho user
+      for (const quiz of quizzes) {
+        const statusResponse = await this.getQuizStatusForUser(quiz.id, userId);
+
+        quizzesWithStatus.push({
+          ...quiz,
+          userStatus: statusResponse.success ? statusResponse.data : null,
+        });
+      }
+
+      return {
+        success: true,
+        data: quizzesWithStatus,
+        message: "Lấy thông tin quiz thành công",
+      };
+    } catch (error) {
+      return this.handleError(error, "Lỗi khi lấy thông tin quiz");
+    }
+  }
+
   async getQuizResultForTeacher(resultId) {
     try {
       if (!resultId) {
@@ -469,6 +505,40 @@ class QuizService {
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi lấy kết quả");
+    }
+  }
+
+  async getQuizStatusForUser(quizId, userId) {
+    try {
+      if (!quizId || !userId) {
+        return {
+          success: false,
+          message: "Quiz ID và User ID không được để trống",
+        };
+      }
+      console.log(
+        `[ADMIN] Fetching quiz status for quiz ${quizId}, user ${userId}`
+      );
+      const response = await quizApi.getQuizStatusForUser(quizId, userId);
+      const data = this._extractDataFromResponse(response);
+
+      // ⭐ THÊM DEBUG Ở ĐÂY
+      console.log(
+        `[ADMIN] Quiz status API response for quiz ${quizId}, user ${userId}:`,
+        {
+          responseData: data,
+          hasIsPassed: data?.isPassed !== undefined,
+          isPassedValue: data?.isPassed,
+          fullDataKeys: data ? Object.keys(data) : "no data",
+        }
+      );
+
+      return { success: true, data };
+    } catch (error) {
+      return this.handleError(
+        error,
+        "Lỗi khi lấy trạng thái quiz của người dùng"
+      );
     }
   }
 

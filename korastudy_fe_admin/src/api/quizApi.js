@@ -99,6 +99,11 @@ const quizApi = {
     return axiosClient.get(`/api/v1/quizzes/results/${resultId}/teacher`);
   },
 
+  // Lấy trạng thái quiz của một user (Admin view)
+  getQuizStatusForUser: (quizId, userId) => {
+    return axiosClient.get(`/api/v1/quizzes/${quizId}/user/${userId}/status`);
+  },
+
   // Lấy danh sách kết quả của quiz
   getQuizResults: (quizId) => {
     return axiosClient.get(`/api/v1/quizzes/${quizId}/results`);
