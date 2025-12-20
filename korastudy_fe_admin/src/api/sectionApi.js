@@ -38,21 +38,6 @@ const sectionApi = {
   deleteSection: (id) => {
     return axiosClient.delete(`/api/v1/sections/${id}`);
   },
-
-  // ==================== CÁC ENDPOINT SAU KHÔNG TỒN TẠI TRONG BACKEND - CẦN XÓA ====================
-  /*
-  reorderSections: (courseId, sectionOrder) => {
-    return axiosClient.put(`/api/v1/sections/course/${courseId}/reorder`, sectionOrder);
-  },
-
-  getSectionProgress: (sectionId) => {
-    return axiosClient.get(`/api/v1/sections/${sectionId}/progress`);
-  },
-
-  markSectionComplete: (sectionId) => {
-    return axiosClient.put(`/api/v1/sections/${sectionId}/complete`);
-  },
-  */
 };
 
 export default sectionApi;

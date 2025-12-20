@@ -15,6 +15,9 @@ import {
   Progress,
   Empty,
   Input,
+  Tooltip,
+  Popover,
+  Badge,
 } from "antd";
 import {
   UserOutlined,
@@ -25,9 +28,16 @@ import {
   IdcardOutlined,
   PlayCircleOutlined,
   CheckCircleOutlined,
+  FileTextOutlined,
+  TrophyOutlined,
+  EyeOutlined,
+  ClockCircleOutlined,
+  InfoCircleOutlined,
 } from "@ant-design/icons";
 import EnrollmentService from "../../services/EnrollmentService";
+import CourseProgressService from "../../services/Quiz/CourseProgressService";
 import LessonService from "../../services/LessonService";
+import QuizService from "../../services/Quiz/QuizService";
 
 const { Search } = Input;
 
@@ -55,6 +65,90 @@ const generateAvatarColor = (userId) => {
   return colors[Math.abs(userId) % colors.length];
 };
 
+// Component popover hiển thị chi tiết quiz progress
+const QuizProgressDetail = ({ quizProgress }) => {
+  if (!quizProgress || quizProgress.totalQuizzes === 0) {
+    return (
+      <div style={{ width: 280 }}>
+        <p style={{ color: "#999" }}>Chưa có quiz nào</p>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ width: 280 }}>
+      <div style={{ marginBottom: 8 }}>
+        <strong>Tổng số quiz: </strong>
+        {quizProgress.totalQuizzes}
+      </div>
+      <div style={{ marginBottom: 4 }}>
+        <Space>
+          <Badge color="green" text="Đã pass" />
+          <strong>{quizProgress.passedQuizzes}</strong>
+        </Space>
+      </div>
+      <div style={{ marginBottom: 4 }}>
+        <Space>
+          <Badge color="orange" text="Đã làm (fail)" />
+          <strong>{quizProgress.failedQuizzes}</strong>
+        </Space>
+      </div>
+      <div style={{ marginBottom: 8 }}>
+        <Space>
+          <Badge color="default" text="Chưa làm" />
+          <strong>{quizProgress.notAttemptedQuizzes}</strong>
+        </Space>
+      </div>
+
+      {quizProgress.quizDetails && quizProgress.quizDetails.length > 0 && (
+        <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 8 }}>
+          <div style={{ fontSize: "12px", color: "#666", marginBottom: 4 }}>
+            Chi tiết quiz:
+          </div>
+          {quizProgress.quizDetails.slice(0, 3).map((quiz, index) => (
+            <div
+              key={index}
+              style={{
+                padding: "4px 0",
+                borderBottom: index < 2 ? "1px solid #f5f5f5" : "none",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <div style={{ flex: 1, fontSize: "11px" }}>
+                  {quiz.quizTitle}
+                </div>
+                <div>
+                  <Tag
+                    color={
+                      quiz.isPassed
+                        ? "green"
+                        : quiz.isCompleted
+                        ? "orange"
+                        : "default"
+                    }
+                    size="small"
+                  >
+                    {quiz.isPassed
+                      ? "Pass"
+                      : quiz.isCompleted
+                      ? "Fail"
+                      : "Chưa làm"}
+                  </Tag>
+                </div>
+              </div>
+            </div>
+          ))}
+          {quizProgress.quizDetails.length > 3 && (
+            <div style={{ fontSize: "11px", color: "#999", marginTop: 4 }}>
+              ...và {quizProgress.quizDetails.length - 3} quiz khác
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
   const [enrollments, setEnrollments] = useState([]);
   const [filteredEnrollments, setFilteredEnrollments] = useState([]);
@@ -65,6 +159,11 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
     current: 1,
     pageSize: 5,
     total: 0,
+  });
+  const [courseStructure, setCourseStructure] = useState({
+    totalLessons: 0,
+    totalQuizzes: 0,
+    quizzes: [],
   });
 
   // Load enrollments và progress
@@ -77,6 +176,30 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
 
       setLoading(true);
       try {
+        // 1. Lấy cấu trúc khóa học (lessons & quizzes) MỘT LẦN
+        let structure = { totalLessons: 0, totalQuizzes: 0, quizzes: [] };
+        const structureResponse =
+          await CourseProgressService.getCourseStructure(courseId);
+        if (
+          structureResponse.success &&
+          Array.isArray(structureResponse.data)
+        ) {
+          let lessonCount = 0;
+          let quizList = [];
+          structureResponse.data.forEach((section) => {
+            lessonCount += section.lessons?.length || 0;
+            if (section.quizzes?.length > 0) {
+              quizList.push(...section.quizzes);
+            }
+          });
+          structure = {
+            totalLessons: lessonCount,
+            totalQuizzes: quizList.length,
+            quizzes: quizList,
+          };
+        }
+        setCourseStructure(structure);
+
         // 1. Load enrollments
         const enrollmentResponse =
           await EnrollmentService.getCourseEnrollmentsAdmin(courseId, {
@@ -99,7 +222,7 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
             return;
           }
 
-          // 2. Kết hợp enrollment data với progress data
+          // 2. Kết hợp enrollment data với progress data (bao gồm cả quiz)
           const enrollmentsWithProgress = await Promise.all(
             enrollmentsData.map(async (enrollment) => {
               try {
@@ -108,97 +231,78 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
                   [enrollment.userId]: true,
                 }));
 
-                let userProgress = {
-                  progress: 0,
-                  completedLessons: 0,
-                  totalLessons: 0,
-                  lastActivity: null,
-                  totalDuration: 0,
-                  // Thêm trường để xác định hoàn thành khóa học
-                  isCourseCompleted: false,
-                };
-
-                // Load progress cho user cụ thể trong khóa học này
-                try {
-                  const progressResponse =
-                    await LessonService.getUserProgressByCourseForAdmin(
-                      courseId,
-                      enrollment.userId
-                    );
-
-                  if (progressResponse.success && progressResponse.data) {
-                    const progressData = progressResponse.data;
-
-                    // Xử lý dữ liệu progress: API trả về array của từng bài học
-                    if (Array.isArray(progressData)) {
-                      // Tính toán tổng hợp từ danh sách bài học
-                      const totalLessons = progressData.length;
-                      const completedLessons = progressData.filter(
-                        (item) => item.status === "COMPLETED"
-                      ).length;
-                      const progressPercentage =
-                        totalLessons > 0
-                          ? (completedLessons / totalLessons) * 100
-                          : 0;
-
-                      // Tính tổng thời gian
-                      const totalDuration = progressData.reduce(
-                        (sum, item) => sum + (item.timeSpent || 0),
-                        0
-                      );
-
-                      // Lấy thời gian hoạt động cuối
-                      const lastActivity =
-                        progressData.length > 0
-                          ? progressData.reduce(
-                              (latest, item) =>
-                                new Date(item.lastAccessed) > new Date(latest)
-                                  ? item.lastAccessed
-                                  : latest,
-                              progressData[0].lastAccessed
-                            )
-                          : null;
-
-                      userProgress = {
-                        progress: progressPercentage,
-                        completedLessons,
-                        totalLessons,
-                        lastActivity,
-                        totalDuration,
-                        // Xác định hoàn thành khóa học: tất cả bài học đều COMPLETED
-                        isCourseCompleted:
-                          totalLessons > 0 && completedLessons === totalLessons,
-                      };
-                    } else if (progressData.progressPercentage !== undefined) {
-                      // Nếu API trả về trực tiếp tổng hợp
-                      userProgress = {
-                        progress: progressData.progressPercentage,
-                        completedLessons: progressData.completedLessons || 0,
-                        totalLessons: progressData.totalLessons || 0,
-                        lastActivity:
-                          progressData.lastActivity ||
-                          progressData.lastAccessed,
-                        totalDuration: progressData.totalDuration || 0,
-                        isCourseCompleted: progressData.isCompleted || false,
-                      };
-                    }
-                  }
-                } catch (progressError) {
-                  console.error(
-                    `Error loading progress for user ${enrollment.userId}:`,
-                    progressError
+                // Load lesson progress
+                const lessonProgressResponse =
+                  await LessonService.getUserProgressByCourseForAdmin(
+                    courseId,
+                    enrollment.userId
                   );
+                const completedLessons =
+                  lessonProgressResponse.success &&
+                  Array.isArray(lessonProgressResponse.data)
+                    ? lessonProgressResponse.data.filter(
+                        (item) => item.status === "COMPLETED"
+                      ).length
+                    : 0;
+
+                // Load quiz progress
+                let passedQuizzes = 0;
+                let failedQuizzes = 0;
+                let notAttemptedQuizzes = 0;
+                let quizDetails = [];
+
+                if (structure.totalQuizzes > 0) {
+                  const quizStatusPromises = structure.quizzes.map((quiz) =>
+                    QuizService.getQuizStatusForUser(quiz.id, enrollment.userId)
+                  );
+                  const quizStatuses = await Promise.all(quizStatusPromises);
+
+                  quizStatuses.forEach((statusRes, index) => {
+                    const quizInfo = structure.quizzes[index];
+                    const detail = {
+                      quizId: quizInfo.id,
+                      quizTitle: quizInfo.title,
+                      isPassed: false,
+                      isCompleted: false,
+                    };
+                    if (statusRes.success && statusRes.data) {
+                      detail.isPassed = statusRes.data.isPassed || false;
+                      detail.isCompleted = statusRes.data.isCompleted || false;
+                      if (detail.isPassed) {
+                        passedQuizzes++;
+                      } else if (detail.isCompleted) {
+                        failedQuizzes++;
+                      } else {
+                        notAttemptedQuizzes++;
+                      }
+                    } else {
+                      notAttemptedQuizzes++;
+                    }
+                    quizDetails.push(detail);
+                  });
                 }
+
+                const totalItems =
+                  structure.totalLessons + structure.totalQuizzes;
+                const completedItems = completedLessons + passedQuizzes;
+                const progress =
+                  totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
 
                 return {
                   ...enrollment,
-                  ...userProgress,
-                  progress: Math.min(100, Math.max(0, userProgress.progress)),
-                  completedLessons: userProgress.completedLessons,
-                  totalLessons: userProgress.totalLessons,
-                  lastActivity: userProgress.lastActivity,
-                  totalDuration: userProgress.totalDuration,
-                  isCourseCompleted: userProgress.isCourseCompleted,
+                  progress: Math.round(progress),
+                  completedLessons: completedLessons,
+                  totalLessons: structure.totalLessons,
+                  quizProgress: {
+                    totalQuizzes: structure.totalQuizzes,
+                    passedQuizzes: passedQuizzes,
+                    failedQuizzes: failedQuizzes,
+                    notAttemptedQuizzes: notAttemptedQuizzes,
+                    completedQuizzes: passedQuizzes + failedQuizzes,
+                    quizDetails: quizDetails,
+                  },
+                  isCourseCompleted:
+                    totalItems > 0 && completedItems === totalItems,
                 };
               } catch (error) {
                 console.error(
@@ -209,9 +313,13 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
                   ...enrollment,
                   progress: 0,
                   completedLessons: 0,
-                  totalLessons: 0,
-                  lastActivity: null,
-                  totalDuration: 0,
+                  totalLessons: structure.totalLessons,
+                  quizProgress: {
+                    totalQuizzes: structure.totalQuizzes,
+                    passedQuizzes: 0,
+                    failedQuizzes: 0,
+                    notAttemptedQuizzes: 0,
+                  },
                   isCourseCompleted: false,
                 };
               } finally {
@@ -242,7 +350,7 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
         setLoading(false);
       }
     },
-    [courseId]
+    [courseId, CourseProgressService]
   );
 
   // Refresh progress cho một user cụ thể
@@ -253,93 +361,77 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
       setProgressLoading((prev) => ({ ...prev, [userId]: true }));
 
       try {
-        const response = await LessonService.getUserProgressByCourseForAdmin(
-          courseId,
-          userId
-        );
+        // Lấy lại tiến độ lesson
+        const lessonProgressResponse =
+          await LessonService.getUserProgressByCourseForAdmin(courseId, userId);
+        const completedLessons =
+          lessonProgressResponse.success &&
+          Array.isArray(lessonProgressResponse.data)
+            ? lessonProgressResponse.data.filter(
+                (item) => item.status === "COMPLETED"
+              ).length
+            : 0;
 
-        if (response.success && response.data) {
-          const progressData = response.data;
-          let progressInfo = {
-            progress: 0,
-            completedLessons: 0,
-            totalLessons: 0,
-            lastActivity: null,
-            isCourseCompleted: false,
-          };
+        // Lấy lại tiến độ quiz
+        let passedQuizzes = 0;
+        let failedQuizzes = 0;
+        let notAttemptedQuizzes = 0;
+        let quizDetails = [];
 
-          if (Array.isArray(progressData)) {
-            const totalLessons = progressData.length;
-            const completedLessons = progressData.filter(
-              (item) => item.status === "COMPLETED"
-            ).length;
-            const progressPercentage =
-              totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
-
-            // FIX: Tìm lastAccessed hoặc completedDate hoặc startedDate
-            let lastActivity = null;
-            if (progressData.length > 0) {
-              // Tìm ngày gần nhất trong các trường timestamp
-              const allDates = progressData.flatMap((item) =>
-                [
-                  item.lastAccessed,
-                  item.completedDate,
-                  item.startedDate,
-                  item.updatedAt,
-                ].filter(Boolean)
-              );
-
-              if (allDates.length > 0) {
-                // Tìm ngày mới nhất
-                lastActivity = allDates.reduce((latest, date) => {
-                  const date1 = new Date(latest);
-                  const date2 = new Date(date);
-                  return date2 > date1 ? date : latest;
-                }, allDates[0]);
-              }
-            }
-
-            progressInfo = {
-              progress: progressPercentage,
-              completedLessons,
-              totalLessons,
-              lastActivity,
-              isCourseCompleted:
-                totalLessons > 0 && completedLessons === totalLessons,
-            };
-          } else if (progressData.progressPercentage !== undefined) {
-            // Nếu API trả về trực tiếp tổng hợp
-            progressInfo = {
-              progress: progressData.progressPercentage,
-              completedLessons: progressData.completedLessons || 0,
-              totalLessons: progressData.totalLessons || 0,
-              lastActivity:
-                progressData.lastActivity ||
-                progressData.lastAccessed ||
-                progressData.updatedAt,
-              isCourseCompleted: progressData.isCompleted || false,
-            };
-          }
-
-          setEnrollments((prev) =>
-            prev.map((enrollment) =>
-              enrollment.userId === userId
-                ? {
-                    ...enrollment,
-                    progress: Math.min(100, Math.max(0, progressInfo.progress)),
-                    completedLessons: progressInfo.completedLessons,
-                    totalLessons: progressInfo.totalLessons,
-                    lastActivity:
-                      progressInfo.lastActivity || enrollment.lastActivity, // Giữ lại nếu null
-                    isCourseCompleted: progressInfo.isCourseCompleted,
-                  }
-                : enrollment
-            )
+        if (courseStructure.totalQuizzes > 0) {
+          const quizStatusPromises = courseStructure.quizzes.map((quiz) =>
+            QuizService.getQuizStatusForUser(quiz.id, userId)
           );
-          message.success("Đã cập nhật tiến độ");
-        } else {
-          message.warning("Không tìm thấy dữ liệu tiến độ");
+          const quizStatuses = await Promise.all(quizStatusPromises);
+          quizStatuses.forEach((statusRes, index) => {
+            const quizInfo = courseStructure.quizzes[index];
+            const detail = {
+              quizId: quizInfo.id,
+              quizTitle: quizInfo.title,
+              isPassed: false,
+              isCompleted: false,
+            };
+            if (statusRes.success && statusRes.data) {
+              detail.isPassed = statusRes.data.isPassed || false;
+              detail.isCompleted = statusRes.data.isCompleted || false;
+              if (detail.isPassed) passedQuizzes++;
+              else if (detail.isCompleted) failedQuizzes++;
+              else notAttemptedQuizzes++;
+            } else {
+              notAttemptedQuizzes++;
+            }
+            quizDetails.push(detail);
+          });
         }
+
+        const totalItems =
+          courseStructure.totalLessons + courseStructure.totalQuizzes;
+        const completedItems = completedLessons + passedQuizzes;
+        const progress =
+          totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+
+        setEnrollments((prev) =>
+          prev.map((enrollment) =>
+            enrollment.userId === userId
+              ? {
+                  ...enrollment,
+                  progress: Math.round(progress),
+                  completedLessons: completedLessons,
+                  totalLessons: courseStructure.totalLessons,
+                  quizProgress: {
+                    totalQuizzes: courseStructure.totalQuizzes,
+                    passedQuizzes: passedQuizzes,
+                    failedQuizzes: failedQuizzes,
+                    notAttemptedQuizzes: notAttemptedQuizzes,
+                    completedQuizzes: passedQuizzes + failedQuizzes,
+                    quizDetails: quizDetails,
+                  },
+                  isCourseCompleted:
+                    totalItems > 0 && completedItems === totalItems,
+                }
+              : enrollment
+          )
+        );
       } catch (error) {
         console.error(`Error refreshing progress for user ${userId}:`, error);
         message.error("Lỗi khi cập nhật tiến độ");
@@ -347,8 +439,9 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
         setProgressLoading((prev) => ({ ...prev, [userId]: false }));
       }
     },
-    [courseId]
+    [courseId, courseStructure]
   );
+
   // Tìm kiếm enrollments
   const handleSearch = useCallback(
     (value) => {
@@ -374,7 +467,7 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
       loadEnrollmentsWithProgress(1, pagination.pageSize);
       setSearchText("");
     }
-  }, [visible, courseId, loadEnrollmentsWithProgress, pagination.pageSize]);
+  }, [visible, courseId]);
 
   // Table columns
   const columns = [
@@ -459,68 +552,166 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
       ),
     },
     {
-      title: "Tiến độ học tập",
-      dataIndex: "progress",
-      key: "progress",
-      width: 200,
-      render: (progress, record) => (
+      title: (
         <div>
-          <Space direction="vertical" style={{ width: "100%" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Progress
-                percent={Math.round(progress || 0)}
-                size="small"
-                status={progress >= 100 ? "success" : "active"}
-                format={(percent) => `${percent}%`}
-                style={{ flex: 1, marginRight: 8 }}
-              />
-              <Button
-                type="text"
-                size="small"
-                icon={<ReloadOutlined />}
-                loading={progressLoading[record.userId]}
-                onClick={() => refreshUserProgress(record.userId)}
-                title="Làm mới tiến độ"
-              />
-            </div>
-            <div
-              style={{
-                fontSize: "11px",
-                color: "#666",
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              <PlayCircleOutlined style={{ marginRight: 4 }} />
-              {record.completedLessons || 0}/{record.totalLessons || 0} bài học
-            </div>
-            {record.totalDuration > 0 && (
-              <div style={{ fontSize: "10px", color: "#999" }}>
-                Tổng thời gian: {Math.floor(record.totalDuration / 60)} phút
-              </div>
-            )}
-          </Space>
+          Tiến độ học tập
+          <Tooltip title="Tiến độ được tính dựa trên cả lesson và quiz">
+            <InfoCircleOutlined
+              style={{ marginLeft: 4, color: "#1890ff", fontSize: "12px" }}
+            />
+          </Tooltip>
         </div>
       ),
+      dataIndex: "progress",
+      key: "progress",
+      width: 250,
+      render: (progress, record) => {
+        const totalItems =
+          record.totalLessons + record.quizProgress.totalQuizzes;
+        const completedItems =
+          record.completedLessons + record.quizProgress.passedQuizzes;
+
+        return (
+          <div>
+            <Space direction="vertical" style={{ width: "100%" }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Tooltip
+                  title={`${completedItems}/${totalItems} mục đã hoàn thành (Lesson: ${record.completedLessons}/${record.totalLessons}, Quiz Pass: ${record.quizProgress.passedQuizzes}/${record.quizProgress.totalQuizzes})`}
+                >
+                  <Progress
+                    percent={Math.round(progress || 0)}
+                    size="small"
+                    status={progress >= 100 ? "success" : "active"}
+                    format={(percent) => `${percent}%`}
+                    style={{ flex: 1, marginRight: 8 }}
+                  />
+                </Tooltip>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<ReloadOutlined />}
+                  loading={progressLoading[record.userId]}
+                  onClick={() => refreshUserProgress(record.userId)}
+                  title="Làm mới tiến độ"
+                />
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  fontSize: "11px",
+                  color: "#666",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center" }}>
+                  <PlayCircleOutlined style={{ marginRight: 4 }} />
+                  {record.completedLessons || 0}/{record.totalLessons || 0} bài
+                  học
+                </div>
+                <Popover
+                  content={
+                    <QuizProgressDetail quizProgress={record.quizProgress} />
+                  }
+                  title="Tiến độ Quiz"
+                  trigger="hover"
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      cursor: "pointer",
+                      color:
+                        record.quizProgress.passedQuizzes > 0
+                          ? "#52c41a"
+                          : "#666",
+                    }}
+                  >
+                    <FileTextOutlined style={{ marginRight: 4 }} />
+                    {record.quizProgress.passedQuizzes || 0}/
+                    {record.quizProgress.totalQuizzes || 0} quiz
+                    <EyeOutlined style={{ marginLeft: 4, fontSize: 10 }} />
+                  </div>
+                </Popover>
+              </div>
+
+              {record.totalDuration > 0 && (
+                <div style={{ fontSize: "10px", color: "#999" }}>
+                  <ClockCircleOutlined style={{ marginRight: 4 }} />
+                  Tổng thời gian: {Math.floor(record.totalDuration / 60)} phút
+                </div>
+              )}
+            </Space>
+          </div>
+        );
+      },
+    },
+    {
+      title: "Tổng số mục",
+      key: "totalItems",
+      width: 100,
+      render: (_, record) => {
+        const totalItems =
+          (record.totalLessons || 0) + (record.quizProgress?.totalQuizzes || 0);
+        const completedItems =
+          (record.completedLessons || 0) +
+          (record.quizProgress?.passedQuizzes || 0);
+
+        return (
+          <div style={{ textAlign: "center" }}>
+            <div
+              style={{
+                fontSize: "14px",
+                fontWeight: 600,
+                color:
+                  completedItems === totalItems && totalItems > 0
+                    ? "#52c41a"
+                    : "#1890ff",
+              }}
+            >
+              {completedItems}/{totalItems}
+            </div>
+            <div style={{ fontSize: "10px", color: "#999" }}>
+              {totalItems === 0 ? "Chưa có nội dung" : "mục"}
+            </div>
+          </div>
+        );
+      },
     },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
-      width: 120,
+      width: 140,
       render: (status, record) => {
-        // Ưu tiên xác định trạng thái dựa trên tiến độ học tập
-        if (record.isCourseCompleted || record.progress >= 100) {
+        // Kiểm tra hoàn thành khóa học
+        if (record.isCourseCompleted) {
           return (
             <Tag icon={<CheckCircleOutlined />} color="green">
               Hoàn thành
             </Tag>
+          );
+        }
+
+        // Kiểm tra đã pass tất cả quiz
+        if (
+          record.quizProgress &&
+          record.quizProgress.passedQuizzes ===
+            record.quizProgress.totalQuizzes &&
+          record.quizProgress.totalQuizzes > 0
+        ) {
+          return (
+            <Tooltip title="Đã pass tất cả quiz, chưa hoàn thành bài học">
+              <Tag icon={<TrophyOutlined />} color="cyan">
+                Đã pass quiz
+              </Tag>
+            </Tooltip>
           );
         }
 
@@ -588,7 +779,7 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
     },
   ];
 
-  // Statistics
+  // Statistics - bao gồm cả quiz
   const stats = useMemo(() => {
     const data = searchText ? filteredEnrollments : enrollments;
 
@@ -600,13 +791,13 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
         avgProgress: 0,
         expired: 0,
         totalLessonsCompleted: 0,
+        totalQuizzesPassed: 0,
+        totalQuizzesAttempted: 0,
         totalDuration: 0,
       };
     }
 
-    const completed = data.filter(
-      (e) => e.isCourseCompleted || e.progress >= 100
-    ).length;
+    const completed = data.filter((e) => e.isCourseCompleted).length;
     const inProgress = data.filter(
       (e) =>
         e.status === "ACTIVE" &&
@@ -625,6 +816,14 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
       (sum, e) => sum + (e.completedLessons || 0),
       0
     );
+    const totalQuizzesPassed = data.reduce(
+      (sum, e) => sum + (e.quizProgress?.passedQuizzes || 0),
+      0
+    );
+    const totalQuizzesAttempted = data.reduce(
+      (sum, e) => sum + (e.quizProgress?.completedQuizzes || 0),
+      0
+    );
     const totalDuration = data.reduce(
       (sum, e) => sum + (e.totalDuration || 0),
       0
@@ -637,6 +836,8 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
       avgProgress,
       expired,
       totalLessonsCompleted,
+      totalQuizzesPassed,
+      totalQuizzesAttempted,
       totalDuration,
     };
   }, [enrollments, filteredEnrollments, searchText]);
@@ -667,67 +868,88 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
       }
       open={visible}
       onCancel={onClose}
-      width={1300}
+      width={1400}
       footer={null}
       destroyOnClose
       style={{ top: 20 }}
     >
-      {/* Statistics */}
+      {/* Statistics với quiz */}
       <Row gutter={16} style={{ marginBottom: "24px" }}>
-        <Col span={4}>
+        <Col span={3}>
           <Card size="small">
             <Statistic
               title="Tổng học viên"
               value={enrollments.length}
               prefix={<UserOutlined />}
-              valueStyle={{ fontSize: "24px" }}
+              valueStyle={{ fontSize: "20px" }}
             />
           </Card>
         </Col>
-        <Col span={4}>
+        <Col span={3}>
           <Card size="small">
             <Statistic
-              title="Hoàn thành"
+              title="Hoàn thành KH"
               value={stats.completed}
-              valueStyle={{ color: "#52c41a", fontSize: "24px" }}
+              valueStyle={{ color: "#52c41a", fontSize: "20px" }}
             />
           </Card>
         </Col>
-        <Col span={4}>
+        <Col span={3}>
           <Card size="small">
             <Statistic
               title="Đang học"
               value={stats.inProgress}
-              valueStyle={{ color: "#1890ff", fontSize: "24px" }}
+              valueStyle={{ color: "#1890ff", fontSize: "20px" }}
             />
           </Card>
         </Col>
-        <Col span={4}>
-          <Card size="small">
-            <Statistic
-              title="Chưa bắt đầu"
-              value={stats.notStarted}
-              valueStyle={{ color: "#faad14", fontSize: "24px" }}
-            />
-          </Card>
-        </Col>
-        <Col span={4}>
-          <Card size="small">
-            <Statistic
-              title="Hết hạn"
-              value={stats.expired}
-              valueStyle={{ color: "#ff4d4f", fontSize: "24px" }}
-            />
-          </Card>
-        </Col>
-        <Col span={4}>
+        <Col span={3}>
           <Card size="small">
             <Statistic
               title="Tiến độ TB"
               value={Math.round(stats.avgProgress)}
               suffix="%"
               prefix={<PercentageOutlined />}
-              valueStyle={{ color: "#722ed1", fontSize: "24px" }}
+              valueStyle={{ color: "#722ed1", fontSize: "20px" }}
+            />
+          </Card>
+        </Col>
+        <Col span={3}>
+          <Card size="small">
+            <Statistic
+              title="Bài học HT"
+              value={stats.totalLessonsCompleted}
+              prefix={<PlayCircleOutlined />}
+              valueStyle={{ color: "#13c2c2", fontSize: "20px" }}
+            />
+          </Card>
+        </Col>
+        <Col span={3}>
+          <Card size="small">
+            <Statistic
+              title="Quiz pass"
+              value={stats.totalQuizzesPassed}
+              prefix={<TrophyOutlined />}
+              valueStyle={{ color: "#fa8c16", fontSize: "20px" }}
+            />
+          </Card>
+        </Col>
+        <Col span={3}>
+          <Card size="small">
+            <Statistic
+              title="Quiz đã làm"
+              value={stats.totalQuizzesAttempted}
+              prefix={<FileTextOutlined />}
+              valueStyle={{ color: "#eb2f96", fontSize: "20px" }}
+            />
+          </Card>
+        </Col>
+        <Col span={3}>
+          <Card size="small">
+            <Statistic
+              title="Chưa bắt đầu"
+              value={stats.notStarted}
+              valueStyle={{ color: "#faad14", fontSize: "20px" }}
             />
           </Card>
         </Col>
@@ -765,10 +987,13 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
       {/* Table */}
       <Table
         columns={columns}
-        dataSource={displayData}
+        dataSource={displayData.map((item, index) => ({
+          ...item,
+          key: item.id || index,
+        }))}
         loading={loading}
-        rowKey="id"
-        scroll={{ x: 1100 }}
+        rowKey="key"
+        scroll={{ x: 1200 }}
         locale={{
           emptyText: searchText ? (
             <Empty
