@@ -37,6 +37,7 @@ const TextEditor = ({
 
   // Đồng bộ giá trị từ prop
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (value !== undefined && value !== text) {
       setText(value);

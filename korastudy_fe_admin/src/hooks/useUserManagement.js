@@ -300,26 +300,30 @@ export const useUserManagement = () => {
     setCurrentPage(0);
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    fetchUsers();
-    fetchUserStats();
-  }, [currentPage, pageSize]);
+  useEffect(
+    () => {
+      fetchUsers();
+      fetchUserStats();
+    },
+    [currentPage, pageSize] // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   // Apply filters when search term or filters change
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    setCurrentPage(0); // Reset to first page when searching
-    if (searchTerm) {
-      searchUsers();
-    } else if (filterRole !== "all") {
-      fetchUsersByRole();
-    } else if (filterStatus !== "all") {
-      fetchUsersByStatus();
-    } else {
-      fetchUsers();
-    }
-  }, [searchTerm, filterRole, filterStatus]);
+  useEffect(
+    () => {
+      setCurrentPage(0); // Reset to first page when searching
+      if (searchTerm) {
+        searchUsers();
+      } else if (filterRole !== "all") {
+        fetchUsersByRole();
+      } else if (filterStatus !== "all") {
+        fetchUsersByStatus();
+      } else {
+        fetchUsers();
+      }
+    },
+    [searchTerm, filterRole, filterStatus] // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   return {
     // States
