@@ -462,13 +462,15 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
     [enrollments]
   );
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (visible && courseId) {
-      loadEnrollmentsWithProgress(1, pagination.pageSize);
-      setSearchText("");
-    }
-  }, [visible, courseId]);
+  useEffect(
+    () => {
+      if (visible && courseId) {
+        loadEnrollmentsWithProgress(1, pagination.pageSize);
+        setSearchText("");
+      }
+    },
+    [visible, courseId, pagination.pageSize] // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   // Table columns
   const columns = [

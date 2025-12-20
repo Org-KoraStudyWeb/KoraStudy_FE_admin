@@ -25,14 +25,13 @@ const ExamEditor = () => {
   const [uploadingFiles, setUploadingFiles] = useState({});
   const [expandedParts, setExpandedParts] = useState({});
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     console.log("ExamEditor useEffect, isEditing:", isEditing, "id:", id); // Debug log
     if (isEditing) {
       fetchExamData();
     }
   }, [id, isEditing]);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
 
   const fetchExamData = async () => {
     setLoading(true);

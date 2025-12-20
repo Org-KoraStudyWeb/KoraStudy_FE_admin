@@ -65,11 +65,14 @@ const CreateFlashCard = () => {
 
   // Load existing flashcard set if editing
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (isEdit || isView) {
-      loadFlashCardSet();
-    }
-  }, [id, isEdit, isView]);
+  useEffect(
+    () => {
+      if (isEdit || isView) {
+        loadFlashCardSet();
+      }
+    },
+    [id, isEdit, isView] // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   const loadFlashCardSet = async () => {
     try {
