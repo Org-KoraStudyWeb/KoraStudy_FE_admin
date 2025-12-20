@@ -1,15 +1,15 @@
-import { useState, useEffect } from 'react';
-import userApi from '../api/userApi';
+import { useState, useEffect } from "react";
+import userApi from "../api/userApi";
 
 export const useUserManagement = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterRole, setFilterRole] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterRole, setFilterRole] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [error, setError] = useState(null);
-  
+
   // Pagination states
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
@@ -21,32 +21,32 @@ export const useUserManagement = () => {
     overview: {
       totalUsers: 0,
       activeUsers: 0,
-      inactiveUsers: 0
+      inactiveUsers: 0,
     },
     byRole: {
       admins: 0,
       contentManagers: 0,
       deliveryManagers: 0,
-      regularUsers: 0
-    }
+      regularUsers: 0,
+    },
   });
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('Fetching users from API...');
-      
+      console.log("Fetching users from API...");
+
       const response = await userApi.getAllUsers({
         page: currentPage,
         size: pageSize,
-        sort: 'id,desc'
+        sort: "id,desc",
       });
-      
-      console.log('API Response:', response);
-      
+
+      console.log("API Response:", response);
+
       const data = response.data;
-      
+
       // Handle paginated response
       if (data.content) {
         setUsers(data.content);
@@ -60,8 +60,12 @@ export const useUserManagement = () => {
         setTotalElements(Array.isArray(data) ? data.length : 0);
       }
     } catch (error) {
-      console.error('Lỗi khi tải danh sách người dùng:', error);
-      setError(error.response?.data?.message || error.message || 'Có lỗi xảy ra khi tải dữ liệu');
+      console.error("Lỗi khi tải danh sách người dùng:", error);
+      setError(
+        error.response?.data?.message ||
+          error.message ||
+          "Có lỗi xảy ra khi tải dữ liệu"
+      );
       setUsers([]);
     } finally {
       setLoading(false);
@@ -77,12 +81,12 @@ export const useUserManagement = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await userApi.searchUsers(searchTerm, {
         page: currentPage,
-        size: pageSize
+        size: pageSize,
       });
-      
+
       const data = response.data;
       if (data.content) {
         setUsers(data.content);
@@ -94,8 +98,8 @@ export const useUserManagement = () => {
         setTotalElements(0);
       }
     } catch (error) {
-      console.error('Lỗi khi tìm kiếm người dùng:', error);
-      setError('Có lỗi xảy ra khi tìm kiếm');
+      console.error("Lỗi khi tìm kiếm người dùng:", error);
+      setError("Có lỗi xảy ra khi tìm kiếm");
       setUsers([]);
     } finally {
       setLoading(false);
@@ -106,12 +110,12 @@ export const useUserManagement = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await userApi.getUsersByRole(filterRole, {
         page: currentPage,
-        size: pageSize
+        size: pageSize,
       });
-      
+
       const data = response.data;
       if (data.content) {
         setUsers(data.content);
@@ -121,8 +125,8 @@ export const useUserManagement = () => {
         setUsers([]);
       }
     } catch (error) {
-      console.error('Lỗi khi lọc theo vai trò:', error);
-      setError('Có lỗi xảy ra khi lọc theo vai trò');
+      console.error("Lỗi khi lọc theo vai trò:", error);
+      setError("Có lỗi xảy ra khi lọc theo vai trò");
       setUsers([]);
     } finally {
       setLoading(false);
@@ -133,13 +137,13 @@ export const useUserManagement = () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const isEnabled = filterStatus === 'active';
+
+      const isEnabled = filterStatus === "active";
       const response = await userApi.getUsersByStatus(isEnabled, {
         page: currentPage,
-        size: pageSize
+        size: pageSize,
       });
-      
+
       const data = response.data;
       if (data.content) {
         setUsers(data.content);
@@ -149,8 +153,8 @@ export const useUserManagement = () => {
         setUsers([]);
       }
     } catch (error) {
-      console.error('Lỗi khi lọc theo trạng thái:', error);
-      setError('Có lỗi xảy ra khi lọc theo trạng thái');
+      console.error("Lỗi khi lọc theo trạng thái:", error);
+      setError("Có lỗi xảy ra khi lọc theo trạng thái");
       setUsers([]);
     } finally {
       setLoading(false);
@@ -161,22 +165,22 @@ export const useUserManagement = () => {
     try {
       const response = await userApi.getUserStatistics();
       const statsData = response.data || {};
-      
+
       setStats({
         overview: {
           totalUsers: statsData.overview?.totalUsers || 0,
           activeUsers: statsData.overview?.activeUsers || 0,
-          inactiveUsers: statsData.overview?.inactiveUsers || 0
+          inactiveUsers: statsData.overview?.inactiveUsers || 0,
         },
         byRole: {
           admins: statsData.byRole?.admins || 0,
           contentManagers: statsData.byRole?.contentManagers || 0,
           deliveryManagers: statsData.byRole?.deliveryManagers || 0,
-          regularUsers: statsData.byRole?.regularUsers || 0
-        }
+          regularUsers: statsData.byRole?.regularUsers || 0,
+        },
       });
     } catch (error) {
-      console.error('Lỗi khi tải thống kê:', error);
+      console.error("Lỗi khi tải thống kê:", error);
     }
   };
 
@@ -185,23 +189,25 @@ export const useUserManagement = () => {
     try {
       const newStatus = !currentStatus;
       await userApi.toggleUserStatus(userId, newStatus);
-      
+
       // Refresh current page
       if (searchTerm) {
         searchUsers();
-      } else if (filterRole !== 'all') {
+      } else if (filterRole !== "all") {
         fetchUsersByRole();
-      } else if (filterStatus !== 'all') {
+      } else if (filterStatus !== "all") {
         fetchUsersByStatus();
       } else {
         fetchUsers();
       }
-      
+
       await fetchUserStats();
-      alert(`Đã ${newStatus ? 'kích hoạt' : 'vô hiệu hóa'} người dùng thành công`);
+      alert(
+        `Đã ${newStatus ? "kích hoạt" : "vô hiệu hóa"} người dùng thành công`
+      );
     } catch (error) {
-      console.error('Lỗi khi cập nhật trạng thái:', error);
-      alert('Có lỗi xảy ra khi cập nhật trạng thái');
+      console.error("Lỗi khi cập nhật trạng thái:", error);
+      alert("Có lỗi xảy ra khi cập nhật trạng thái");
     }
   };
 
@@ -209,23 +215,23 @@ export const useUserManagement = () => {
   const handleDeleteUser = async (userId) => {
     try {
       await userApi.deleteUser(userId);
-      
+
       // Refresh current view
       if (searchTerm) {
         searchUsers();
-      } else if (filterRole !== 'all') {
+      } else if (filterRole !== "all") {
         fetchUsersByRole();
-      } else if (filterStatus !== 'all') {
+      } else if (filterStatus !== "all") {
         fetchUsersByStatus();
       } else {
         fetchUsers();
       }
-      
+
       await fetchUserStats();
-      alert('Đã xóa người dùng thành công');
+      alert("Đã xóa người dùng thành công");
     } catch (error) {
-      console.error('Lỗi khi xóa người dùng:', error);
-      alert('Có lỗi xảy ra khi xóa người dùng');
+      console.error("Lỗi khi xóa người dùng:", error);
+      alert("Có lỗi xảy ra khi xóa người dùng");
     }
   };
 
@@ -233,26 +239,26 @@ export const useUserManagement = () => {
   const handleBulkDelete = async () => {
     try {
       await Promise.all(
-        selectedUsers.map(userId => userApi.deleteUser(userId))
+        selectedUsers.map((userId) => userApi.deleteUser(userId))
       );
-      
+
       // Refresh current view
       if (searchTerm) {
         searchUsers();
-      } else if (filterRole !== 'all') {
+      } else if (filterRole !== "all") {
         fetchUsersByRole();
-      } else if (filterStatus !== 'all') {
+      } else if (filterStatus !== "all") {
         fetchUsersByStatus();
       } else {
         fetchUsers();
       }
-      
+
       await fetchUserStats();
       setSelectedUsers([]);
-      alert('Đã xóa các người dùng được chọn');
+      alert("Đã xóa các người dùng được chọn");
     } catch (error) {
-      console.error('Lỗi khi xóa nhiều người dùng:', error);
-      alert('Có lỗi xảy ra khi xóa các người dùng');
+      console.error("Lỗi khi xóa nhiều người dùng:", error);
+      alert("Có lỗi xảy ra khi xóa các người dùng");
     }
   };
 
@@ -261,14 +267,14 @@ export const useUserManagement = () => {
     if (selectedUsers.length === users.length) {
       setSelectedUsers([]);
     } else {
-      setSelectedUsers(users.map(user => user.id));
+      setSelectedUsers(users.map((user) => user.id));
     }
   };
 
   // Handle individual select
   const handleSelectUser = (userId) => {
     if (selectedUsers.includes(userId)) {
-      setSelectedUsers(selectedUsers.filter(id => id !== userId));
+      setSelectedUsers(selectedUsers.filter((id) => id !== userId));
     } else {
       setSelectedUsers([...selectedUsers, userId]);
     }
@@ -288,25 +294,27 @@ export const useUserManagement = () => {
 
   // Clear all filters
   const clearFilters = () => {
-    setSearchTerm('');
-    setFilterRole('all');
-    setFilterStatus('all');
+    setSearchTerm("");
+    setFilterRole("all");
+    setFilterStatus("all");
     setCurrentPage(0);
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchUsers();
     fetchUserStats();
   }, [currentPage, pageSize]);
 
   // Apply filters when search term or filters change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setCurrentPage(0); // Reset to first page when searching
     if (searchTerm) {
       searchUsers();
-    } else if (filterRole !== 'all') {
+    } else if (filterRole !== "all") {
       fetchUsersByRole();
-    } else if (filterStatus !== 'all') {
+    } else if (filterStatus !== "all") {
       fetchUsersByStatus();
     } else {
       fetchUsers();
@@ -330,7 +338,7 @@ export const useUserManagement = () => {
     totalPages,
     totalElements,
     stats,
-    
+
     // Actions
     fetchUsers,
     handleToggleUserStatus,
@@ -340,6 +348,6 @@ export const useUserManagement = () => {
     handleSelectUser,
     handlePageChange,
     handlePageSizeChange,
-    clearFilters
+    clearFilters,
   };
 };

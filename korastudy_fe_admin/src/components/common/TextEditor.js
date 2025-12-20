@@ -1,6 +1,6 @@
 // src/components/common/TextEditor.js
 import React, { useState, useRef, useEffect } from "react";
-import { Input, Button, Space, Tooltip, Divider, message } from "antd";
+import { Input, Button, Space, Tooltip, message } from "antd";
 import {
   BoldOutlined,
   ItalicOutlined,
@@ -28,20 +28,21 @@ const TextEditor = ({
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
-  // Đồng bộ giá trị từ prop
-  useEffect(() => {
-    if (value !== undefined && value !== text) {
-      setText(value);
-      addToHistory(value);
-    }
-  }, [value]);
-
   const addToHistory = (newText) => {
     const newHistory = history.slice(0, historyIndex + 1);
     newHistory.push(newText);
     setHistory(newHistory);
     setHistoryIndex(newHistory.length - 1);
   };
+
+  // Đồng bộ giá trị từ prop
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (value !== undefined && value !== text) {
+      setText(value);
+      addToHistory(value);
+    }
+  }, [value]);
 
   const handleChange = (e) => {
     const newValue = e.target.value;

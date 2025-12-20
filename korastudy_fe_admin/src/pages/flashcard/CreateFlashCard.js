@@ -1,21 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, Trash2, Save, Eye, Image, Languages, Volume2, Loader } from 'lucide-react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
-import flashCardApi from '../../api/flashCardApi';
-import { translateKoreanToVietnamese, generateKoreanSpeech, playAudioFromBase64 } from '../../api/azureService';
-import { toast } from 'react-toastify';
+import React, { useState, useEffect } from "react";
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Save,
+  Eye,
+  Languages,
+  Volume2,
+  Loader,
+} from "lucide-react";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import flashCardApi from "../../api/flashCardApi";
+import {
+  translateKoreanToVietnamese,
+  generateKoreanSpeech,
+  playAudioFromBase64,
+} from "../../api/azureService";
+import { toast } from "react-toastify";
 
 const CreateFlashCard = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
-  const isView = window.location.pathname.includes('/view/');
+  const isView = window.location.pathname.includes("/view/");
 
   const [flashCardSet, setFlashCardSet] = useState({
-    title: '',
-    description: '',
-    category: '',
-    cards: [{ term: '', definition: '', example: '', imageUrl: '' }]
+    title: "",
+    description: "",
+    category: "",
+    cards: [{ term: "", definition: "", example: "", imageUrl: "" }],
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -24,17 +37,34 @@ const CreateFlashCard = () => {
 
   // Quick add vocabulary templates
   const quickAddTemplates = [
-    { korean: '안녕하세요', vietnamese: 'Xin chào', pronunciation: 'an-nyeong-ha-se-yo' },
-    { korean: '감사합니다', vietnamese: 'Cảm ơn', pronunciation: 'gam-sa-ham-ni-da' },
-    { korean: '죄송합니다', vietnamese: 'Xin lỗi', pronunciation: 'joe-song-ham-ni-da' },
-    { korean: '괜찮아요', vietnamese: 'Không sao', pronunciation: 'gwaen-chan-a-yo' },
-    { korean: '네', vietnamese: 'Vâng/Có', pronunciation: 'ne' },
-    { korean: '아니요', vietnamese: 'Không', pronunciation: 'a-ni-yo' },
-    { korean: '맛있어요', vietnamese: 'Ngon', pronunciation: 'ma-si-sseo-yo' },
-    { korean: '사랑해요', vietnamese: 'Yêu', pronunciation: 'sa-rang-hae-yo' }
+    {
+      korean: "안녕하세요",
+      vietnamese: "Xin chào",
+      pronunciation: "an-nyeong-ha-se-yo",
+    },
+    {
+      korean: "감사합니다",
+      vietnamese: "Cảm ơn",
+      pronunciation: "gam-sa-ham-ni-da",
+    },
+    {
+      korean: "죄송합니다",
+      vietnamese: "Xin lỗi",
+      pronunciation: "joe-song-ham-ni-da",
+    },
+    {
+      korean: "괜찮아요",
+      vietnamese: "Không sao",
+      pronunciation: "gwaen-chan-a-yo",
+    },
+    { korean: "네", vietnamese: "Vâng/Có", pronunciation: "ne" },
+    { korean: "아니요", vietnamese: "Không", pronunciation: "a-ni-yo" },
+    { korean: "맛있어요", vietnamese: "Ngon", pronunciation: "ma-si-sseo-yo" },
+    { korean: "사랑해요", vietnamese: "Yêu", pronunciation: "sa-rang-hae-yo" },
   ];
 
   // Load existing flashcard set if editing
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (isEdit || isView) {
       loadFlashCardSet();
@@ -46,21 +76,24 @@ const CreateFlashCard = () => {
       setLoading(true);
       const response = await flashCardApi.getFlashcardSetById(id);
       const data = response.data;
-      
+
       setFlashCardSet({
-        title: data.title || '',
-        description: data.description || '',
-        category: data.category || '',
-        cards: data.cards && data.cards.length > 0 ? data.cards.map(card => ({
-          term: card.term || '',
-          definition: card.definition || '',
-          example: card.example || '',
-          imageUrl: card.imageUrl || ''
-        })) : [{ term: '', definition: '', example: '', imageUrl: '' }]
+        title: data.title || "",
+        description: data.description || "",
+        category: data.category || "",
+        cards:
+          data.cards && data.cards.length > 0
+            ? data.cards.map((card) => ({
+                term: card.term || "",
+                definition: card.definition || "",
+                example: card.example || "",
+                imageUrl: card.imageUrl || "",
+              }))
+            : [{ term: "", definition: "", example: "", imageUrl: "" }],
       });
     } catch (error) {
-      console.error('Lỗi khi tải flashcard set:', error);
-      alert('Có lỗi xảy ra khi tải dữ liệu');
+      console.error("Lỗi khi tải flashcard set:", error);
+      alert("Có lỗi xảy ra khi tải dữ liệu");
     } finally {
       setLoading(false);
     }
@@ -69,7 +102,10 @@ const CreateFlashCard = () => {
   const addCard = () => {
     setFlashCardSet({
       ...flashCardSet,
-      cards: [...flashCardSet.cards, { term: '', definition: '', example: '', imageUrl: '' }]
+      cards: [
+        ...flashCardSet.cards,
+        { term: "", definition: "", example: "", imageUrl: "" },
+      ],
     });
   };
 
@@ -89,24 +125,24 @@ const CreateFlashCard = () => {
   // Auto-translate Korean to Vietnamese using Azure
   const handleAutoTranslate = async (index, koreanText) => {
     if (!koreanText || !koreanText.trim()) {
-      toast.warning('Vui lòng nhập từ tiếng Hàn trước');
+      toast.warning("Vui lòng nhập từ tiếng Hàn trước");
       return;
     }
 
     setTranslatingCardIndex(index);
-    
+
     try {
       const result = await translateKoreanToVietnamese(koreanText);
-      
+
       if (result.success) {
-        updateCard(index, 'definition', result.translatedText);
-        toast.success('Đã dịch tự động!');
+        updateCard(index, "definition", result.translatedText);
+        toast.success("Đã dịch tự động!");
       } else {
-        toast.error('Không thể dịch văn bản');
+        toast.error("Không thể dịch văn bản");
       }
     } catch (error) {
-      console.error('Translation error:', error);
-      toast.error('Lỗi khi dịch văn bản');
+      console.error("Translation error:", error);
+      toast.error("Lỗi khi dịch văn bản");
     } finally {
       setTranslatingCardIndex(null);
     }
@@ -115,24 +151,24 @@ const CreateFlashCard = () => {
   // Generate and play audio pronunciation using Azure Text-to-Speech
   const handlePlayAudio = async (index, koreanText) => {
     if (!koreanText || !koreanText.trim()) {
-      toast.warning('Vui lòng nhập từ tiếng Hàn trước');
+      toast.warning("Vui lòng nhập từ tiếng Hàn trước");
       return;
     }
 
     setPlayingAudioIndex(index);
-    
+
     try {
       const result = await generateKoreanSpeech(koreanText);
-      
+
       if (result.success && result.audioData) {
         playAudioFromBase64(result.audioData);
-        toast.success('Đang phát âm...');
+        toast.success("Đang phát âm...");
       } else {
-        toast.error('Không thể tạo audio');
+        toast.error("Không thể tạo audio");
       }
     } catch (error) {
-      console.error('Speech generation error:', error);
-      toast.error('Lỗi khi tạo audio phát âm');
+      console.error("Speech generation error:", error);
+      toast.error("Lỗi khi tạo audio phát âm");
     } finally {
       setPlayingAudioIndex(null);
     }
@@ -143,64 +179,65 @@ const CreateFlashCard = () => {
       term: template.korean,
       definition: template.vietnamese,
       example: template.pronunciation,
-      imageUrl: ''
+      imageUrl: "",
     };
-    
+
     setFlashCardSet({
       ...flashCardSet,
-      cards: [...flashCardSet.cards, newCard]
+      cards: [...flashCardSet.cards, newCard],
     });
   };
 
   const handleSave = async () => {
     // Validation
     if (!flashCardSet.title.trim()) {
-      alert('Vui lòng nhập tên danh sách');
+      alert("Vui lòng nhập tên danh sách");
       return;
     }
 
     if (!flashCardSet.category) {
-      alert('Vui lòng chọn danh mục');
+      alert("Vui lòng chọn danh mục");
       return;
     }
 
     // Validate cards
-    const validCards = flashCardSet.cards.filter(card => 
-      card.term?.trim() && card.definition?.trim()
+    const validCards = flashCardSet.cards.filter(
+      (card) => card.term?.trim() && card.definition?.trim()
     );
 
     if (validCards.length === 0) {
-      alert('Vui lòng thêm ít nhất một từ vựng');
+      alert("Vui lòng thêm ít nhất một từ vựng");
       return;
     }
 
     try {
       setSaving(true);
-      
+
       const payload = {
         title: flashCardSet.title.trim(),
         description: flashCardSet.description.trim(),
         category: flashCardSet.category,
-        cards: validCards.map(card => ({
+        cards: validCards.map((card) => ({
           term: card.term?.trim(),
           definition: card.definition?.trim(),
-          example: card.example?.trim() || '',
-          imageUrl: card.imageUrl?.trim() || ''
-        }))
+          example: card.example?.trim() || "",
+          imageUrl: card.imageUrl?.trim() || "",
+        })),
       };
 
       if (isEdit) {
         await flashCardApi.updateSystemFlashcardSet(id, payload);
-        alert('Cập nhật bộ flashcard thành công!');
+        alert("Cập nhật bộ flashcard thành công!");
       } else {
         await flashCardApi.createSystemFlashcardSet(payload);
-        alert('Tạo bộ flashcard thành công!');
+        alert("Tạo bộ flashcard thành công!");
       }
 
-      navigate('/admin/flashcards');
+      navigate("/admin/flashcards");
     } catch (error) {
-      console.error('Lỗi khi lưu flashcard:', error);
-      const errorMessage = error.response?.data?.message || 'Có lỗi xảy ra khi lưu dữ liệu';
+      console.error("Lỗi khi lưu flashcard:", error);
+      const errorMessage =
+        error.response?.data?.message || "Có lỗi xảy ra khi lưu dữ liệu";
       alert(errorMessage);
     } finally {
       setSaving(false);
@@ -222,15 +259,24 @@ const CreateFlashCard = () => {
     <div className="p-6">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <Link to="/admin/flashcards" className="p-2 hover:bg-gray-100 rounded-lg">
+        <Link
+          to="/admin/flashcards"
+          className="p-2 hover:bg-gray-100 rounded-lg"
+        >
           <ArrowLeft size={20} />
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {isView ? 'Xem Chi Tiết Flash Card' : isEdit ? 'Chỉnh Sửa Flash Card' : 'Tạo Flash Card Mới'}
+            {isView
+              ? "Xem Chi Tiết Flash Card"
+              : isEdit
+              ? "Chỉnh Sửa Flash Card"
+              : "Tạo Flash Card Mới"}
           </h1>
           <p className="text-gray-600 mt-1">
-            {isView ? 'Xem chi tiết bộ thẻ học từ vựng' : 'Tạo và quản lý bộ thẻ học từ vựng hệ thống'}
+            {isView
+              ? "Xem chi tiết bộ thẻ học từ vựng"
+              : "Tạo và quản lý bộ thẻ học từ vựng hệ thống"}
           </p>
         </div>
       </div>
@@ -241,8 +287,10 @@ const CreateFlashCard = () => {
           <div className="lg:col-span-2 space-y-6">
             {/* Basic Information */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Thông tin danh sách</h2>
-              
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Thông tin danh sách
+              </h2>
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -251,20 +299,30 @@ const CreateFlashCard = () => {
                   <input
                     type="text"
                     value={flashCardSet.title}
-                    onChange={(e) => setFlashCardSet({ ...flashCardSet, title: e.target.value })}
+                    onChange={(e) =>
+                      setFlashCardSet({
+                        ...flashCardSet,
+                        title: e.target.value,
+                      })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Ví dụ: Từ vựng du lịch"
                     disabled={isView}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Mô tả (tùy chọn)
                   </label>
                   <textarea
                     value={flashCardSet.description}
-                    onChange={(e) => setFlashCardSet({ ...flashCardSet, description: e.target.value })}
+                    onChange={(e) =>
+                      setFlashCardSet({
+                        ...flashCardSet,
+                        description: e.target.value,
+                      })
+                    }
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Mô tả ngắn về danh sách từ vựng này..."
@@ -293,9 +351,14 @@ const CreateFlashCard = () => {
 
               <div className="space-y-4">
                 {flashCardSet.cards.map((card, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div
+                    key={index}
+                    className="border border-gray-200 rounded-lg p-4 bg-gray-50"
+                  >
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-medium text-gray-900">Từ #{index + 1}</h3>
+                      <h3 className="font-medium text-gray-900">
+                        Từ #{index + 1}
+                      </h3>
                       {!isView && flashCardSet.cards.length > 1 && (
                         <button
                           onClick={() => removeCard(index)}
@@ -306,7 +369,7 @@ const CreateFlashCard = () => {
                         </button>
                       )}
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -315,8 +378,10 @@ const CreateFlashCard = () => {
                         <div className="flex gap-2">
                           <input
                             type="text"
-                            value={card.term || ''}
-                            onChange={(e) => updateCard(index, 'term', e.target.value)}
+                            value={card.term || ""}
+                            onChange={(e) =>
+                              updateCard(index, "term", e.target.value)
+                            }
                             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="안녕하세요"
                             disabled={isView}
@@ -345,8 +410,10 @@ const CreateFlashCard = () => {
                         <div className="flex gap-2">
                           <input
                             type="text"
-                            value={card.definition || ''}
-                            onChange={(e) => updateCard(index, 'definition', e.target.value)}
+                            value={card.definition || ""}
+                            onChange={(e) =>
+                              updateCard(index, "definition", e.target.value)
+                            }
                             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             placeholder="Xin chào"
                             disabled={isView}
@@ -354,7 +421,9 @@ const CreateFlashCard = () => {
                           {!isView && (
                             <button
                               type="button"
-                              onClick={() => handleAutoTranslate(index, card.term)}
+                              onClick={() =>
+                                handleAutoTranslate(index, card.term)
+                              }
                               disabled={translatingCardIndex === index}
                               className="px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-50"
                               title="Dịch tự động"
@@ -369,7 +438,7 @@ const CreateFlashCard = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -377,8 +446,10 @@ const CreateFlashCard = () => {
                         </label>
                         <input
                           type="text"
-                          value={card.example || ''}
-                          onChange={(e) => updateCard(index, 'example', e.target.value)}
+                          value={card.example || ""}
+                          onChange={(e) =>
+                            updateCard(index, "example", e.target.value)
+                          }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="an-nyeong-ha-se-yo"
                           disabled={isView}
@@ -390,8 +461,10 @@ const CreateFlashCard = () => {
                         </label>
                         <input
                           type="text"
-                          value={card.imageUrl || ''}
-                          onChange={(e) => updateCard(index, 'imageUrl', e.target.value)}
+                          value={card.imageUrl || ""}
+                          onChange={(e) =>
+                            updateCard(index, "imageUrl", e.target.value)
+                          }
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           placeholder="안녕하세요, 만나서 반갑습니다"
                           disabled={isView}
@@ -408,8 +481,10 @@ const CreateFlashCard = () => {
           <div className="space-y-6">
             {/* Category Selection */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Cài đặt</h3>
-              
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Cài đặt
+              </h3>
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -417,7 +492,12 @@ const CreateFlashCard = () => {
                   </label>
                   <select
                     value={flashCardSet.category}
-                    onChange={(e) => setFlashCardSet({ ...flashCardSet, category: e.target.value })}
+                    onChange={(e) =>
+                      setFlashCardSet({
+                        ...flashCardSet,
+                        category: e.target.value,
+                      })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     disabled={isView}
                   >
@@ -435,16 +515,20 @@ const CreateFlashCard = () => {
               {/* Action Buttons */}
               {!isView && (
                 <div className="mt-6 space-y-3">
-                  <button 
+                  <button
                     onClick={handleSave}
                     disabled={saving}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
                   >
                     <Save size={16} />
-                    {saving ? 'Đang lưu...' : (isEdit ? 'Cập nhật' : 'Tạo danh sách')}
+                    {saving
+                      ? "Đang lưu..."
+                      : isEdit
+                      ? "Cập nhật"
+                      : "Tạo danh sách"}
                   </button>
-                  <Link 
-                    to="/admin/flashcards" 
+                  <Link
+                    to="/admin/flashcards"
                     className="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
                   >
                     Hủy
@@ -454,15 +538,15 @@ const CreateFlashCard = () => {
 
               {isView && (
                 <div className="mt-6 space-y-3">
-                  <Link 
+                  <Link
                     to={`/admin/flashcards/edit/${id}`}
                     className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
                   >
                     <Eye size={16} />
                     Chỉnh sửa
                   </Link>
-                  <Link 
-                    to="/admin/flashcards" 
+                  <Link
+                    to="/admin/flashcards"
                     className="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
                   >
                     Quay lại
@@ -474,8 +558,10 @@ const CreateFlashCard = () => {
             {/* Quick Add Templates */}
             {!isView && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Thêm nhanh từ mẫu</h3>
-                
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Thêm nhanh từ mẫu
+                </h3>
+
                 <div className="grid grid-cols-2 gap-2">
                   {quickAddTemplates.map((template, index) => (
                     <button
@@ -484,12 +570,16 @@ const CreateFlashCard = () => {
                       className="p-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-left"
                       title={`${template.korean} - ${template.vietnamese}`}
                     >
-                      <div className="font-medium text-gray-900">{template.korean}</div>
-                      <div className="text-gray-600 text-xs">{template.vietnamese}</div>
+                      <div className="font-medium text-gray-900">
+                        {template.korean}
+                      </div>
+                      <div className="text-gray-600 text-xs">
+                        {template.vietnamese}
+                      </div>
                     </button>
                   ))}
                 </div>
-                
+
                 <p className="text-sm text-gray-500 mt-4">
                   Click vào từ mẫu để thêm nhanh vào danh sách
                 </p>
@@ -498,23 +588,35 @@ const CreateFlashCard = () => {
 
             {/* Statistics */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Thống kê</h3>
-              
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Thống kê
+              </h3>
+
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Tổng số từ:</span>
-                  <span className="font-medium">{flashCardSet.cards.length}</span>
+                  <span className="font-medium">
+                    {flashCardSet.cards.length}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Từ hoàn thành:</span>
                   <span className="font-medium">
-                    {flashCardSet.cards.filter(card => card.term && card.definition).length}
+                    {
+                      flashCardSet.cards.filter(
+                        (card) => card.term && card.definition
+                      ).length
+                    }
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Còn thiếu:</span>
                   <span className="font-medium text-orange-600">
-                    {flashCardSet.cards.filter(card => !card.term || !card.definition).length}
+                    {
+                      flashCardSet.cards.filter(
+                        (card) => !card.term || !card.definition
+                      ).length
+                    }
                   </span>
                 </div>
               </div>

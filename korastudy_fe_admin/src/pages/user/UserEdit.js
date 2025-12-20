@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, X, Upload, AlertCircle } from 'lucide-react';
-import userApi from '../../api/userApi';
+import React, { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Save, X, AlertCircle } from "lucide-react";
+import userApi from "../../api/userApi";
 
 const UserEdit = () => {
   const { id } = useParams();
@@ -10,25 +10,26 @@ const UserEdit = () => {
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
   const [originalUser, setOriginalUser] = useState(null);
-  
+
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phoneNumber: '',
-    dob: '',
-    gender: '',
-    address: '',
-    idCard: '',
-    level: '',
-    bio: '',
-    note: '',
+    firstName: "",
+    lastName: "",
+    email: "",
+    phoneNumber: "",
+    dob: "",
+    gender: "",
+    address: "",
+    idCard: "",
+    level: "",
+    bio: "",
+    note: "",
     isUserEnabled: true,
-    roles: []
+    roles: [],
   });
 
   const [validationErrors, setValidationErrors] = useState({});
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchUserDetail();
   }, [id]);
@@ -37,29 +38,32 @@ const UserEdit = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await userApi.getUserDetail(id);
       const user = response.data;
-      
+
       setOriginalUser(user);
       setFormData({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        phoneNumber: user.phoneNumber || '',
-        dob: user.dob ? user.dob.split('T')[0] : '', // Format date for input
-        gender: user.gender || '',
-        address: user.address || '',
-        idCard: user.idCard || '',
-        level: user.level || '',
-        bio: user.bio || '',
-        note: user.note || '',
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        email: user.email || "",
+        phoneNumber: user.phoneNumber || "",
+        dob: user.dob ? user.dob.split("T")[0] : "", // Format date for input
+        gender: user.gender || "",
+        address: user.address || "",
+        idCard: user.idCard || "",
+        level: user.level || "",
+        bio: user.bio || "",
+        note: user.note || "",
         isUserEnabled: user.isUserEnabled,
-        roles: user.roles || []
+        roles: user.roles || [],
       });
     } catch (error) {
-      console.error('Lỗi khi tải thông tin người dùng:', error);
-      setError(error.response?.data?.message || 'Có lỗi xảy ra khi tải thông tin người dùng');
+      console.error("Lỗi khi tải thông tin người dùng:", error);
+      setError(
+        error.response?.data?.message ||
+          "Có lỗi xảy ra khi tải thông tin người dùng"
+      );
     } finally {
       setLoading(false);
     }
@@ -67,29 +71,29 @@ const UserEdit = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
-    setFormData(prev => ({
+
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
 
     // Clear validation error when user starts typing
     if (validationErrors[name]) {
-      setValidationErrors(prev => ({
+      setValidationErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: "",
       }));
     }
   };
 
   const handleRoleChange = (e) => {
     const { value, checked } = e.target;
-    
-    setFormData(prev => ({
+
+    setFormData((prev) => ({
       ...prev,
-      roles: checked 
+      roles: checked
         ? [...prev.roles, value]
-        : prev.roles.filter(role => role !== value)
+        : prev.roles.filter((role) => role !== value),
     }));
   };
 
@@ -98,27 +102,30 @@ const UserEdit = () => {
 
     // Required fields
     if (!formData.firstName.trim()) {
-      errors.firstName = 'Họ là bắt buộc';
+      errors.firstName = "Họ là bắt buộc";
     }
-    
+
     if (!formData.lastName.trim()) {
-      errors.lastName = 'Tên là bắt buộc';
+      errors.lastName = "Tên là bắt buộc";
     }
 
     if (!formData.email.trim()) {
-      errors.email = 'Email là bắt buộc';
+      errors.email = "Email là bắt buộc";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Email không hợp lệ';
+      errors.email = "Email không hợp lệ";
     }
 
     // Phone number validation
-    if (formData.phoneNumber && !/^[0-9]{10,11}$/.test(formData.phoneNumber.replace(/\s+/g, ''))) {
-      errors.phoneNumber = 'Số điện thoại không hợp lệ';
+    if (
+      formData.phoneNumber &&
+      !/^[0-9]{10,11}$/.test(formData.phoneNumber.replace(/\s+/g, ""))
+    ) {
+      errors.phoneNumber = "Số điện thoại không hợp lệ";
     }
 
     // ID Card validation
     if (formData.idCard && !/^[0-9]{9,12}$/.test(formData.idCard)) {
-      errors.idCard = 'CCCD/CMND không hợp lệ';
+      errors.idCard = "CCCD/CMND không hợp lệ";
     }
 
     // Age validation
@@ -126,9 +133,9 @@ const UserEdit = () => {
       const birthDate = new Date(formData.dob);
       const today = new Date();
       const age = today.getFullYear() - birthDate.getFullYear();
-      
+
       if (age < 13 || age > 100) {
-        errors.dob = 'Tuổi phải từ 13 đến 100';
+        errors.dob = "Tuổi phải từ 13 đến 100";
       }
     }
 
@@ -138,7 +145,7 @@ const UserEdit = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -161,23 +168,26 @@ const UserEdit = () => {
         bio: formData.bio.trim() || null,
         note: formData.note.trim() || null,
         isUserEnabled: formData.isUserEnabled,
-        roles: formData.roles
+        roles: formData.roles,
       };
 
       await userApi.updateUser(id, updateData);
-      
-      alert('Cập nhật thông tin người dùng thành công!');
+
+      alert("Cập nhật thông tin người dùng thành công!");
       navigate(`/admin/users/view/${id}`);
     } catch (error) {
-      console.error('Lỗi khi cập nhật người dùng:', error);
-      
+      console.error("Lỗi khi cập nhật người dùng:", error);
+
       if (error.response?.status === 400) {
         // Handle validation errors from server
         const serverErrors = error.response.data?.errors || {};
         setValidationErrors(serverErrors);
-        setError('Vui lòng kiểm tra lại thông tin đã nhập');
+        setError("Vui lòng kiểm tra lại thông tin đã nhập");
       } else {
-        setError(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật thông tin');
+        setError(
+          error.response?.data?.message ||
+            "Có lỗi xảy ra khi cập nhật thông tin"
+        );
       }
     } finally {
       setSaving(false);
@@ -185,24 +195,28 @@ const UserEdit = () => {
   };
 
   const handleCancel = () => {
-    const hasChanges = JSON.stringify(formData) !== JSON.stringify({
-      firstName: originalUser?.firstName || '',
-      lastName: originalUser?.lastName || '',
-      email: originalUser?.email || '',
-      phoneNumber: originalUser?.phoneNumber || '',
-      dob: originalUser?.dob ? originalUser.dob.split('T')[0] : '',
-      gender: originalUser?.gender || '',
-      address: originalUser?.address || '',
-      idCard: originalUser?.idCard || '',
-      level: originalUser?.level || '',
-      bio: originalUser?.bio || '',
-      note: originalUser?.note || '',
-      isUserEnabled: originalUser?.isUserEnabled || true,
-      roles: originalUser?.roles || []
-    });
+    const hasChanges =
+      JSON.stringify(formData) !==
+      JSON.stringify({
+        firstName: originalUser?.firstName || "",
+        lastName: originalUser?.lastName || "",
+        email: originalUser?.email || "",
+        phoneNumber: originalUser?.phoneNumber || "",
+        dob: originalUser?.dob ? originalUser.dob.split("T")[0] : "",
+        gender: originalUser?.gender || "",
+        address: originalUser?.address || "",
+        idCard: originalUser?.idCard || "",
+        level: originalUser?.level || "",
+        bio: originalUser?.bio || "",
+        note: originalUser?.note || "",
+        isUserEnabled: originalUser?.isUserEnabled || true,
+        roles: originalUser?.roles || [],
+      });
 
     if (hasChanges) {
-      const confirmLeave = window.confirm('Bạn có chắc chắn muốn thoát? Các thay đổi sẽ không được lưu.');
+      const confirmLeave = window.confirm(
+        "Bạn có chắc chắn muốn thoát? Các thay đổi sẽ không được lưu."
+      );
       if (!confirmLeave) return;
     }
 
@@ -215,7 +229,9 @@ const UserEdit = () => {
         <div className="flex items-center justify-center min-h-96">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Đang tải thông tin người dùng...</p>
+            <p className="mt-4 text-gray-600">
+              Đang tải thông tin người dùng...
+            </p>
           </div>
         </div>
       </div>
@@ -228,16 +244,18 @@ const UserEdit = () => {
         <div className="flex items-center justify-center min-h-96">
           <div className="text-center bg-white p-8 rounded-lg shadow-sm border border-gray-200 max-w-md mx-auto">
             <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Có lỗi xảy ra</h3>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Có lỗi xảy ra
+            </h3>
             <p className="text-gray-600 mb-6">{error}</p>
             <div className="flex gap-4 justify-center">
-              <button 
+              <button
                 onClick={fetchUserDetail}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 Thử lại
               </button>
-              <Link 
+              <Link
                 to="/admin/users"
                 className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors"
               >
@@ -255,14 +273,16 @@ const UserEdit = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={handleCancel}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <ArrowLeft size={20} className="text-gray-600" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Chỉnh sửa người dùng</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Chỉnh sửa người dùng
+            </h1>
             <p className="text-gray-600">Cập nhật thông tin người dùng</p>
           </div>
         </div>
@@ -285,8 +305,10 @@ const UserEdit = () => {
           {/* Basic Information */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Thông tin cơ bản</h3>
-              
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                Thông tin cơ bản
+              </h3>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -298,12 +320,16 @@ const UserEdit = () => {
                     value={formData.firstName}
                     onChange={handleInputChange}
                     className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      validationErrors.firstName ? 'border-red-300' : 'border-gray-300'
+                      validationErrors.firstName
+                        ? "border-red-300"
+                        : "border-gray-300"
                     }`}
                     placeholder="Nhập họ"
                   />
                   {validationErrors.firstName && (
-                    <p className="mt-1 text-sm text-red-600">{validationErrors.firstName}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {validationErrors.firstName}
+                    </p>
                   )}
                 </div>
 
@@ -317,12 +343,16 @@ const UserEdit = () => {
                     value={formData.lastName}
                     onChange={handleInputChange}
                     className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      validationErrors.lastName ? 'border-red-300' : 'border-gray-300'
+                      validationErrors.lastName
+                        ? "border-red-300"
+                        : "border-gray-300"
                     }`}
                     placeholder="Nhập tên"
                   />
                   {validationErrors.lastName && (
-                    <p className="mt-1 text-sm text-red-600">{validationErrors.lastName}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {validationErrors.lastName}
+                    </p>
                   )}
                 </div>
 
@@ -336,12 +366,16 @@ const UserEdit = () => {
                     value={formData.email}
                     onChange={handleInputChange}
                     className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      validationErrors.email ? 'border-red-300' : 'border-gray-300'
+                      validationErrors.email
+                        ? "border-red-300"
+                        : "border-gray-300"
                     }`}
                     placeholder="Nhập email"
                   />
                   {validationErrors.email && (
-                    <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {validationErrors.email}
+                    </p>
                   )}
                 </div>
 
@@ -355,12 +389,16 @@ const UserEdit = () => {
                     value={formData.phoneNumber}
                     onChange={handleInputChange}
                     className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      validationErrors.phoneNumber ? 'border-red-300' : 'border-gray-300'
+                      validationErrors.phoneNumber
+                        ? "border-red-300"
+                        : "border-gray-300"
                     }`}
                     placeholder="Nhập số điện thoại"
                   />
                   {validationErrors.phoneNumber && (
-                    <p className="mt-1 text-sm text-red-600">{validationErrors.phoneNumber}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {validationErrors.phoneNumber}
+                    </p>
                   )}
                 </div>
 
@@ -374,11 +412,15 @@ const UserEdit = () => {
                     value={formData.dob}
                     onChange={handleInputChange}
                     className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      validationErrors.dob ? 'border-red-300' : 'border-gray-300'
+                      validationErrors.dob
+                        ? "border-red-300"
+                        : "border-gray-300"
                     }`}
                   />
                   {validationErrors.dob && (
-                    <p className="mt-1 text-sm text-red-600">{validationErrors.dob}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {validationErrors.dob}
+                    </p>
                   )}
                 </div>
 
@@ -408,12 +450,16 @@ const UserEdit = () => {
                     value={formData.idCard}
                     onChange={handleInputChange}
                     className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      validationErrors.idCard ? 'border-red-300' : 'border-gray-300'
+                      validationErrors.idCard
+                        ? "border-red-300"
+                        : "border-gray-300"
                     }`}
                     placeholder="Nhập số CCCD/CMND"
                   />
                   {validationErrors.idCard && (
-                    <p className="mt-1 text-sm text-red-600">{validationErrors.idCard}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {validationErrors.idCard}
+                    </p>
                   )}
                 </div>
 
@@ -482,8 +528,10 @@ const UserEdit = () => {
           {/* Account Settings */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Cài đặt tài khoản</h3>
-              
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">
+                Cài đặt tài khoản
+              </h3>
+
               {/* Account Status */}
               <div className="mb-6">
                 <label className="flex items-center">
@@ -510,10 +558,10 @@ const UserEdit = () => {
                 </label>
                 <div className="space-y-2">
                   {[
-                    { value: 'ADMIN', label: 'Quản trị viên' },
-                    { value: 'CONTENT_MANAGER', label: 'Quản lý nội dung' },
-                    { value: 'DELIVERY_MANAGER', label: 'Quản lý giao hàng' },
-                    { value: 'USER', label: 'Người dùng' }
+                    { value: "ADMIN", label: "Quản trị viên" },
+                    { value: "CONTENT_MANAGER", label: "Quản lý nội dung" },
+                    { value: "DELIVERY_MANAGER", label: "Quản lý giao hàng" },
+                    { value: "USER", label: "Người dùng" },
                   ].map((role) => (
                     <label key={role.value} className="flex items-center">
                       <input
@@ -523,7 +571,9 @@ const UserEdit = () => {
                         onChange={handleRoleChange}
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
-                      <span className="ml-2 text-sm text-gray-700">{role.label}</span>
+                      <span className="ml-2 text-sm text-gray-700">
+                        {role.label}
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -532,16 +582,25 @@ const UserEdit = () => {
               {/* Current User Info */}
               {originalUser && (
                 <div className="border-t border-gray-200 pt-6">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">Thông tin hiện tại</h4>
+                  <h4 className="text-sm font-medium text-gray-900 mb-3">
+                    Thông tin hiện tại
+                  </h4>
                   <div className="space-y-2 text-sm text-gray-600">
                     <p>
-                      <span className="font-medium">Username:</span> {originalUser.username}
+                      <span className="font-medium">Username:</span>{" "}
+                      {originalUser.username}
                     </p>
                     <p>
-                      <span className="font-medium">Ngày tạo:</span> {new Date(originalUser.createdDate).toLocaleDateString('vi-VN')}
+                      <span className="font-medium">Ngày tạo:</span>{" "}
+                      {new Date(originalUser.createdDate).toLocaleDateString(
+                        "vi-VN"
+                      )}
                     </p>
                     <p>
-                      <span className="font-medium">Cập nhật lần cuối:</span> {new Date(originalUser.updatedDate).toLocaleDateString('vi-VN')}
+                      <span className="font-medium">Cập nhật lần cuối:</span>{" "}
+                      {new Date(originalUser.updatedDate).toLocaleDateString(
+                        "vi-VN"
+                      )}
                     </p>
                   </div>
                 </div>
@@ -566,7 +625,7 @@ const UserEdit = () => {
             className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors flex items-center gap-2"
           >
             <Save size={16} />
-            {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
+            {saving ? "Đang lưu..." : "Lưu thay đổi"}
           </button>
         </div>
       </form>
