@@ -1,15 +1,14 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { 
-  Trash2, 
-  Upload, 
-  Volume2, 
+import React, { useRef, useState, useEffect } from "react";
+import {
+  Trash2,
+  Volume2,
   Image as ImageIcon,
   X,
   Loader,
   Play,
-  Pause
-} from 'lucide-react';
-import CloudinaryService from '../../services/CloudinaryService';
+  Pause,
+} from "lucide-react";
+import CloudinaryService from "../../services/CloudinaryService";
 
 const QuestionEditor = ({
   question,
@@ -18,12 +17,12 @@ const QuestionEditor = ({
   onUpdateQuestion,
   onDeleteQuestion,
   onFileUpload,
-  uploadingFiles
+  uploadingFiles,
 }) => {
   const imageInputRef = useRef(null);
   const audioInputRef = useRef(null);
   const audioRef = useRef(null);
-  
+
   const [imagePreview, setImagePreview] = useState(null);
   const [audioPreview, setAudioPreview] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -31,10 +30,10 @@ const QuestionEditor = ({
   // Clean up preview URLs when component unmounts
   useEffect(() => {
     return () => {
-      if (imagePreview && imagePreview.startsWith('blob:')) {
+      if (imagePreview && imagePreview.startsWith("blob:")) {
         CloudinaryService.revokePreviewUrl(imagePreview);
       }
-      if (audioPreview && audioPreview.startsWith('blob:')) {
+      if (audioPreview && audioPreview.startsWith("blob:")) {
         CloudinaryService.revokePreviewUrl(audioPreview);
       }
     };
@@ -46,16 +45,16 @@ const QuestionEditor = ({
 
     try {
       // Validate file trước khi upload
-      CloudinaryService.validateFile(file, 'image');
-      
+      CloudinaryService.validateFile(file, "image");
+
       // Tạo preview URL cho UX tốt hơn
       const previewUrl = CloudinaryService.generatePreviewUrl(file);
       setImagePreview(previewUrl);
-      
+
       // Gửi file lên để xử lý
-      await onFileUpload(file, 'image', questionIndex);
+      await onFileUpload(file, "image", questionIndex);
     } catch (error) {
-      console.error('Lỗi khi xử lý file ảnh:', error);
+      console.error("Lỗi khi xử lý file ảnh:", error);
       alert(error.message);
     }
   };
@@ -66,35 +65,35 @@ const QuestionEditor = ({
 
     try {
       // Validate file trước khi upload
-      CloudinaryService.validateFile(file, 'audio');
-      
+      CloudinaryService.validateFile(file, "audio");
+
       // Tạo preview URL cho UX tốt hơn
       const previewUrl = CloudinaryService.generatePreviewUrl(file);
       setAudioPreview(previewUrl);
-      
+
       // Gửi file lên để xử lý
-      await onFileUpload(file, 'audio', questionIndex);
+      await onFileUpload(file, "audio", questionIndex);
     } catch (error) {
-      console.error('Lỗi khi xử lý file âm thanh:', error);
+      console.error("Lỗi khi xử lý file âm thanh:", error);
       alert(error.message);
     }
   };
 
   const removeImage = () => {
-    if (imagePreview && imagePreview.startsWith('blob:')) {
+    if (imagePreview && imagePreview.startsWith("blob:")) {
       CloudinaryService.revokePreviewUrl(imagePreview);
     }
     setImagePreview(null);
-    onUpdateQuestion(questionIndex, 'imageUrl', null);
+    onUpdateQuestion(questionIndex, "imageUrl", null);
   };
 
   const removeAudio = () => {
-    if (audioPreview && audioPreview.startsWith('blob:')) {
+    if (audioPreview && audioPreview.startsWith("blob:")) {
       CloudinaryService.revokePreviewUrl(audioPreview);
     }
     setAudioPreview(null);
     setIsPlaying(false);
-    onUpdateQuestion(questionIndex, 'audioUrl', null);
+    onUpdateQuestion(questionIndex, "audioUrl", null);
   };
 
   const toggleAudioPlayback = () => {
@@ -112,8 +111,10 @@ const QuestionEditor = ({
     setIsPlaying(false);
   };
 
-  const isUploadingImage = uploadingFiles[`${partIndex}-${questionIndex}-image`];
-  const isUploadingAudio = uploadingFiles[`${partIndex}-${questionIndex}-audio`];
+  const isUploadingImage =
+    uploadingFiles[`${partIndex}-${questionIndex}-image`];
+  const isUploadingAudio =
+    uploadingFiles[`${partIndex}-${questionIndex}-audio`];
 
   // Use preview or uploaded URL
   const displayImageUrl = imagePreview || question.imageUrl;
@@ -128,7 +129,9 @@ const QuestionEditor = ({
           </span>
           <select
             value={question.questionType}
-            onChange={(e) => onUpdateQuestion(questionIndex, 'questionType', e.target.value)}
+            onChange={(e) =>
+              onUpdateQuestion(questionIndex, "questionType", e.target.value)
+            }
             className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="MULTIPLE_CHOICE">Trắc nghiệm</option>
@@ -137,12 +140,18 @@ const QuestionEditor = ({
             <option value="READING">Đọc hiểu</option>
           </select>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <input
             type="number"
             value={question.points}
-            onChange={(e) => onUpdateQuestion(questionIndex, 'points', parseInt(e.target.value))}
+            onChange={(e) =>
+              onUpdateQuestion(
+                questionIndex,
+                "points",
+                parseInt(e.target.value)
+              )
+            }
             min="1"
             className="w-16 px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             title="Điểm số"
@@ -166,7 +175,9 @@ const QuestionEditor = ({
           </label>
           <textarea
             value={question.questionText}
-            onChange={(e) => onUpdateQuestion(questionIndex, 'questionText', e.target.value)}
+            onChange={(e) =>
+              onUpdateQuestion(questionIndex, "questionText", e.target.value)
+            }
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Nhập nội dung câu hỏi"
@@ -182,9 +193,9 @@ const QuestionEditor = ({
             </label>
             {displayImageUrl ? (
               <div className="relative">
-                <img 
-                  src={displayImageUrl} 
-                  alt="Question" 
+                <img
+                  src={displayImageUrl}
+                  alt="Question"
                   className="w-full h-32 object-cover rounded-lg border"
                 />
                 <button
@@ -223,7 +234,7 @@ const QuestionEditor = ({
                     <ImageIcon className="mb-2 text-gray-400" size={24} />
                   )}
                   <span className="text-sm text-gray-500">
-                    {isUploadingImage ? 'Đang upload...' : 'Nhấn để upload ảnh'}
+                    {isUploadingImage ? "Đang upload..." : "Nhấn để upload ảnh"}
                   </span>
                   <span className="text-xs text-gray-400 mt-1">
                     JPG, PNG, GIF (tối đa 5MB)
@@ -249,8 +260,12 @@ const QuestionEditor = ({
                       {isPlaying ? <Pause size={16} /> : <Play size={16} />}
                     </button>
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900">Audio File</div>
-                      <div className="text-xs text-gray-500">Nhấn play để nghe thử</div>
+                      <div className="text-sm font-medium text-gray-900">
+                        Audio File
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Nhấn play để nghe thử
+                      </div>
                     </div>
                     <button
                       onClick={removeAudio}
@@ -297,7 +312,9 @@ const QuestionEditor = ({
                     <Volume2 className="mb-2 text-gray-400" size={24} />
                   )}
                   <span className="text-sm text-gray-500">
-                    {isUploadingAudio ? 'Đang upload...' : 'Nhấn để upload audio'}
+                    {isUploadingAudio
+                      ? "Đang upload..."
+                      : "Nhấn để upload audio"}
                   </span>
                   <span className="text-xs text-gray-400 mt-1">
                     MP3, WAV, M4A (tối đa 20MB)
@@ -315,7 +332,9 @@ const QuestionEditor = ({
           </label>
           <textarea
             value={question.option}
-            onChange={(e) => onUpdateQuestion(questionIndex, 'option', e.target.value)}
+            onChange={(e) =>
+              onUpdateQuestion(questionIndex, "option", e.target.value)
+            }
             rows={3}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="A) Lựa chọn 1 B) Lựa chọn 2 C) Lựa chọn 3 D) Lựa chọn 4"
@@ -331,20 +350,24 @@ const QuestionEditor = ({
             <input
               type="text"
               value={question.correctAnswer}
-              onChange={(e) => onUpdateQuestion(questionIndex, 'correctAnswer', e.target.value)}
+              onChange={(e) =>
+                onUpdateQuestion(questionIndex, "correctAnswer", e.target.value)
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="A"
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Giải thích
             </label>
             <input
               type="text"
-              value={question.explanation || ''}
-              onChange={(e) => onUpdateQuestion(questionIndex, 'explanation', e.target.value)}
+              value={question.explanation || ""}
+              onChange={(e) =>
+                onUpdateQuestion(questionIndex, "explanation", e.target.value)
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Giải thích đáp án"
             />
@@ -356,6 +379,3 @@ const QuestionEditor = ({
 };
 
 export default QuestionEditor;
-
-
-

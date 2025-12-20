@@ -350,7 +350,7 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
         setLoading(false);
       }
     },
-    [courseId, CourseProgressService]
+    [courseId]
   );
 
   // Refresh progress cho một user cụ thể
@@ -462,6 +462,7 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
     [enrollments]
   );
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (visible && courseId) {
       loadEnrollmentsWithProgress(1, pagination.pageSize);
