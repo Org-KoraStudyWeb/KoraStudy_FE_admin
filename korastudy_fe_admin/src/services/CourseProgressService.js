@@ -465,7 +465,6 @@ class CourseProgressService {
 
     lessonProgressData.forEach((lesson) => {
       const progress = lesson.progress || 0;
-      const timeSpent = lesson.timeSpent || 0;
       const duration = lesson.duration || 0;
 
       // Phân loại trạng thái

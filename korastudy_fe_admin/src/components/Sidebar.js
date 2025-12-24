@@ -14,8 +14,9 @@ import {
   ChevronDown,
   ChevronRight,
   User,
-  CreditCard, // Icon cho Flash Card
+  CreditCard, // Icon cho Flash Card và Thanh toán (thay đổi sau)
   Edit3, // Icon cho Blog
+  DollarSign, // Icon mới cho Thanh toán
 } from "lucide-react";
 
 const Sidebar = ({ isCollapsed, onCollapse }) => {
@@ -92,7 +93,7 @@ const Sidebar = ({ isCollapsed, onCollapse }) => {
         },
         {
           title: "Quản lý thanh toán",
-          icon: <CreditCard size={16} />,
+          icon: <DollarSign size={16} />, // Đã thay đổi icon ở đây
           path: "/admin/payment",
         },
       ],
@@ -140,7 +141,7 @@ const Sidebar = ({ isCollapsed, onCollapse }) => {
 
     {
       title: "Quản lý thông báo",
-      icon: <IoNotificationsOutline className="text-lg" />, // Hoặc icon phù hợp khác
+      icon: <IoNotificationsOutline className="text-lg" />,
       path: "/admin/notifications",
       permissions: ["ADMIN"],
     },
@@ -164,51 +165,69 @@ const Sidebar = ({ isCollapsed, onCollapse }) => {
     return location.pathname.startsWith(path);
   };
 
+  // Hàm kiểm tra xem có submenu nào đang active không
+  const isSubmenuActive = (submenu) => {
+    return submenu.some((subItem) => isActive(subItem.path));
+  };
+
   const renderMenuItem = (item) => (
     <li key={item.path || item.key}>
       {item.submenu ? (
         <div>
           {isCollapsed ? (
+            // Khi sidebar đóng: hiển thị icon của menu chính
+            // Nhưng có thể click để mở trang đầu tiên của submenu
             <Link
               to={item.submenu[0].path}
-              className="w-full flex items-center justify-center p-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+              className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors duration-200 ${
+                isSubmenuActive(item.submenu)
+                  ? "bg-blue-50 text-blue-600"
+                  : "text-gray-700 hover:bg-gray-100"
+              }`}
+              title={item.title}
             >
               {item.icon}
             </Link>
           ) : (
-            <button
-              onClick={() => toggleMenu(item.key)}
-              className="w-full flex items-center justify-between p-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-            >
-              <div className="flex items-center gap-3">
-                {item.icon}
-                <span className="font-medium">{item.title}</span>
-              </div>
-              {expandedMenus[item.key] ? (
-                <ChevronDown size={16} />
-              ) : (
-                <ChevronRight size={16} />
+            <>
+              <button
+                onClick={() => toggleMenu(item.key)}
+                className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors duration-200 ${
+                  isSubmenuActive(item.submenu)
+                    ? "bg-blue-50 text-blue-600"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  {item.icon}
+                  <span className="font-medium">{item.title}</span>
+                </div>
+                {expandedMenus[item.key] ? (
+                  <ChevronDown size={16} />
+                ) : (
+                  <ChevronRight size={16} />
+                )}
+              </button>
+              {!isCollapsed && expandedMenus[item.key] && (
+                <ul className="pl-8 mt-1 space-y-1">
+                  {item.submenu.map((subItem, subIndex) => (
+                    <li key={subIndex}>
+                      <Link
+                        to={subItem.path}
+                        className={`flex items-center gap-3 p-2 rounded-lg transition-colors duration-200 ${
+                          isActive(subItem.path)
+                            ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
+                            : "text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        {subItem.icon}
+                        <span className="text-sm">{subItem.title}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               )}
-            </button>
-          )}
-          {!isCollapsed && expandedMenus[item.key] && (
-            <ul className="pl-8 mt-1 space-y-1">
-              {item.submenu.map((subItem, subIndex) => (
-                <li key={subIndex}>
-                  <Link
-                    to={subItem.path}
-                    className={`flex items-center gap-3 p-2 rounded-lg transition-colors duration-200 ${
-                      isActive(subItem.path)
-                        ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
-                        : "text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    {subItem.icon}
-                    <span className="text-sm">{subItem.title}</span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            </>
           )}
         </div>
       ) : (
@@ -221,6 +240,7 @@ const Sidebar = ({ isCollapsed, onCollapse }) => {
               ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
               : "text-gray-700 hover:bg-gray-100"
           }`}
+          title={isCollapsed ? item.title : ""}
         >
           {item.icon}
           {!isCollapsed && <span className="font-medium">{item.title}</span>}
@@ -279,6 +299,24 @@ const Sidebar = ({ isCollapsed, onCollapse }) => {
       >
         <ul className="space-y-2">
           {mainMenuItems.map(renderMenuItem)}
+
+          {/* Thêm icon riêng cho trang thanh toán khi sidebar đóng */}
+          {isCollapsed && (
+            <li key="payment-direct">
+              <Link
+                to="/admin/payment"
+                className={`flex items-center justify-center p-3 rounded-lg transition-colors duration-200 ${
+                  isActive("/admin/payment")
+                    ? "bg-blue-50 text-blue-600"
+                    : "text-gray-700 hover:bg-gray-100"
+                }`}
+                title="Quản lý thanh toán"
+              >
+                <DollarSign size={20} />
+              </Link>
+            </li>
+          )}
+
           {/* Gộp menu dưới vào đây để cùng cuộn */}
           <div className="pt-2 mt-2 border-t border-gray-200">
             {bottomMenuItems.map(renderMenuItem)}
