@@ -17,7 +17,6 @@ import {
   Input,
   Tooltip,
   Popover,
-  Badge,
 } from "antd";
 import {
   UserOutlined,
@@ -35,9 +34,14 @@ import {
   InfoCircleOutlined,
 } from "@ant-design/icons";
 import EnrollmentService from "../../services/EnrollmentService";
-import CourseProgressService from "../../services/Quiz/CourseProgressService";
+import CourseProgressService from "../../services/CourseProgressService";
 import LessonService from "../../services/LessonService";
-import QuizService from "../../services/Quiz/QuizService";
+import QuizProgressService from "../../services/Quiz/QuizProgressService";
+import EnrollmentActions from "./enrollmentComponents/EnrollmentActions";
+import ProgressDetailModal from "./enrollmentComponents/ProgressDetailModal";
+import QuizResultsModal from "./enrollmentComponents/QuizResultsModal";
+import QuizProgressDetail from "./enrollmentComponents/QuizProgressDetail";
+import CertificateModal from "./enrollmentComponents/CertificateModal";
 
 const { Search } = Input;
 
@@ -65,90 +69,6 @@ const generateAvatarColor = (userId) => {
   return colors[Math.abs(userId) % colors.length];
 };
 
-// Component popover hiển thị chi tiết quiz progress
-const QuizProgressDetail = ({ quizProgress }) => {
-  if (!quizProgress || quizProgress.totalQuizzes === 0) {
-    return (
-      <div style={{ width: 280 }}>
-        <p style={{ color: "#999" }}>Chưa có quiz nào</p>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ width: 280 }}>
-      <div style={{ marginBottom: 8 }}>
-        <strong>Tổng số quiz: </strong>
-        {quizProgress.totalQuizzes}
-      </div>
-      <div style={{ marginBottom: 4 }}>
-        <Space>
-          <Badge color="green" text="Đã pass" />
-          <strong>{quizProgress.passedQuizzes}</strong>
-        </Space>
-      </div>
-      <div style={{ marginBottom: 4 }}>
-        <Space>
-          <Badge color="orange" text="Đã làm (fail)" />
-          <strong>{quizProgress.failedQuizzes}</strong>
-        </Space>
-      </div>
-      <div style={{ marginBottom: 8 }}>
-        <Space>
-          <Badge color="default" text="Chưa làm" />
-          <strong>{quizProgress.notAttemptedQuizzes}</strong>
-        </Space>
-      </div>
-
-      {quizProgress.quizDetails && quizProgress.quizDetails.length > 0 && (
-        <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 8 }}>
-          <div style={{ fontSize: "12px", color: "#666", marginBottom: 4 }}>
-            Chi tiết quiz:
-          </div>
-          {quizProgress.quizDetails.slice(0, 3).map((quiz, index) => (
-            <div
-              key={index}
-              style={{
-                padding: "4px 0",
-                borderBottom: index < 2 ? "1px solid #f5f5f5" : "none",
-              }}
-            >
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <div style={{ flex: 1, fontSize: "11px" }}>
-                  {quiz.quizTitle}
-                </div>
-                <div>
-                  <Tag
-                    color={
-                      quiz.isPassed
-                        ? "green"
-                        : quiz.isCompleted
-                        ? "orange"
-                        : "default"
-                    }
-                    size="small"
-                  >
-                    {quiz.isPassed
-                      ? "Pass"
-                      : quiz.isCompleted
-                      ? "Fail"
-                      : "Chưa làm"}
-                  </Tag>
-                </div>
-              </div>
-            </div>
-          ))}
-          {quizProgress.quizDetails.length > 3 && (
-            <div style={{ fontSize: "11px", color: "#999", marginTop: 4 }}>
-              ...và {quizProgress.quizDetails.length - 3} quiz khác
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
 const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
   const [enrollments, setEnrollments] = useState([]);
   const [filteredEnrollments, setFilteredEnrollments] = useState([]);
@@ -166,7 +86,14 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
     quizzes: [],
   });
 
-  // Load enrollments và progress
+  // State cho modal xem chi tiết
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  // State cho các modal khác
+  const [quizResultsModalVisible, setQuizResultsModalVisible] = useState(false);
+  const [certificateModalVisible, setCertificateModalVisible] = useState(false);
+
+  // Load enrollments và progress - SỬA LẠI ĐÂY
   const loadEnrollmentsWithProgress = useCallback(
     async (page = 1, size = 5) => {
       if (!courseId) {
@@ -176,30 +103,6 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
 
       setLoading(true);
       try {
-        // 1. Lấy cấu trúc khóa học (lessons & quizzes) MỘT LẦN
-        let structure = { totalLessons: 0, totalQuizzes: 0, quizzes: [] };
-        const structureResponse =
-          await CourseProgressService.getCourseStructure(courseId);
-        if (
-          structureResponse.success &&
-          Array.isArray(structureResponse.data)
-        ) {
-          let lessonCount = 0;
-          let quizList = [];
-          structureResponse.data.forEach((section) => {
-            lessonCount += section.lessons?.length || 0;
-            if (section.quizzes?.length > 0) {
-              quizList.push(...section.quizzes);
-            }
-          });
-          structure = {
-            totalLessons: lessonCount,
-            totalQuizzes: quizList.length,
-            quizzes: quizList,
-          };
-        }
-        setCourseStructure(structure);
-
         // 1. Load enrollments
         const enrollmentResponse =
           await EnrollmentService.getCourseEnrollmentsAdmin(courseId, {
@@ -222,7 +125,32 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
             return;
           }
 
-          // 2. Kết hợp enrollment data với progress data (bao gồm cả quiz)
+          // 2. Lấy cấu trúc khóa học nếu chưa có
+          if (courseStructure.totalLessons === 0) {
+            const structureResponse =
+              await CourseProgressService.getCourseStructure(courseId);
+            if (
+              structureResponse.success &&
+              Array.isArray(structureResponse.data)
+            ) {
+              let lessonCount = 0;
+              let quizList = [];
+              structureResponse.data.forEach((section) => {
+                lessonCount += section.lessons?.length || 0;
+                if (section.quizzes?.length > 0) {
+                  quizList.push(...section.quizzes);
+                }
+              });
+              const newStructure = {
+                totalLessons: lessonCount,
+                totalQuizzes: quizList.length,
+                quizzes: quizList,
+              };
+              setCourseStructure(newStructure);
+            }
+          }
+
+          // 3. Kết hợp enrollment data với progress data
           const enrollmentsWithProgress = await Promise.all(
             enrollmentsData.map(async (enrollment) => {
               try {
@@ -231,12 +159,20 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
                   [enrollment.userId]: true,
                 }));
 
-                // Load lesson progress
-                const lessonProgressResponse =
-                  await LessonService.getUserProgressByCourseForAdmin(
-                    courseId,
-                    enrollment.userId
-                  );
+                // GỌI SONG SONG 2 API ĐỂ LẤY DỮ LIỆU
+                const [lessonProgressResponse, quizProgressResponse] =
+                  await Promise.all([
+                    LessonService.getUserProgressByCourseForAdmin(
+                      courseId,
+                      enrollment.userId
+                    ),
+                    QuizProgressService.getUserQuizProgressInCourseForAdmin(
+                      courseId,
+                      enrollment.userId
+                    ),
+                  ]);
+
+                // Xử lý tiến độ bài học
                 const completedLessons =
                   lessonProgressResponse.success &&
                   Array.isArray(lessonProgressResponse.data)
@@ -245,64 +181,62 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
                       ).length
                     : 0;
 
-                // Load quiz progress
-                let passedQuizzes = 0;
-                let failedQuizzes = 0;
-                let notAttemptedQuizzes = 0;
-                let quizDetails = [];
+                // Xử lý tiến độ quiz
+                const quizAnalysis =
+                  quizProgressResponse.success &&
+                  Array.isArray(quizProgressResponse.data)
+                    ? QuizProgressService.analyzeUserQuizProgress(
+                        quizProgressResponse.data
+                      )
+                    : null;
 
-                if (structure.totalQuizzes > 0) {
-                  const quizStatusPromises = structure.quizzes.map((quiz) =>
-                    QuizService.getQuizStatusForUser(quiz.id, enrollment.userId)
-                  );
-                  const quizStatuses = await Promise.all(quizStatusPromises);
+                const quizProgressData = {
+                  totalQuizzes: quizAnalysis?.totalQuizzes || 0,
+                  passedQuizzes: quizAnalysis?.passedQuizzes || 0,
+                  failedQuizzes: quizAnalysis?.failedQuizzes || 0,
+                  notAttemptedQuizzes: quizAnalysis?.notAttemptedQuizzes || 0,
+                  completedQuizzes: quizAnalysis?.completedQuizzes || 0,
+                  quizDetails: quizProgressResponse.data || [],
+                };
 
-                  quizStatuses.forEach((statusRes, index) => {
-                    const quizInfo = structure.quizzes[index];
-                    const detail = {
-                      quizId: quizInfo.id,
-                      quizTitle: quizInfo.title,
-                      isPassed: false,
-                      isCompleted: false,
-                    };
-                    if (statusRes.success && statusRes.data) {
-                      detail.isPassed = statusRes.data.isPassed || false;
-                      detail.isCompleted = statusRes.data.isCompleted || false;
-                      if (detail.isPassed) {
-                        passedQuizzes++;
-                      } else if (detail.isCompleted) {
-                        failedQuizzes++;
-                      } else {
-                        notAttemptedQuizzes++;
-                      }
-                    } else {
-                      notAttemptedQuizzes++;
-                    }
-                    quizDetails.push(detail);
-                  });
-                }
-
+                // Tính toán tiến độ tổng
                 const totalItems =
-                  structure.totalLessons + structure.totalQuizzes;
-                const completedItems = completedLessons + passedQuizzes;
-                const progress =
-                  totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
+                  courseStructure.totalLessons + quizProgressData.totalQuizzes;
+                const completedItems =
+                  completedLessons + quizProgressData.passedQuizzes;
+                const totalProgress =
+                  totalItems > 0
+                    ? Math.round((completedItems / totalItems) * 100)
+                    : 0;
+                const isCourseCompleted =
+                  totalItems > 0 && completedItems === totalItems;
+
+                // TÍNH TOÁN NGÀY HOẠT ĐỘNG CUỐI
+                const lessonProgressRaw = lessonProgressResponse.data || [];
+                const quizProgressRaw = quizProgressResponse.data || [];
+
+                const allPossibleDates = [
+                  enrollment.lastActivity, // Giữ lại ngày gốc để so sánh
+                  ...lessonProgressRaw.map((p) => p.lastAccessed),
+                  ...quizProgressRaw.map((p) => p.lastAttemptDate),
+                ]
+                  .filter(Boolean)
+                  .map((d) => new Date(d));
+
+                const lastActivity =
+                  allPossibleDates.length > 0
+                    ? new Date(Math.max(...allPossibleDates)).toISOString()
+                    : null;
 
                 return {
                   ...enrollment,
-                  progress: Math.round(progress),
-                  completedLessons: completedLessons,
-                  totalLessons: structure.totalLessons,
-                  quizProgress: {
-                    totalQuizzes: structure.totalQuizzes,
-                    passedQuizzes: passedQuizzes,
-                    failedQuizzes: failedQuizzes,
-                    notAttemptedQuizzes: notAttemptedQuizzes,
-                    completedQuizzes: passedQuizzes + failedQuizzes,
-                    quizDetails: quizDetails,
-                  },
-                  isCourseCompleted:
-                    totalItems > 0 && completedItems === totalItems,
+                  progress: totalProgress,
+                  completedLessons,
+                  totalLessons: courseStructure.totalLessons,
+                  quizProgress: quizProgressData,
+                  isCourseCompleted,
+                  totalDuration: enrollment.totalDuration || 0,
+                  lastActivity, // Cập nhật ngày hoạt động cuối
                 };
               } catch (error) {
                 console.error(
@@ -313,14 +247,17 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
                   ...enrollment,
                   progress: 0,
                   completedLessons: 0,
-                  totalLessons: structure.totalLessons,
+                  totalLessons: courseStructure.totalLessons,
                   quizProgress: {
-                    totalQuizzes: structure.totalQuizzes,
+                    totalQuizzes: courseStructure.totalQuizzes,
                     passedQuizzes: 0,
                     failedQuizzes: 0,
-                    notAttemptedQuizzes: 0,
+                    notAttemptedQuizzes: courseStructure.totalQuizzes,
+                    completedQuizzes: 0,
+                    quizDetails: [],
                   },
                   isCourseCompleted: false,
+                  totalDuration: 0,
                 };
               } finally {
                 setProgressLoading((prev) => ({
@@ -350,7 +287,7 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
         setLoading(false);
       }
     },
-    [courseId]
+    [courseId, courseStructure]
   );
 
   // Refresh progress cho một user cụ thể
@@ -361,77 +298,82 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
       setProgressLoading((prev) => ({ ...prev, [userId]: true }));
 
       try {
-        // Lấy lại tiến độ lesson
-        const lessonProgressResponse =
-          await LessonService.getUserProgressByCourseForAdmin(courseId, userId);
-        const completedLessons =
-          lessonProgressResponse.success &&
-          Array.isArray(lessonProgressResponse.data)
+        // Sử dụng logic tương tự như loadEnrollmentsWithProgress cho một user
+        const [lessonProgressResponse, quizProgressResponse] =
+          await Promise.all([
+            LessonService.getUserProgressByCourseForAdmin(courseId, userId),
+            QuizProgressService.getUserQuizProgressInCourseForAdmin(
+              courseId,
+              userId
+            ),
+          ]);
+
+        if (lessonProgressResponse.success && quizProgressResponse.success) {
+          const completedLessons = Array.isArray(lessonProgressResponse.data)
             ? lessonProgressResponse.data.filter(
                 (item) => item.status === "COMPLETED"
               ).length
             : 0;
 
-        // Lấy lại tiến độ quiz
-        let passedQuizzes = 0;
-        let failedQuizzes = 0;
-        let notAttemptedQuizzes = 0;
-        let quizDetails = [];
+          const quizAnalysis = Array.isArray(quizProgressResponse.data)
+            ? QuizProgressService.analyzeUserQuizProgress(
+                quizProgressResponse.data
+              )
+            : null;
 
-        if (courseStructure.totalQuizzes > 0) {
-          const quizStatusPromises = courseStructure.quizzes.map((quiz) =>
-            QuizService.getQuizStatusForUser(quiz.id, userId)
+          const quizProgressData = {
+            totalQuizzes: quizAnalysis?.totalQuizzes || 0,
+            passedQuizzes: quizAnalysis?.passedQuizzes || 0,
+            failedQuizzes: quizAnalysis?.failedQuizzes || 0,
+            notAttemptedQuizzes: quizAnalysis?.notAttemptedQuizzes || 0,
+            completedQuizzes: quizAnalysis?.completedQuizzes || 0,
+            quizDetails: quizProgressResponse.data || [],
+          };
+
+          const totalItems =
+            courseStructure.totalLessons + quizProgressData.totalQuizzes;
+          const completedItems =
+            completedLessons + quizProgressData.passedQuizzes;
+          const totalProgress =
+            totalItems > 0
+              ? Math.round((completedItems / totalItems) * 100)
+              : 0;
+          const isCourseCompleted =
+            totalItems > 0 && completedItems === totalItems;
+
+          // Tính toán ngày hoạt động cuối
+          const lessonProgressRaw = lessonProgressResponse.data || [];
+          const quizProgressRaw = quizProgressResponse.data || [];
+          const allPossibleDates = [
+            ...lessonProgressRaw.map((p) => p.lastAccessed),
+            ...quizProgressRaw.map((p) => p.lastAttemptDate),
+          ]
+            .filter(Boolean)
+            .map((d) => new Date(d));
+          const lastActivity =
+            allPossibleDates.length > 0
+              ? new Date(Math.max(...allPossibleDates)).toISOString()
+              : null;
+
+          setEnrollments((prev) =>
+            prev.map((enrollment) =>
+              enrollment.userId === userId
+                ? {
+                    ...enrollment,
+                    progress: totalProgress,
+                    completedLessons,
+                    totalLessons: courseStructure.totalLessons,
+                    quizProgress: quizProgressData,
+                    isCourseCompleted,
+                    lastActivity: lastActivity || enrollment.lastActivity,
+                  }
+                : enrollment
+            )
           );
-          const quizStatuses = await Promise.all(quizStatusPromises);
-          quizStatuses.forEach((statusRes, index) => {
-            const quizInfo = courseStructure.quizzes[index];
-            const detail = {
-              quizId: quizInfo.id,
-              quizTitle: quizInfo.title,
-              isPassed: false,
-              isCompleted: false,
-            };
-            if (statusRes.success && statusRes.data) {
-              detail.isPassed = statusRes.data.isPassed || false;
-              detail.isCompleted = statusRes.data.isCompleted || false;
-              if (detail.isPassed) passedQuizzes++;
-              else if (detail.isCompleted) failedQuizzes++;
-              else notAttemptedQuizzes++;
-            } else {
-              notAttemptedQuizzes++;
-            }
-            quizDetails.push(detail);
-          });
+          message.success("Đã cập nhật tiến độ thành công");
+        } else {
+          message.error("Không thể cập nhật tiến độ");
         }
-
-        const totalItems =
-          courseStructure.totalLessons + courseStructure.totalQuizzes;
-        const completedItems = completedLessons + passedQuizzes;
-        const progress =
-          totalItems > 0 ? (completedItems / totalItems) * 100 : 0;
-
-        setEnrollments((prev) =>
-          prev.map((enrollment) =>
-            enrollment.userId === userId
-              ? {
-                  ...enrollment,
-                  progress: Math.round(progress),
-                  completedLessons: completedLessons,
-                  totalLessons: courseStructure.totalLessons,
-                  quizProgress: {
-                    totalQuizzes: courseStructure.totalQuizzes,
-                    passedQuizzes: passedQuizzes,
-                    failedQuizzes: failedQuizzes,
-                    notAttemptedQuizzes: notAttemptedQuizzes,
-                    completedQuizzes: passedQuizzes + failedQuizzes,
-                    quizDetails: quizDetails,
-                  },
-                  isCourseCompleted:
-                    totalItems > 0 && completedItems === totalItems,
-                }
-              : enrollment
-          )
-        );
       } catch (error) {
         console.error(`Error refreshing progress for user ${userId}:`, error);
         message.error("Lỗi khi cập nhật tiến độ");
@@ -441,6 +383,31 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
     },
     [courseId, courseStructure]
   );
+
+  // Xem chi tiết tiến độ
+  const handleViewProgressDetail = (userId, username) => {
+    setSelectedUser({ userId, username });
+    setDetailModalVisible(true);
+  };
+
+  // Xem kết quả quiz
+  const handleViewQuizResults = (userId, username) => {
+    setSelectedUser({ userId, username });
+    setQuizResultsModalVisible(true);
+  };
+
+  // Trao certificate
+  const handleIssueCertificate = (userId, username, progress) => {
+    setSelectedUser({ userId, username, progress });
+    setCertificateModalVisible(true);
+  };
+
+  // Hàm xử lý khi trao certificate (placeholder)
+  const onIssueCertificate = async (certificateData) => {
+    console.log("Issuing certificate:", certificateData);
+    // TODO: Gọi API để lưu certificate
+    message.info("Tính năng trao certificate đang được phát triển.");
+  };
 
   // Tìm kiếm enrollments
   const handleSearch = useCallback(
@@ -462,22 +429,21 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
     [enrollments]
   );
 
-  useEffect(
-    () => {
-      if (visible && courseId) {
-        loadEnrollmentsWithProgress(1, pagination.pageSize);
-        setSearchText("");
-      }
-    },
-    [visible, courseId, pagination.pageSize] // eslint-disable-line react-hooks/exhaustive-deps
-  );
+  useEffect(() => {
+    if (visible && courseId) {
+      loadEnrollmentsWithProgress(1, pagination.pageSize);
+      setSearchText("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, courseId, pagination.pageSize]);
 
-  // Table columns
+  // Table columns - THÊM CỘT THAO TÁC
   const columns = [
     {
       title: "Học viên",
       key: "user",
       width: 200,
+      fixed: "left",
       render: (_, record) => (
         <Space direction="vertical" size={8} style={{ width: "100%" }}>
           <Space>
@@ -780,9 +746,23 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
         </Space>
       ),
     },
+    {
+      title: "Thao tác",
+      key: "action",
+      width: 80,
+      fixed: "right",
+      render: (_, record) => (
+        <EnrollmentActions
+          record={record}
+          onViewProgressDetail={handleViewProgressDetail}
+          onViewQuizResults={handleViewQuizResults}
+          onIssueCertificate={handleIssueCertificate}
+        />
+      ),
+    },
   ];
 
-  // Statistics - bao gồm cả quiz
+  // Statistics
   const stats = useMemo(() => {
     const data = searchText ? filteredEnrollments : enrollments;
 
@@ -851,182 +831,232 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
     : pagination.total;
 
   return (
-    <Modal
-      title={
-        <div>
-          <UserOutlined style={{ marginRight: 8 }} />
-          Danh sách học viên - {courseName}
-          <div
-            style={{
-              fontSize: "12px",
-              color: "#666",
-              fontWeight: "normal",
-              marginTop: "4px",
-            }}
-          >
-            Tổng số: {enrollments.length} học viên{" "}
-            {searchText && `(Đang tìm: "${searchText}")`}
+    <>
+      <Modal
+        title={
+          <div>
+            <UserOutlined style={{ marginRight: 8 }} />
+            Danh sách học viên - {courseName}
+            <div
+              style={{
+                fontSize: "12px",
+                color: "#666",
+                fontWeight: "normal",
+                marginTop: "4px",
+              }}
+            >
+              Tổng số: {enrollments.length} học viên{" "}
+              {searchText && `(Đang tìm: "${searchText}")`}
+            </div>
           </div>
-        </div>
-      }
-      open={visible}
-      onCancel={onClose}
-      width={1400}
-      footer={null}
-      destroyOnClose
-      style={{ top: 20 }}
-    >
-      {/* Statistics với quiz */}
-      <Row gutter={16} style={{ marginBottom: "24px" }}>
-        <Col span={3}>
-          <Card size="small">
-            <Statistic
-              title="Tổng học viên"
-              value={enrollments.length}
-              prefix={<UserOutlined />}
-              valueStyle={{ fontSize: "20px" }}
-            />
-          </Card>
-        </Col>
-        <Col span={3}>
-          <Card size="small">
-            <Statistic
-              title="Hoàn thành KH"
-              value={stats.completed}
-              valueStyle={{ color: "#52c41a", fontSize: "20px" }}
-            />
-          </Card>
-        </Col>
-        <Col span={3}>
-          <Card size="small">
-            <Statistic
-              title="Đang học"
-              value={stats.inProgress}
-              valueStyle={{ color: "#1890ff", fontSize: "20px" }}
-            />
-          </Card>
-        </Col>
-        <Col span={3}>
-          <Card size="small">
-            <Statistic
-              title="Tiến độ TB"
-              value={Math.round(stats.avgProgress)}
-              suffix="%"
-              prefix={<PercentageOutlined />}
-              valueStyle={{ color: "#722ed1", fontSize: "20px" }}
-            />
-          </Card>
-        </Col>
-        <Col span={3}>
-          <Card size="small">
-            <Statistic
-              title="Bài học HT"
-              value={stats.totalLessonsCompleted}
-              prefix={<PlayCircleOutlined />}
-              valueStyle={{ color: "#13c2c2", fontSize: "20px" }}
-            />
-          </Card>
-        </Col>
-        <Col span={3}>
-          <Card size="small">
-            <Statistic
-              title="Quiz pass"
-              value={stats.totalQuizzesPassed}
-              prefix={<TrophyOutlined />}
-              valueStyle={{ color: "#fa8c16", fontSize: "20px" }}
-            />
-          </Card>
-        </Col>
-        <Col span={3}>
-          <Card size="small">
-            <Statistic
-              title="Quiz đã làm"
-              value={stats.totalQuizzesAttempted}
-              prefix={<FileTextOutlined />}
-              valueStyle={{ color: "#eb2f96", fontSize: "20px" }}
-            />
-          </Card>
-        </Col>
-        <Col span={3}>
-          <Card size="small">
-            <Statistic
-              title="Chưa bắt đầu"
-              value={stats.notStarted}
-              valueStyle={{ color: "#faad14", fontSize: "20px" }}
-            />
-          </Card>
-        </Col>
-      </Row>
-
-      {/* Action bar với tìm kiếm */}
-      <div
-        style={{
-          marginBottom: "16px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
+        }
+        open={visible}
+        onCancel={onClose}
+        width={1400}
+        footer={null}
+        destroyOnClose
+        style={{ top: 20 }}
       >
-        <Search
-          placeholder="Tìm kiếm theo tên, email hoặc ID học viên..."
-          allowClear
-          enterButton={<SearchOutlined />}
-          size="middle"
-          style={{ width: 400 }}
-          onSearch={handleSearch}
-          onChange={(e) => handleSearch(e.target.value)}
-        />
-        <Button
-          icon={<ReloadOutlined />}
-          onClick={() =>
-            loadEnrollmentsWithProgress(pagination.current, pagination.pageSize)
-          }
-          loading={loading}
-        >
-          Tải lại
-        </Button>
-      </div>
+        {/* Statistics */}
+        <Row gutter={16} style={{ marginBottom: "24px" }}>
+          <Col span={3}>
+            <Card size="small">
+              <Statistic
+                title="Tổng học viên"
+                value={enrollments.length}
+                prefix={<UserOutlined />}
+                valueStyle={{ fontSize: "20px" }}
+              />
+            </Card>
+          </Col>
+          <Col span={3}>
+            <Card size="small">
+              <Statistic
+                title="Hoàn thành KH"
+                value={stats.completed}
+                valueStyle={{ color: "#52c41a", fontSize: "20px" }}
+              />
+            </Card>
+          </Col>
+          <Col span={3}>
+            <Card size="small">
+              <Statistic
+                title="Đang học"
+                value={stats.inProgress}
+                valueStyle={{ color: "#1890ff", fontSize: "20px" }}
+              />
+            </Card>
+          </Col>
+          <Col span={3}>
+            <Card size="small">
+              <Statistic
+                title="Tiến độ TB"
+                value={Math.round(stats.avgProgress)}
+                suffix="%"
+                prefix={<PercentageOutlined />}
+                valueStyle={{ color: "#722ed1", fontSize: "20px" }}
+              />
+            </Card>
+          </Col>
+          <Col span={3}>
+            <Card size="small">
+              <Statistic
+                title="Bài học HT"
+                value={stats.totalLessonsCompleted}
+                prefix={<PlayCircleOutlined />}
+                valueStyle={{ color: "#13c2c2", fontSize: "20px" }}
+              />
+            </Card>
+          </Col>
+          <Col span={3}>
+            <Card size="small">
+              <Statistic
+                title="Quiz pass"
+                value={stats.totalQuizzesPassed}
+                prefix={<TrophyOutlined />}
+                valueStyle={{ color: "#fa8c16", fontSize: "20px" }}
+              />
+            </Card>
+          </Col>
+          <Col span={3}>
+            <Card size="small">
+              <Statistic
+                title="Quiz đã làm"
+                value={stats.totalQuizzesAttempted}
+                prefix={<FileTextOutlined />}
+                valueStyle={{ color: "#eb2f96", fontSize: "20px" }}
+              />
+            </Card>
+          </Col>
+          <Col span={3}>
+            <Card size="small">
+              <Statistic
+                title="Chưa bắt đầu"
+                value={stats.notStarted}
+                valueStyle={{ color: "#faad14", fontSize: "20px" }}
+              />
+            </Card>
+          </Col>
+        </Row>
 
-      {/* Table */}
-      <Table
-        columns={columns}
-        dataSource={displayData.map((item, index) => ({
-          ...item,
-          key: item.id || index,
-        }))}
-        loading={loading}
-        rowKey="key"
-        scroll={{ x: 1200 }}
-        locale={{
-          emptyText: searchText ? (
-            <Empty
-              description={`Không tìm thấy học viên phù hợp với "${searchText}"`}
-            />
-          ) : (
-            <Empty description="Chưa có học viên đăng ký" />
-          ),
-        }}
-        pagination={{
-          current: pagination.current,
-          pageSize: pagination.pageSize,
-          total: displayTotal,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total, range) =>
-            `${range[0]}-${range[1]} của ${total} học viên`,
-          onChange: (page, pageSize) => {
-            if (!searchText) {
-              loadEnrollmentsWithProgress(page, pageSize);
+        {/* Action bar với tìm kiếm */}
+        <div
+          style={{
+            marginBottom: "16px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Search
+            placeholder="Tìm kiếm theo tên, email hoặc ID học viên..."
+            allowClear
+            enterButton={<SearchOutlined />}
+            size="middle"
+            style={{ width: 400 }}
+            onSearch={handleSearch}
+            onChange={(e) => handleSearch(e.target.value)}
+          />
+          <Button
+            icon={<ReloadOutlined />}
+            onClick={() =>
+              loadEnrollmentsWithProgress(
+                pagination.current,
+                pagination.pageSize
+              )
             }
-          },
-          onShowSizeChange: (current, size) => {
-            if (!searchText) {
-              loadEnrollmentsWithProgress(1, size);
-            }
-          },
-        }}
-      />
-    </Modal>
+            loading={loading}
+          >
+            Tải lại
+          </Button>
+        </div>
+
+        {/* Table */}
+        <Table
+          columns={columns}
+          dataSource={displayData.map((item, index) => ({
+            ...item,
+            key: item.id || index,
+          }))}
+          loading={loading}
+          rowKey="key"
+          scroll={{ x: 1300 }}
+          locale={{
+            emptyText: searchText ? (
+              <Empty
+                description={`Không tìm thấy học viên phù hợp với "${searchText}"`}
+              />
+            ) : (
+              <Empty description="Chưa có học viên đăng ký" />
+            ),
+          }}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.pageSize,
+            total: displayTotal,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} của ${total} học viên`,
+            onChange: (page, pageSize) => {
+              if (!searchText) {
+                loadEnrollmentsWithProgress(page, pageSize);
+              }
+            },
+            onShowSizeChange: (current, size) => {
+              if (!searchText) {
+                loadEnrollmentsWithProgress(1, size);
+              }
+            },
+          }}
+        />
+      </Modal>
+
+      {/* Modal xem chi tiết tiến độ */}
+      {selectedUser && (
+        <ProgressDetailModal
+          visible={detailModalVisible}
+          onClose={() => {
+            setDetailModalVisible(false);
+            setSelectedUser(null);
+          }}
+          courseId={courseId}
+          userId={selectedUser.userId}
+          username={selectedUser.username}
+        />
+      )}
+
+      {/* Modal xem kết quả quiz */}
+      {selectedUser && (
+        <QuizResultsModal
+          visible={quizResultsModalVisible}
+          onClose={() => {
+            setQuizResultsModalVisible(false);
+            setSelectedUser(null);
+          }}
+          courseId={courseId}
+          userId={selectedUser.userId}
+          username={selectedUser.username}
+        />
+      )}
+
+      {/* Modal trao certificate */}
+      {selectedUser && (
+        <CertificateModal
+          visible={certificateModalVisible}
+          onClose={() => {
+            setCertificateModalVisible(false);
+            setSelectedUser(null);
+          }}
+          courseId={courseId}
+          userId={selectedUser.userId}
+          username={selectedUser.username}
+          courseName={courseName}
+          progress={selectedUser.progress}
+          onIssueCertificate={onIssueCertificate}
+        />
+      )}
+    </>
   );
 };
 

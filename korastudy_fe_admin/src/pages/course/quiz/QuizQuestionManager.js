@@ -56,7 +56,7 @@ const QuizQuestionManager = () => {
     setLoading(true);
     try {
       // Load quiz info
-      const quizResponse = await QuizService.getQuizById(quizId);
+      const quizResponse = await QuizService.getQuizByIdForAdmin(quizId);
       if (quizResponse.success) {
         setQuiz(quizResponse.data);
       } else {
@@ -65,7 +65,9 @@ const QuizQuestionManager = () => {
       }
 
       // Load questions
-      const questionsResponse = await QuizService.getQuestionsByQuizId(quizId);
+      const questionsResponse = await QuizService.getQuestionsByQuizIdForAdmin(
+        quizId
+      );
       if (questionsResponse.success) {
         setQuestions(questionsResponse.data);
       }

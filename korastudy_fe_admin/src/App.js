@@ -33,6 +33,7 @@ import CreateBlog from "./pages/blog/CreateBlog";
 // Import User Management components
 import UserList from "./pages/user/UserList";
 import QuizQuestionManager from "./pages/course/quiz/QuizQuestionManager";
+import PaymentManagement from "./pages/PaymentManagement";
 
 function App() {
   return (
@@ -151,6 +152,14 @@ function App() {
           element={
             <AdminLayout title="Chi tiết khóa học">
               <CourseDetail />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/payment"
+          element={
+            <AdminLayout title="Quản lý Thanh toán">
+              <PaymentManagement />
             </AdminLayout>
           }
         />

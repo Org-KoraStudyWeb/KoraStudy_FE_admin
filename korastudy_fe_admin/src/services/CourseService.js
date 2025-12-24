@@ -18,11 +18,32 @@ class CourseService {
 
   // ==================== ADMIN COURSE MANAGEMENT ====================
 
+  // src/services/CourseService.js
+
   async getAllCoursesAdmin(params = {}) {
     try {
-      console.log("📦 Fetching admin courses with params:", params);
+      // Destructure params với giá trị mặc định để xử lý các trường hợp thiếu
+      const {
+        page: rawPage,
+        size = 5, // Đặt size mặc định là 5 theo yêu cầu
+        sortBy = "id",
+        sortDir = "desc",
+        keyword,
+      } = params;
 
-      const response = await courseApi.getAllCoursesAdmin(params);
+      // Xử lý tường minh các giá trị không hợp lệ cho 'page' (NaN, undefined, null, số âm)
+      // Đây là nơi sửa lỗi gốc rễ của cảnh báo bạn thấy.
+      const page = !isNaN(rawPage) && rawPage >= 0 ? rawPage : 0;
+
+      // Xây dựng object params cuối cùng để gọi API
+      const cleanParams = { page, size, sortBy, sortDir };
+      if (keyword) {
+        cleanParams.keyword = keyword;
+      }
+
+      console.log("📦 Fetching admin courses with clean params:", cleanParams);
+
+      const response = await courseApi.getAllCoursesAdmin(cleanParams);
 
       return {
         success: true,

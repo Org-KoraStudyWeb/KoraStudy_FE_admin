@@ -10,7 +10,7 @@ const courseApi = {
   getAllCoursesAdmin: (params = {}) => {
     const {
       page = 0,
-      size = 10,
+      size = 5,
       sortBy = "id",
       sortDir = "desc",
       keyword = "",

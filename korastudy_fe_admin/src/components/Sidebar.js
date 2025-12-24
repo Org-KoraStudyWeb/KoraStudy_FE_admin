@@ -90,6 +90,11 @@ const Sidebar = ({ isCollapsed, onCollapse }) => {
           icon: <List size={16} />,
           path: "/admin/courses",
         },
+        {
+          title: "Quản lý thanh toán",
+          icon: <CreditCard size={16} />,
+          path: "/admin/payment",
+        },
       ],
     },
     {
