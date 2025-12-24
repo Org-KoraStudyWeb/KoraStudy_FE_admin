@@ -6,13 +6,9 @@ import quizUtilityService from "./QuizUtilityService";
 import cloudinaryService from "../../services/CloudinaryService";
 
 class QuizService {
-  // Export constants for external use
   static QUESTION_TYPES = QUESTION_TYPES;
   static QUESTION_TYPE_LABELS = QUESTION_TYPE_LABELS;
 
-  /**
-   * Xử lý response từ API
-   */
   _extractDataFromResponse(response) {
     if (!response) return null;
     return response?.data !== undefined ? response.data : response;
@@ -103,14 +99,14 @@ class QuizService {
     }
   }
 
-  async getQuizById(quizId) {
+  async getQuizByIdForAdmin(quizId) {
     try {
       if (!quizId) {
         return { success: false, message: "Quiz ID không được để trống" };
       }
 
-      console.log("[ADMIN] Fetching quiz:", quizId);
-      const response = await quizApi.getQuizById(quizId);
+      console.log("[ADMIN] Fetching quiz for admin:", quizId);
+      const response = await quizApi.getQuizByIdForAdmin(quizId);
       const data = this._extractDataFromResponse(response);
 
       return {
@@ -120,26 +116,6 @@ class QuizService {
       };
     } catch (error) {
       return this.handleError(error, "Lỗi khi lấy thông tin quiz");
-    }
-  }
-
-  async getQuizzesBySectionId(sectionId) {
-    try {
-      if (!sectionId) {
-        return { success: false, message: "Section ID không được để trống" };
-      }
-
-      console.log("[ADMIN] Fetching quizzes for section:", sectionId);
-      const response = await quizApi.getQuizzesBySectionId(sectionId);
-      const data = this._extractDataFromResponse(response);
-
-      return {
-        success: true,
-        data: Array.isArray(data) ? data : [],
-        message: "Lấy danh sách quiz thành công",
-      };
-    } catch (error) {
-      return this.handleError(error, "Lỗi khi lấy danh sách quiz");
     }
   }
 
@@ -179,7 +155,13 @@ class QuizService {
         };
       }
 
-      const payload = quizUtilityService.prepareQuestionPayload(questionData);
+      // Normalize score nếu cần
+      let processedData = { ...questionData };
+      if (questionData.score) {
+        console.log(`📌 Question Score: ${questionData.score}`);
+      }
+
+      const payload = quizUtilityService.prepareQuestionPayload(processedData);
       const response = await quizApi.addQuestionToQuiz(quizId, payload);
       const data = this._extractDataFromResponse(response);
 
@@ -244,14 +226,14 @@ class QuizService {
     }
   }
 
-  async getQuestionsByQuizId(quizId) {
+  async getQuestionsByQuizIdForAdmin(quizId) {
     try {
       if (!quizId) {
         return { success: false, message: "Quiz ID không được để trống" };
       }
 
       console.log("[ADMIN] Fetching questions for quiz:", quizId);
-      const response = await quizApi.getQuestionsByQuizId(quizId);
+      const response = await quizApi.getQuestionsByQuizIdForAdmin(quizId);
       const data = this._extractDataFromResponse(response);
 
       return {
@@ -379,132 +361,26 @@ class QuizService {
       return this.handleError(error, "Lỗi khi lấy danh sách lựa chọn");
     }
   }
-  // ==================== UPLOAD FILE (ADMIN ONLY) ====================
-  async uploadQuestionImage(questionId, imageFile) {
-    try {
-      console.log(
-        `Uploading image for question ${questionId}:`,
-        imageFile.name
-      );
-
-      // 1. Upload lên Cloudinary
-      const cloudinaryResult = await cloudinaryService.uploadImage(imageFile);
-
-      // 2. Cập nhật URL ảnh vào câu hỏi
-      const updateData = {
-        imageUrl: cloudinaryResult.url,
-      };
-
-      const response = await this.updateQuestion(questionId, updateData);
-      return response;
-    } catch (error) {
-      console.error("Upload question image error:", error);
-      return {
-        success: false,
-        message: `Lỗi upload ảnh: ${error.message}`,
-      };
-    }
-  }
-
-  async uploadOptionImage(optionId, imageFile) {
-    try {
-      console.log(`Uploading image for option ${optionId}:`, imageFile.name);
-
-      // 1. Upload lên Cloudinary
-      const cloudinaryResult = await cloudinaryService.uploadImage(imageFile);
-
-      // 2. Cập nhật URL ảnh vào option
-      const updateData = {
-        optionText: `[IMAGE]${cloudinaryResult.url}`, // Hoặc có trường riêng cho image
-        imageUrl: cloudinaryResult.url,
-      };
-
-      const response = await this.updateOption(optionId, updateData);
-      return response;
-    } catch (error) {
-      console.error("Upload option image error:", error);
-      return {
-        success: false,
-        message: `Lỗi upload ảnh: ${error.message}`,
-      };
-    }
-  }
 
   // ==================== RESULTS & ANALYTICS (ADMIN ONLY) ====================
 
-  async getQuizResult(resultId) {
+  async getQuizResultDetailForAdmin(resultId) {
     try {
       if (!resultId) {
         return { success: false, message: "Result ID không được để trống" };
       }
 
-      console.log("[ADMIN] Fetching quiz result:", resultId);
-      const response = await quizApi.getQuizResult(resultId);
+      console.log("[ADMIN] Fetching quiz result detail:", resultId);
+      const response = await quizApi.getQuizResultForAdmin(resultId);
       const data = this._extractDataFromResponse(response);
 
       return {
         success: true,
         data: data,
-        message: "Lấy kết quả bài làm thành công",
+        message: "Lấy chi tiết kết quả thành công",
       };
     } catch (error) {
-      return this.handleError(error, "Lỗi khi lấy kết quả bài làm");
-    }
-  }
-
-  async getQuizzesWithStatusBySection(sectionId, userId) {
-    try {
-      // 1. Lấy danh sách quiz trong section
-      const quizzesResponse = await this.getQuizzesBySectionId(sectionId);
-
-      if (!quizzesResponse.success) {
-        return {
-          success: false,
-          message: quizzesResponse.message,
-          data: [],
-        };
-      }
-
-      const quizzes = quizzesResponse.data || [];
-      const quizzesWithStatus = [];
-
-      // 2. Lấy trạng thái của từng quiz cho user
-      for (const quiz of quizzes) {
-        const statusResponse = await this.getQuizStatusForUser(quiz.id, userId);
-
-        quizzesWithStatus.push({
-          ...quiz,
-          userStatus: statusResponse.success ? statusResponse.data : null,
-        });
-      }
-
-      return {
-        success: true,
-        data: quizzesWithStatus,
-        message: "Lấy thông tin quiz thành công",
-      };
-    } catch (error) {
-      return this.handleError(error, "Lỗi khi lấy thông tin quiz");
-    }
-  }
-
-  async getQuizResultForTeacher(resultId) {
-    try {
-      if (!resultId) {
-        return { success: false, message: "Result ID không được để trống" };
-      }
-
-      console.log("[ADMIN] Fetching result for teacher:", resultId);
-      const response = await quizApi.getQuizResultForTeacher(resultId);
-      const data = this._extractDataFromResponse(response);
-
-      return {
-        success: true,
-        data: data,
-        message: "Lấy kết quả thành công",
-      };
-    } catch (error) {
-      return this.handleError(error, "Lỗi khi lấy kết quả");
+      return this.handleError(error, "Lỗi khi lấy chi tiết kết quả");
     }
   }
 
@@ -516,24 +392,18 @@ class QuizService {
           message: "Quiz ID và User ID không được để trống",
         };
       }
+
       console.log(
         `[ADMIN] Fetching quiz status for quiz ${quizId}, user ${userId}`
       );
       const response = await quizApi.getQuizStatusForUser(quizId, userId);
       const data = this._extractDataFromResponse(response);
 
-      // ⭐ THÊM DEBUG Ở ĐÂY
-      console.log(
-        `[ADMIN] Quiz status API response for quiz ${quizId}, user ${userId}:`,
-        {
-          responseData: data,
-          hasIsPassed: data?.isPassed !== undefined,
-          isPassedValue: data?.isPassed,
-          fullDataKeys: data ? Object.keys(data) : "no data",
-        }
-      );
-
-      return { success: true, data };
+      return {
+        success: true,
+        data: data,
+        message: "Lấy trạng thái quiz của người dùng thành công",
+      };
     } catch (error) {
       return this.handleError(
         error,
@@ -548,7 +418,7 @@ class QuizService {
         return { success: false, message: "Quiz ID không được để trống" };
       }
 
-      console.log("[ADMIN] Fetching quiz results:", quizId);
+      console.log("[ADMIN] Fetching all results for quiz:", quizId);
       const response = await quizApi.getQuizResults(quizId);
       const data = this._extractDataFromResponse(response);
 
@@ -561,9 +431,6 @@ class QuizService {
       return this.handleError(error, "Lỗi khi lấy kết quả quiz");
     }
   }
-
-  // XÓA PHƯƠNG THỨC NÀY VÌ KHÔNG CÓ TRONG API
-  // async getAllQuizResults(quizId) { ... }
 
   async getQuizStatistics(quizId) {
     try {
@@ -585,7 +452,171 @@ class QuizService {
     }
   }
 
-  // ==================== VALIDATION (ADMIN ONLY) ====================
+  // ==================== COURSE QUIZ PROGRESS (ADMIN ONLY) ====================
+
+  async getUserQuizProgressInCourse(courseId, userId) {
+    try {
+      if (!courseId || !userId) {
+        return {
+          success: false,
+          message: "Course ID và User ID không được để trống",
+        };
+      }
+
+      console.log(
+        `[ADMIN] Fetching quiz progress for user ${userId} in course ${courseId}`
+      );
+
+      const response = await quizApi.getUserQuizProgressInCourse(
+        courseId,
+        userId
+      );
+      const data = this._extractDataFromResponse(response);
+
+      return {
+        success: true,
+        data: Array.isArray(data) ? data : [],
+        message: "Lấy tiến độ quiz của user thành công",
+      };
+    } catch (error) {
+      return this.handleError(error, "Lỗi khi lấy tiến độ quiz của user");
+    }
+  }
+
+  async getUserQuizProgressSummary(courseId, userId) {
+    try {
+      if (!courseId || !userId) {
+        return {
+          success: false,
+          message: "Course ID và User ID không được để trống",
+        };
+      }
+
+      console.log(
+        `[ADMIN] Fetching quiz progress summary for user ${userId} in course ${courseId}`
+      );
+
+      const response = await quizApi.getUserQuizProgressSummary(
+        courseId,
+        userId
+      );
+      const data = this._extractDataFromResponse(response);
+
+      return {
+        success: true,
+        data: data,
+        message: "Lấy thống kê tiến độ quiz thành công",
+      };
+    } catch (error) {
+      return this.handleError(error, "Lỗi khi lấy thống kê tiến độ quiz");
+    }
+  }
+
+  async getAllUsersQuizProgressInCourse(courseId) {
+    try {
+      if (!courseId) {
+        return { success: false, message: "Course ID không được để trống" };
+      }
+
+      console.log(
+        `[ADMIN] Fetching all users quiz progress for course ${courseId}`
+      );
+
+      const response = await quizApi.getAllUsersQuizProgressInCourse(courseId);
+      const data = this._extractDataFromResponse(response);
+
+      return {
+        success: true,
+        data: Array.isArray(data) ? data : [],
+        message: "Lấy tiến độ của tất cả users thành công",
+      };
+    } catch (error) {
+      return this.handleError(error, "Lỗi khi lấy tiến độ của tất cả users");
+    }
+  }
+
+  async getUserDetailedAverageScoreInCourse(courseId, userId) {
+    try {
+      if (!courseId || !userId) {
+        return {
+          success: false,
+          message: "Course ID và User ID không được để trống",
+        };
+      }
+
+      console.log(
+        `[ADMIN] Fetching detailed average score for user ${userId} in course ${courseId}`
+      );
+
+      const response = await quizApi.getUserDetailedAverageScoreInCourse(
+        courseId,
+        userId
+      );
+      const data = this._extractDataFromResponse(response);
+
+      return {
+        success: true,
+        data: data,
+        message: "Lấy điểm trung bình chi tiết của user thành công",
+      };
+    } catch (error) {
+      return this.handleError(
+        error,
+        "Lỗi khi lấy điểm trung bình chi tiết của user"
+      );
+    }
+  }
+
+  async getUserSimpleAverageScoreInCourse(courseId, userId) {
+    try {
+      if (!courseId || !userId) {
+        return {
+          success: false,
+          message: "Course ID và User ID không được để trống",
+        };
+      }
+
+      console.log(
+        `[ADMIN] Fetching simple average score for user ${userId} in course ${courseId}`
+      );
+
+      const response = await quizApi.getUserSimpleAverageScoreInCourse(
+        courseId,
+        userId
+      );
+      const data = this._extractDataFromResponse(response);
+
+      return {
+        success: true,
+        data: data,
+        message: "Lấy điểm trung bình của user thành công",
+      };
+    } catch (error) {
+      return this.handleError(error, "Lỗi khi lấy điểm trung bình của user");
+    }
+  }
+
+  // ==================== UTILITY METHODS (MIXED - Cả ADMIN và USER) ====================
+
+  async getQuizzesBySectionId(sectionId) {
+    try {
+      if (!sectionId) {
+        return { success: false, message: "Section ID không được để trống" };
+      }
+
+      console.log("[UTILITY] Fetching quizzes for section:", sectionId);
+      const response = await quizApi.getQuizzesBySectionId(sectionId);
+      const data = this._extractDataFromResponse(response);
+
+      return {
+        success: true,
+        data: Array.isArray(data) ? data : [],
+        message: "Lấy danh sách quiz thành công",
+      };
+    } catch (error) {
+      return this.handleError(error, "Lỗi khi lấy danh sách quiz");
+    }
+  }
 
   async checkQuizExistsBySectionId(sectionId) {
     try {
@@ -593,7 +624,7 @@ class QuizService {
         return { success: false, message: "Section ID không được để trống" };
       }
 
-      console.log("[ADMIN] Checking quiz exists for section:", sectionId);
+      console.log("[UTILITY] Checking quiz exists for section:", sectionId);
       const response = await quizApi.checkQuizExistsBySectionId(sectionId);
       const data = this._extractDataFromResponse(response);
 
@@ -613,7 +644,7 @@ class QuizService {
         return { success: false, message: "Quiz ID không được để trống" };
       }
 
-      console.log("[ADMIN] Checking quiz exists:", quizId);
+      console.log("[UTILITY] Checking quiz exists:", quizId);
       const response = await quizApi.checkQuizExists(quizId);
       const data = this._extractDataFromResponse(response);
 
@@ -627,30 +658,58 @@ class QuizService {
     }
   }
 
-  // XÓA PHƯƠNG THỨC NÀY VÌ KHÔNG CÓ TRONG API
-  // async searchQuizzes(params) { ... }
+  // ==================== UPLOAD FILE (ADMIN ONLY) ====================
 
-  async canUserAccessQuiz(quizId) {
+  async uploadQuestionImage(questionId, imageFile) {
     try {
-      if (!quizId) {
-        return { success: false, message: "Quiz ID không được để trống" };
-      }
+      console.log(
+        `[ADMIN] Uploading image for question ${questionId}:`,
+        imageFile.name
+      );
 
-      console.log("[ADMIN] Checking user access to quiz:", quizId);
-      const response = await quizApi.canUserAccessQuiz(quizId);
-      const data = this._extractDataFromResponse(response);
+      const cloudinaryResult = await cloudinaryService.uploadImage(imageFile);
 
-      return {
-        success: true,
-        data: data,
-        message: "Kiểm tra quyền truy cập thành công",
+      const updateData = {
+        imageUrl: cloudinaryResult.url,
       };
+
+      const response = await this.updateQuestion(questionId, updateData);
+      return response;
     } catch (error) {
-      return this.handleError(error, "Lỗi khi kiểm tra quyền truy cập");
+      console.error("Upload question image error:", error);
+      return {
+        success: false,
+        message: `Lỗi upload ảnh: ${error.message}`,
+      };
     }
   }
 
-  // ==================== UTILITY METHODS ====================
+  async uploadOptionImage(optionId, imageFile) {
+    try {
+      console.log(
+        `[ADMIN] Uploading image for option ${optionId}:`,
+        imageFile.name
+      );
+
+      const cloudinaryResult = await cloudinaryService.uploadImage(imageFile);
+
+      const updateData = {
+        optionText: `[IMAGE]${cloudinaryResult.url}`,
+        imageUrl: cloudinaryResult.url,
+      };
+
+      const response = await this.updateOption(optionId, updateData);
+      return response;
+    } catch (error) {
+      console.error("Upload option image error:", error);
+      return {
+        success: false,
+        message: `Lỗi upload ảnh: ${error.message}`,
+      };
+    }
+  }
+
+  // ==================== UTILITY METHODS (Các hàm tiện ích) ====================
 
   getQuestionTypeLabel(questionType) {
     return quizUtilityService.getQuestionTypeLabel(questionType);
@@ -700,6 +759,98 @@ class QuizService {
 
   createSampleQuiz(sectionId) {
     return quizUtilityService.createSampleQuiz(sectionId);
+  }
+
+  /**
+   * Normalize điểm cho tất cả câu hỏi của một quiz
+   * Auto-scale điểm nếu tổng < target (mặc định 10)
+   * @param {Array} questions - Danh sách câu hỏi
+   * @param {Number} targetTotal - Tổng điểm mục tiêu (mặc định: 10)
+   * @returns {Object} - { success, normalizedQuestions, totalScore }
+   */
+  normalizeQuizScores(questions, targetTotal = 10) {
+    try {
+      if (!questions || questions.length === 0) {
+        return {
+          success: false,
+          message: "Quiz phải có ít nhất 1 câu hỏi",
+          questions: [],
+        };
+      }
+
+      const normalizedQuestions = quizUtilityService.normalizeQuestionScores(
+        questions,
+        targetTotal
+      );
+      const totalScore =
+        quizUtilityService.calculateTotalPoints(normalizedQuestions);
+
+      return {
+        success: true,
+        normalizedQuestions,
+        totalScore,
+        message: `Chuẩn hóa điểm thành công. Tổng: ${totalScore}`,
+      };
+    } catch (error) {
+      console.error("❌ Normalize scores error:", error);
+      return {
+        success: false,
+        message: "Lỗi khi chuẩn hóa điểm",
+        questions: questions,
+      };
+    }
+  }
+
+  /**
+   * Validate điểm số của quiz trước khi lưu
+   * @param {Object} quiz - Dữ liệu quiz (có questions)
+   * @returns {Object} - { isValid, validation, warnings }
+   */
+  validateQuizPointsConfig(quiz) {
+    try {
+      if (!quiz.questions || quiz.questions.length === 0) {
+        return {
+          isValid: false,
+          validation: { message: "Quiz phải có ít nhất 1 câu hỏi" },
+          warnings: [],
+        };
+      }
+
+      const validation = quizUtilityService.validateQuizScoring(
+        quiz.questions,
+        quiz.passingScore || 60
+      );
+
+      const warnings = [];
+
+      // Check nếu điểm quá thấp so với target
+      if (validation.totalPoints < 10) {
+        warnings.push(
+          `⚠️ Tổng điểm chỉ ${validation.totalPoints}, khuyến nghị >= 10 để tính toán chính xác`
+        );
+      }
+
+      // Check nếu passingScore quá cao
+      if (quiz.passingScore > validation.totalPoints) {
+        warnings.push(
+          `⚠️ Điểm cần đạt (${quiz.passingScore}%) > tổng điểm (${validation.totalPoints}). Điều này sẽ khiến quiz không thể pass!`
+        );
+        return { isValid: false, validation, warnings };
+      }
+
+      return {
+        isValid: true,
+        validation,
+        warnings,
+      };
+    } catch (error) {
+      console.error("❌ Validate quiz points error:", error);
+      return {
+        isValid: false,
+        validation: { message: "Lỗi khi validate điểm" },
+        warnings: [error.message],
+      };
+    }
   }
 
   // ==================== ERROR HANDLING ====================

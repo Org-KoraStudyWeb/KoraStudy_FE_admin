@@ -1,42 +1,31 @@
-// src/api/quizApi.js (Admin only)
+// src/api/quizApi.js (Admin only - chỉ chứa API cần admin role)
 import axiosClient from "./axiosClient";
 
 const quizApi = {
-  // ==================== QUIZ MANAGEMENT ====================
+  // ==================== QUIZ MANAGEMENT (ADMIN ONLY) ====================
 
-  // Tạo quiz mới
   createQuiz: (quizData) => {
     return axiosClient.post("/api/v1/quizzes", quizData);
   },
 
-  // Cập nhật quiz
   updateQuiz: (quizId, quizData) => {
     return axiosClient.put(`/api/v1/quizzes/${quizId}`, quizData);
   },
 
-  // Xóa quiz
   deleteQuiz: (quizId) => {
     return axiosClient.delete(`/api/v1/quizzes/${quizId}`);
   },
 
-  // Lấy chi tiết quiz (Admin view - có đáp án)
-  getQuizById: (quizId) => {
-    return axiosClient.get(`/api/v1/quizzes/${quizId}`);
+  getQuizByIdForAdmin: (quizId) => {
+    return axiosClient.get(`/api/v1/quizzes/${quizId}/admin`);
   },
 
-  // Lấy danh sách quiz theo section
-  getQuizzesBySectionId: (sectionId) => {
-    return axiosClient.get(`/api/v1/quizzes/section/${sectionId}`);
-  },
-
-  // Publish/Unpublish quiz
   publishQuiz: (quizId, publish) => {
     return axiosClient.put(`/api/v1/quizzes/${quizId}/publish/${publish}`);
   },
 
-  // ==================== QUESTION MANAGEMENT ====================
+  // ==================== QUESTION MANAGEMENT (ADMIN ONLY) ====================
 
-  // Thêm câu hỏi vào quiz
   addQuestionToQuiz: (quizId, questionData) => {
     return axiosClient.post(
       `/api/v1/quizzes/${quizId}/questions`,
@@ -44,7 +33,6 @@ const quizApi = {
     );
   },
 
-  // Cập nhật câu hỏi
   updateQuestion: (questionId, questionData) => {
     return axiosClient.put(
       `/api/v1/quizzes/questions/${questionId}`,
@@ -52,19 +40,16 @@ const quizApi = {
     );
   },
 
-  // Xóa câu hỏi
   deleteQuestion: (questionId) => {
     return axiosClient.delete(`/api/v1/quizzes/questions/${questionId}`);
   },
 
-  // Lấy danh sách câu hỏi của quiz (Admin view - có đáp án)
-  getQuestionsByQuizId: (quizId) => {
-    return axiosClient.get(`/api/v1/quizzes/${quizId}/questions`);
+  getQuestionsByQuizIdForAdmin: (quizId) => {
+    return axiosClient.get(`/api/v1/quizzes/${quizId}/questions/admin`);
   },
 
-  // ==================== OPTION MANAGEMENT ====================
+  // ==================== OPTION MANAGEMENT (ADMIN ONLY) ====================
 
-  // Thêm option vào câu hỏi
   addOptionToQuestion: (questionId, optionData) => {
     return axiosClient.post(
       `/api/v1/quizzes/questions/${questionId}/options`,
@@ -72,39 +57,31 @@ const quizApi = {
     );
   },
 
-  // Cập nhật option
   updateOption: (optionId, optionData) => {
     return axiosClient.put(`/api/v1/quizzes/options/${optionId}`, optionData);
   },
 
-  // Xóa option
   deleteOption: (optionId) => {
     return axiosClient.delete(`/api/v1/quizzes/options/${optionId}`);
   },
 
-  // Lấy danh sách option của câu hỏi
   getOptionsByQuestionId: (questionId) => {
     return axiosClient.get(`/api/v1/quizzes/questions/${questionId}/options`);
   },
 
-  // ==================== RESULTS & ANALYTICS ====================
+  // ==================== RESULTS & ANALYTICS (ADMIN ONLY) ====================
 
-  // Lấy kết quả quiz theo ID
-  getQuizResult: (resultId) => {
-    return axiosClient.get(`/api/v1/quizzes/results/${resultId}`);
+  // Lấy chi tiết kết quả quiz cho admin (có đầy đủ thông tin)
+  getQuizResultForAdmin: (resultId) => {
+    return axiosClient.get(`/api/v1/quizzes/results/${resultId}/admin`);
   },
 
-  // Lấy chi tiết kết quả quiz cho giáo viên
-  getQuizResultForTeacher: (resultId) => {
-    return axiosClient.get(`/api/v1/quizzes/results/${resultId}/teacher`);
-  },
-
-  // Lấy trạng thái quiz của một user (Admin view)
+  // Lấy trạng thái quiz của một user (admin xem user khác)
   getQuizStatusForUser: (quizId, userId) => {
     return axiosClient.get(`/api/v1/quizzes/${quizId}/user/${userId}/status`);
   },
 
-  // Lấy danh sách kết quả của quiz
+  // Lấy danh sách kết quả của quiz (tất cả users)
   getQuizResults: (quizId) => {
     return axiosClient.get(`/api/v1/quizzes/${quizId}/results`);
   },
@@ -114,21 +91,58 @@ const quizApi = {
     return axiosClient.get(`/api/v1/quizzes/${quizId}/statistics`);
   },
 
-  // ==================== VALIDATION & UTILITIES ====================
+  // ==================== COURSE QUIZ PROGRESS (ADMIN ONLY) ====================
 
-  // Kiểm tra quiz có tồn tại trong section
+  // Lấy tiến độ chi tiết quiz của user trong course
+  getUserQuizProgressInCourse: (courseId, userId) => {
+    return axiosClient.get(
+      `/api/v1/quizzes/admin/course/${courseId}/user/${userId}/progress`
+    );
+  },
+
+  // Lấy tổng hợp tiến độ quiz của user trong course
+  getUserQuizProgressSummary: (courseId, userId) => {
+    return axiosClient.get(
+      `/api/v1/quizzes/admin/course/${courseId}/user/${userId}/progress/summary`
+    );
+  },
+
+  // Lấy tiến độ quiz của tất cả users trong course
+  getAllUsersQuizProgressInCourse: (courseId) => {
+    return axiosClient.get(
+      `/api/v1/quizzes/admin/course/${courseId}/all-users-progress`
+    );
+  },
+
+  // Lấy điểm trung bình chi tiết của user trong course
+  getUserDetailedAverageScoreInCourse: (courseId, userId) => {
+    return axiosClient.get(
+      `/api/v1/quizzes/admin/course/${courseId}/user/${userId}/average-score/detailed`
+    );
+  },
+
+  // Lấy điểm trung bình đơn giản của user trong course
+  getUserSimpleAverageScoreInCourse: (courseId, userId) => {
+    return axiosClient.get(
+      `/api/v1/quizzes/admin/course/${courseId}/user/${userId}/average-score/simple`
+    );
+  },
+
+  // ==================== VALIDATION & UTILITIES (MIXED) ====================
+
+  // API này cả admin và user đều có thể gọi (không có @PreAuthorize)
+  getQuizzesBySectionId: (sectionId) => {
+    return axiosClient.get(`/api/v1/quizzes/section/${sectionId}`);
+  },
+
+  // API này cả admin và user đều có thể gọi (không có @PreAuthorize)
   checkQuizExistsBySectionId: (sectionId) => {
     return axiosClient.get(`/api/v1/quizzes/section/${sectionId}/exists`);
   },
 
-  // Kiểm tra quiz có tồn tại
+  // API này cả admin và user đều có thể gọi (không có @PreAuthorize)
   checkQuizExists: (quizId) => {
     return axiosClient.get(`/api/v1/quizzes/${quizId}/exists`);
-  },
-
-  // Kiểm tra user có quyền truy cập quiz
-  canUserAccessQuiz: (quizId) => {
-    return axiosClient.get(`/api/v1/quizzes/${quizId}/can-access`);
   },
 };
 

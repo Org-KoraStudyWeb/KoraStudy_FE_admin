@@ -103,7 +103,9 @@ const CourseDetail = () => {
                     async (quiz) => {
                       try {
                         const questionsResponse =
-                          await QuizService.getQuestionsByQuizId(quiz.id);
+                          await QuizService.getQuestionsByQuizIdForAdmin(
+                            quiz.id
+                          );
                         return {
                           ...quiz,
                           questions: questionsResponse.success
@@ -178,7 +180,7 @@ const CourseDetail = () => {
                   async (quiz) => {
                     try {
                       const questionsResponse =
-                        await QuizService.getQuestionsByQuizId(quiz.id);
+                        await QuizService.getQuestionsByQuizIdForAdmin(quiz.id);
                       return {
                         ...quiz,
                         questions: questionsResponse.success

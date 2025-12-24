@@ -266,6 +266,82 @@ class QuizUtilityService {
     if (correctAnswers.length === 1) return correctAnswers[0];
     return correctAnswers.join(", ");
   }
+
+  /**
+   * Normalize điểm của các câu hỏi
+   * Nếu tổng điểm < TARGET_TOTAL_POINTS, tự động chia đều
+   * VD: 7 câu × 1 điểm = 7 điểm, sẽ normalize thành ~1.43 điểm/câu để tổng = 10
+   * @param {Array} questions - Danh sách câu hỏi
+   * @param {Number} targetTotal - Tổng điểm mục tiêu (mặc định: 10)
+   * @returns {Array} - Câu hỏi với điểm đã normalize
+   */
+  normalizeQuestionScores(questions, targetTotal = 10) {
+    if (!questions || questions.length === 0) return questions;
+
+    const currentTotal = this.calculateTotalPoints(questions);
+
+    console.log(
+      `📊 Score Normalization: Current Total = ${currentTotal}, Target = ${targetTotal}`
+    );
+
+    // Nếu tổng điểm đã >= target, không cần normalize
+    if (currentTotal >= targetTotal) {
+      console.log("✅ Total score is sufficient, no normalization needed");
+      return questions;
+    }
+
+    // Tính điểm mới cho mỗi câu hỏi
+    const normalizedQuestions = questions.map((q) => {
+      const newScore = (q.score / currentTotal) * targetTotal;
+      const roundedScore = Math.round(newScore * 100) / 100; // Làm tròn đến 2 chữ số thập phân
+
+      if (newScore !== roundedScore) {
+        console.log(
+          `🔄 Question "${q.questionText?.substring(0, 40)}...": ${
+            q.score
+          } → ${roundedScore}`
+        );
+      }
+
+      return {
+        ...q,
+        score: roundedScore,
+        originalScore: q.score, // Lưu điểm gốc để tham khảo
+      };
+    });
+
+    const newTotal = this.calculateTotalPoints(normalizedQuestions);
+    console.log(`📈 Normalized Total Score: ${newTotal}`);
+
+    return normalizedQuestions;
+  }
+
+  /**
+   * Validate tổng điểm của quiz
+   * @param {Array} questions - Danh sách câu hỏi
+   * @param {Number} passingScore - Điểm cần đạt (%)
+   * @returns {Object} - { isValid, totalPoints, recommendation }
+   */
+  validateQuizScoring(questions, passingScore = 60) {
+    if (!questions || questions.length === 0) {
+      return {
+        isValid: false,
+        totalPoints: 0,
+        message: "Quiz phải có ít nhất 1 câu hỏi",
+      };
+    }
+
+    const totalPoints = this.calculateTotalPoints(questions);
+    const minPointsNeeded = Math.ceil((passingScore / 100) * totalPoints);
+
+    return {
+      isValid: totalPoints > 0,
+      totalPoints,
+      minPointsNeeded,
+      passingScore,
+      message: `Tổng điểm: ${totalPoints}. Cần ${minPointsNeeded} điểm để pass (${passingScore}%)`,
+    };
+  }
 }
 
 const quizUtilityService = new QuizUtilityService();

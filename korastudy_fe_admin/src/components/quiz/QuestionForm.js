@@ -118,16 +118,11 @@ const QuestionForm = ({ quizId, onSuccess, editingQuestion }) => {
       ) {
         const correctAnswers = editingQuestion.options
           .filter((opt) => opt.isCorrect)
-          .map((opt) => ({
-            text: opt.optionText,
-            id: opt.id || Date.now() + Math.random(),
-          }));
+          .map((opt) => opt.optionText); // Store as strings only
         setFillInBlankAnswers(correctAnswers);
 
         if (correctAnswers.length > 0) {
-          const combinedText = correctAnswers
-            .map((ans) => ans.text)
-            .join(" / ");
+          const combinedText = correctAnswers.join(" / ");
           setFillInBlankAnswerText(combinedText);
           setUseSlashSeparator(true);
         }
@@ -293,7 +288,7 @@ const QuestionForm = ({ quizId, onSuccess, editingQuestion }) => {
           message.error("Câu hỏi điền từ phải có ít nhất 1 đáp án đúng!");
           return;
         }
-        finalAnswers = fillInBlankAnswers.map((ans) => ans.text);
+        finalAnswers = fillInBlankAnswers; // Treat as array of strings
       }
 
       const emptyAnswers = finalAnswers.filter((text) => !text.trim());
@@ -317,7 +312,7 @@ const QuestionForm = ({ quizId, onSuccess, editingQuestion }) => {
             .map((item) => item.trim())
             .filter((item) => item.length > 0);
         } else {
-          finalAnswers = fillInBlankAnswers.map((ans) => ans.text);
+          finalAnswers = fillInBlankAnswers; // Treat as array of strings
         }
 
         // Tạo options từ đáp án (tất cả đều isCorrect = true)
@@ -335,14 +330,17 @@ const QuestionForm = ({ quizId, onSuccess, editingQuestion }) => {
       }
 
       // Tạo question data với Cloudinary URL
+      // Đảm bảo score được include từ form
       const questionData = {
         ...values,
+        score: values.score || 1.0, // Ensure score is always present
         questionType,
         imageUrl: questionImage, // Cloudinary URL đã upload
         options: finalOptions,
       };
 
       console.log("📝 Submitting question data:", questionData);
+      console.log("📊 Question Score:", values.score, "| Type:", questionType);
 
       let response;
       if (editingQuestion) {
@@ -903,7 +901,157 @@ const QuestionForm = ({ quizId, onSuccess, editingQuestion }) => {
         )}
 
         {/* Phần cho FILL_IN_BLANK (giữ nguyên) */}
-        {/* ... (giữ nguyên phần FILL_IN_BLANK từ code trước) ... */}
+        {/* Form nhập đáp án điền từ */}
+        {questionType === QUESTION_TYPES.FILL_IN_BLANK && (
+          <>
+            <Divider orientation="left">
+              <span style={{ fontWeight: 600 }}>Đáp án điền từ</span>
+              <Tag color="blue" style={{ marginLeft: 8 }}>
+                {fillInBlankAnswers.length} đáp án
+              </Tag>
+            </Divider>
+
+            <Card
+              size="small"
+              style={{ marginBottom: 16, border: "1px solid #40a9ff" }}
+            >
+              <div style={{ marginBottom: 12 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    marginBottom: 8,
+                  }}
+                >
+                  <FontSizeOutlined style={{ color: "#1890ff" }} />
+                  <span style={{ fontWeight: 500 }}>Nhập đáp án:</span>
+                </div>
+                <TextArea
+                  placeholder={
+                    useSlashSeparator
+                      ? "Nhập đáp án, dùng / để phân cách nhiều từ (vd: 한생/운동/회사)"
+                      : "Nhập từng đáp án một..."
+                  }
+                  value={fillInBlankAnswerText}
+                  onChange={(e) => setFillInBlankAnswerText(e.target.value)}
+                  rows={2}
+                  maxLength={200}
+                />
+              </div>
+
+              <Row gutter={16} align="middle">
+                <Col span={12}>
+                  <div style={{ textAlign: "center" }}>
+                    <div style={{ marginBottom: 4 }}>Chế độ nhập</div>
+                    <Switch
+                      checked={useSlashSeparator}
+                      onChange={(checked) => setUseSlashSeparator(checked)}
+                      checkedChildren="Nhiều từ"
+                      unCheckedChildren="Từng từ"
+                    />
+                    <div style={{ fontSize: 10, color: "#666", marginTop: 2 }}>
+                      {useSlashSeparator ? "Nhập nhiều từ" : "Nhập từng từ"}
+                    </div>
+                  </div>
+                </Col>
+                <Col span={12}>
+                  <Button
+                    type="primary"
+                    icon={<PlusOutlined />}
+                    onClick={() => {
+                      if (useSlashSeparator) {
+                        const newAnswers = fillInBlankAnswerText
+                          .split("/")
+                          .map((word) => word.trim())
+                          .filter((word) => word);
+                        setFillInBlankAnswers([
+                          ...fillInBlankAnswers,
+                          ...newAnswers,
+                        ]);
+                      } else {
+                        if (fillInBlankAnswerText.trim()) {
+                          setFillInBlankAnswers([
+                            ...fillInBlankAnswers,
+                            fillInBlankAnswerText.trim(),
+                          ]);
+                        }
+                      }
+                      setFillInBlankAnswerText("");
+                    }}
+                    block
+                    disabled={!fillInBlankAnswerText.trim()}
+                  >
+                    {useSlashSeparator ? "Thêm nhiều từ" : "Thêm đáp án"}
+                  </Button>
+                </Col>
+              </Row>
+            </Card>
+
+            {fillInBlankAnswers.length > 0 && (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 8 }}>
+                  Danh sách đáp án:
+                </div>
+                {fillInBlankAnswers.map((answer, index) => {
+                  const answerText =
+                    typeof answer === "string"
+                      ? answer
+                      : answer.optionText || String(answer);
+                  return (
+                    <Card
+                      key={index}
+                      size="small"
+                      style={{
+                        marginBottom: 8,
+                        borderLeft: "4px solid #40a9ff",
+                      }}
+                      extra={
+                        <Button
+                          type="text"
+                          danger
+                          icon={<DeleteOutlined />}
+                          onClick={() => {
+                            const newAnswers = fillInBlankAnswers.filter(
+                              (_, i) => i !== index
+                            );
+                            setFillInBlankAnswers(newAnswers);
+                          }}
+                        />
+                      }
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: 24,
+                            height: 24,
+                            borderRadius: 12,
+                            backgroundColor: "#40a9ff",
+                            color: "white",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: 12,
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {index + 1}
+                        </div>
+                        <div style={{ flex: 1 }}>{answerText}</div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
 
         {/* Explanation */}
         <Form.Item label="Giải thích (tùy chọn)" name="explanation">
