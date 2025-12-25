@@ -1,6 +1,16 @@
 import { useState, useEffect } from "react";
 import userApi from "../api/userApi";
 
+// Helper function to normalize user data, ensuring consistent property names
+const mapUsersData = (users) => {
+  if (!Array.isArray(users)) return [];
+  return users.map((user) => ({
+    ...user,
+    createdDate: user.createdAt, // Map 'createdAt' to 'createdDate'
+    updatedDate: user.lastModified, // Map 'lastModified' to 'updatedDate'
+  }));
+};
+
 export const useUserManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
@@ -49,13 +59,13 @@ export const useUserManagement = () => {
 
       // Handle paginated response
       if (data.content) {
-        setUsers(data.content);
+        setUsers(mapUsersData(data.content));
         setTotalPages(data.totalPages);
         setTotalElements(data.totalElements);
         setCurrentPage(data.number);
       } else {
         // Fallback for non-paginated response
-        setUsers(Array.isArray(data) ? data : []);
+        setUsers(mapUsersData(Array.isArray(data) ? data : []));
         setTotalPages(1);
         setTotalElements(Array.isArray(data) ? data.length : 0);
       }
@@ -89,7 +99,7 @@ export const useUserManagement = () => {
 
       const data = response.data;
       if (data.content) {
-        setUsers(data.content);
+        setUsers(mapUsersData(data.content));
         setTotalPages(data.totalPages);
         setTotalElements(data.totalElements);
       } else {
@@ -118,7 +128,7 @@ export const useUserManagement = () => {
 
       const data = response.data;
       if (data.content) {
-        setUsers(data.content);
+        setUsers(mapUsersData(data.content));
         setTotalPages(data.totalPages);
         setTotalElements(data.totalElements);
       } else {
@@ -146,7 +156,7 @@ export const useUserManagement = () => {
 
       const data = response.data;
       if (data.content) {
-        setUsers(data.content);
+        setUsers(mapUsersData(data.content));
         setTotalPages(data.totalPages);
         setTotalElements(data.totalElements);
       } else {

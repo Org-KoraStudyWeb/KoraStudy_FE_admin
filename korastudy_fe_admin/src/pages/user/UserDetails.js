@@ -9,13 +9,9 @@ import {
   User,
   Shield,
   ShieldOff,
-  MapPin,
-  Briefcase,
   Clock,
   Key,
   Trash2,
-  CheckCircle,
-  XCircle,
   AlertCircle,
 } from "lucide-react";
 import userApi from "../../api/userApi";
@@ -49,6 +45,7 @@ const UserDetail = () => {
       setLoading(true);
       setError(null);
 
+      // Sử dụng API dành cho admin để lấy đầy đủ thông tin
       const response = await userApi.getUserDetail(id);
       setUser(response.data);
     } catch (error) {
@@ -111,31 +108,6 @@ const UserDetail = () => {
     } catch (error) {
       console.error("Lỗi khi xóa người dùng:", error);
       alert("Có lỗi xảy ra khi xóa người dùng");
-    }
-  };
-
-  const handleApproveProfile = async () => {
-    try {
-      await userApi.approveUserProfile(id);
-      alert("Đã phê duyệt hồ sơ người dùng");
-      fetchUserDetail(); // Refresh data
-    } catch (error) {
-      console.error("Lỗi khi phê duyệt hồ sơ:", error);
-      alert("Có lỗi xảy ra khi phê duyệt hồ sơ");
-    }
-  };
-
-  const handleRejectProfile = async () => {
-    const reason = prompt("Nhập lý do từ chối:");
-    if (!reason) return;
-
-    try {
-      await userApi.rejectUserProfile(id, reason);
-      alert("Đã từ chối hồ sơ người dùng");
-      fetchUserDetail(); // Refresh data
-    } catch (error) {
-      console.error("Lỗi khi từ chối hồ sơ:", error);
-      alert("Có lỗi xảy ra khi từ chối hồ sơ");
     }
   };
 
@@ -310,26 +282,6 @@ const UserDetail = () => {
                 Đặt lại mật khẩu
               </button>
 
-              {user.profileStatus === "PENDING" && (
-                <>
-                  <button
-                    onClick={handleApproveProfile}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-100 text-green-700 hover:bg-green-200 rounded-lg transition-colors"
-                  >
-                    <CheckCircle size={16} />
-                    Phê duyệt hồ sơ
-                  </button>
-
-                  <button
-                    onClick={handleRejectProfile}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-orange-100 text-orange-700 hover:bg-orange-200 rounded-lg transition-colors"
-                  >
-                    <XCircle size={16} />
-                    Từ chối hồ sơ
-                  </button>
-                </>
-              )}
-
               <button
                 onClick={() => setShowDeleteModal(true)}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors"
@@ -380,7 +332,7 @@ const UserDetail = () => {
                     <div>
                       <p className="text-sm text-gray-600">Ngày sinh</p>
                       <p className="text-sm font-medium text-gray-900">
-                        {formatDate(user.dob) || "Chưa cập nhật"}
+                        {formatDate(user.dateOfBirth) || "Chưa cập nhật"}
                       </p>
                     </div>
                   </div>
@@ -398,30 +350,6 @@ const UserDetail = () => {
                       </p>
                     </div>
                   </div>
-
-                  {user.idCard && (
-                    <div className="flex items-center gap-3">
-                      <Briefcase size={16} className="text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-600">CCCD/CMND</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {user.idCard}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {user.address && (
-                    <div className="flex items-center gap-3">
-                      <MapPin size={16} className="text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-600">Địa chỉ</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {user.address}
-                        </p>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -436,7 +364,7 @@ const UserDetail = () => {
                     <div>
                       <p className="text-sm text-gray-600">Ngày tạo</p>
                       <p className="text-sm font-medium text-gray-900">
-                        {formatDate(user.createdDate)}
+                        {formatDate(user.createdAt)}
                       </p>
                     </div>
                   </div>
@@ -446,82 +374,13 @@ const UserDetail = () => {
                     <div>
                       <p className="text-sm text-gray-600">Lần cập nhật cuối</p>
                       <p className="text-sm font-medium text-gray-900">
-                        {formatDate(user.updatedDate)}
+                        {formatDate(user.lastModified)}
                       </p>
                     </div>
                   </div>
-
-                  {user.level && (
-                    <div className="flex items-center gap-3">
-                      <Briefcase size={16} className="text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-600">Cấp độ</p>
-                        <p className="text-sm font-medium text-gray-900">
-                          {user.level}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {user.profileStatus && (
-                    <div className="flex items-center gap-3">
-                      <Shield size={16} className="text-gray-400" />
-                      <div>
-                        <p className="text-sm text-gray-600">
-                          Trạng thái hồ sơ
-                        </p>
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            user.profileStatus === "APPROVED"
-                              ? "bg-green-100 text-green-800"
-                              : user.profileStatus === "PENDING"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {user.profileStatus === "APPROVED"
-                            ? "Đã duyệt"
-                            : user.profileStatus === "PENDING"
-                            ? "Chờ duyệt"
-                            : user.profileStatus === "REJECTED"
-                            ? "Bị từ chối"
-                            : user.profileStatus}
-                        </span>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
-
-            {/* Additional Information */}
-            {(user.bio || user.note) && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <h4 className="text-md font-medium text-gray-900 mb-4">
-                  Thông tin bổ sung
-                </h4>
-
-                {user.bio && (
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-600 mb-2">
-                      Giới thiệu bản thân
-                    </p>
-                    <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg">
-                      {user.bio}
-                    </p>
-                  </div>
-                )}
-
-                {user.note && (
-                  <div>
-                    <p className="text-sm text-gray-600 mb-2">Ghi chú</p>
-                    <p className="text-sm text-gray-900 bg-gray-50 p-3 rounded-lg">
-                      {user.note}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </div>

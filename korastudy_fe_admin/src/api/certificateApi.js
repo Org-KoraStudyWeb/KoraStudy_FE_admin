@@ -46,14 +46,8 @@ const certificateApi = {
   getAllUserCertificates: async (userId) => {
     try {
       console.log(`📋 ADMIN GET all certificates for user=${userId}`);
-
-      // Cần backend tạo API mới cho endpoint này
-      // Tạm thời sử dụng cách này nếu backend chưa có
       const response = await axiosClient.get(
-        `/api/v1/certificates/my-certificates`,
-        {
-          params: { adminUserId: userId }, // Cần backend hỗ trợ param này
-        }
+        `/api/v1/certificates/admin/users/${userId}/certificates`
       );
 
       console.log(`✅ Admin user certificates:`, response.data);
