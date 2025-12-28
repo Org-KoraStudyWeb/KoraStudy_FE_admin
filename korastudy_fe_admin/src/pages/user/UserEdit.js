@@ -18,11 +18,6 @@ const UserEdit = () => {
     phoneNumber: "",
     dob: "",
     gender: "",
-    address: "",
-    idCard: "",
-    level: "",
-    bio: "",
-    note: "",
     isUserEnabled: true,
     roles: [],
   });
@@ -50,13 +45,8 @@ const UserEdit = () => {
         lastName: user.lastName || "",
         email: user.email || "",
         phoneNumber: user.phoneNumber || "",
-        dob: user.dob ? user.dob.split("T")[0] : "", // Format date for input
+        dob: user.dateOfBirth ? user.dateOfBirth.split("T")[0] : "", // Format date for input
         gender: user.gender || "",
-        address: user.address || "",
-        idCard: user.idCard || "",
-        level: user.level || "",
-        bio: user.bio || "",
-        note: user.note || "",
         isUserEnabled: user.isUserEnabled,
         roles: user.roles || [],
       });
@@ -125,11 +115,6 @@ const UserEdit = () => {
       errors.phoneNumber = "Số điện thoại không hợp lệ";
     }
 
-    // ID Card validation
-    if (formData.idCard && !/^[0-9]{9,12}$/.test(formData.idCard)) {
-      errors.idCard = "CCCD/CMND không hợp lệ";
-    }
-
     // Age validation
     if (formData.dob) {
       const birthDate = new Date(formData.dob);
@@ -164,11 +149,6 @@ const UserEdit = () => {
         phoneNumber: formData.phoneNumber.trim() || null,
         dob: formData.dob || null,
         gender: formData.gender || null,
-        address: formData.address.trim() || null,
-        idCard: formData.idCard.trim() || null,
-        level: formData.level || null,
-        bio: formData.bio.trim() || null,
-        note: formData.note.trim() || null,
         isUserEnabled: formData.isUserEnabled,
         roles: formData.roles,
       };
@@ -204,13 +184,8 @@ const UserEdit = () => {
         lastName: originalUser?.lastName || "",
         email: originalUser?.email || "",
         phoneNumber: originalUser?.phoneNumber || "",
-        dob: originalUser?.dob ? originalUser.dob.split("T")[0] : "",
+        dob: originalUser?.dateOfBirth ? originalUser.dateOfBirth.split("T")[0] : "",
         gender: originalUser?.gender || "",
-        address: originalUser?.address || "",
-        idCard: originalUser?.idCard || "",
-        level: originalUser?.level || "",
-        bio: originalUser?.bio || "",
-        note: originalUser?.note || "",
         isUserEnabled: originalUser?.isUserEnabled || true,
         roles: originalUser?.roles || [],
       });
@@ -442,87 +417,6 @@ const UserEdit = () => {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    CCCD/CMND
-                  </label>
-                  <input
-                    type="text"
-                    name="idCard"
-                    value={formData.idCard}
-                    onChange={handleInputChange}
-                    className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      validationErrors.idCard
-                        ? "border-red-300"
-                        : "border-gray-300"
-                    }`}
-                    placeholder="Nhập số CCCD/CMND"
-                  />
-                  {validationErrors.idCard && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {validationErrors.idCard}
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Cấp độ
-                  </label>
-                  <select
-                    name="level"
-                    value={formData.level}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">Chọn cấp độ</option>
-                    <option value="Beginner">Beginner</option>
-                    <option value="Intermediate">Intermediate</option>
-                    <option value="Advanced">Advanced</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Địa chỉ
-                </label>
-                <input
-                  type="text"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Nhập địa chỉ"
-                />
-              </div>
-
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Giới thiệu bản thân
-                </label>
-                <textarea
-                  name="bio"
-                  value={formData.bio}
-                  onChange={handleInputChange}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Nhập giới thiệu về bản thân"
-                />
-              </div>
-
-              <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ghi chú của admin
-                </label>
-                <textarea
-                  name="note"
-                  value={formData.note}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="Nhập ghi chú cho người dùng này"
-                />
               </div>
             </div>
           </div>
@@ -594,13 +488,13 @@ const UserEdit = () => {
                     </p>
                     <p>
                       <span className="font-medium">Ngày tạo:</span>{" "}
-                      {new Date(originalUser.createdDate).toLocaleDateString(
+                      {new Date(originalUser.createdAt).toLocaleDateString(
                         "vi-VN"
                       )}
                     </p>
                     <p>
                       <span className="font-medium">Cập nhật lần cuối:</span>{" "}
-                      {new Date(originalUser.updatedDate).toLocaleDateString(
+                      {new Date(originalUser.lastModified).toLocaleDateString(
                         "vi-VN"
                       )}
                     </p>
