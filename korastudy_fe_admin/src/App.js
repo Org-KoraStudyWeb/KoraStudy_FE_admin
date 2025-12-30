@@ -34,6 +34,7 @@ import CreateBlog from "./pages/blog/CreateBlog";
 import UserList from "./pages/user/UserList";
 import QuizQuestionManager from "./pages/course/quiz/QuizQuestionManager";
 import PaymentManagement from "./pages/PaymentManagement";
+import ReviewManagement from "./pages/review/ReviewManagement";
 
 function App() {
   return (
@@ -240,6 +241,16 @@ function App() {
           element={
             <AdminLayout title="Chỉnh sửa bài viết">
               <CreateBlog />
+            </AdminLayout>
+          }
+        />
+
+        {/* Review Management Route */}
+        <Route
+          path="/admin/reviews"
+          element={
+            <AdminLayout title="Quản lý Đánh giá">
+              <ReviewManagement />
             </AdminLayout>
           }
         />
