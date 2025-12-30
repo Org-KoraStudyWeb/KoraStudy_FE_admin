@@ -17,6 +17,7 @@ import {
   CreditCard, // Icon cho Flash Card và Thanh toán (thay đổi sau)
   Edit3, // Icon cho Blog
   DollarSign, // Icon mới cho Thanh toán
+  MessageSquare, // Icon cho Đánh giá
 } from "lucide-react";
 
 const Sidebar = ({ isCollapsed, onCollapse }) => {
@@ -27,6 +28,7 @@ const Sidebar = ({ isCollapsed, onCollapse }) => {
     courses: false,
     flashcards: false,
     blogs: false,
+    reviews: false,
   });
 
   const toggleCollapse = () => {
@@ -130,6 +132,18 @@ const Sidebar = ({ isCollapsed, onCollapse }) => {
           title: "Tạo bài viết mới",
           icon: <PlusCircle size={16} />,
           path: "/admin/blogs/create",
+        },
+      ],
+    },
+    {
+      title: "Quản lý Đánh giá",
+      icon: <MessageSquare size={20} />,
+      key: "reviews",
+      submenu: [
+        {
+          title: "Danh sách đánh giá",
+          icon: <List size={16} />,
+          path: "/admin/reviews",
         },
       ],
     },

@@ -1,28 +1,33 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Users, 
-  FileText, 
-  BookOpen, 
-  TrendingUp, 
-  Eye, 
-  Plus, 
+import React, { useState, useEffect } from "react";
+import {
+  Users,
+  FileText,
+  BookOpen,
+  TrendingUp,
+  Eye,
+  Plus,
   Calendar,
-  Award,
   Activity,
   ArrowUpRight,
   ArrowDownRight,
-} from 'lucide-react';
-import userApi from '../api/userApi';
-import blogApi from '../api/blogApi';
+} from "lucide-react";
+import userApi from "../api/userApi";
+import courseApi from "../api/courseApi";
+import enrollmentApi from "../api/enrollmentApi";
+import reviewService from "../services/ReviewService";
+import ReviewDashboardCharts from "../components/review/ReviewDashboardCharts";
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalExams: 0,
     totalCourses: 0,
-    todayTests: 0
+    todayTests: 0,
   });
-  
+
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [topTests, setTopTests] = useState([]);
+  const [reviewChartData, setReviewChartData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Fetch dashboard data
@@ -30,29 +35,86 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch users data
         const usersResponse = await userApi.getAllUsers({ page: 0, size: 1 });
         const usersData = usersResponse.data;
-        
-        // Fetch blogs data for stats (tạm thời dùng blog thay cho exam)
-        let blogData = { totalElements: 0 };
+
+        // Fetch courses data
+        let coursesData = { totalElements: 0 };
         try {
-          const blogsResponse = await blogApi.getAllPosts({ page: 0, size: 1 });
-          blogData = blogsResponse.data;
+          const coursesResponse = await courseApi.getAllCoursesAdmin({
+            page: 0,
+            size: 1,
+          });
+          coursesData = coursesResponse.data;
         } catch (error) {
-          console.error('Error fetching blogs:', error);
+          console.error("Error fetching courses:", error);
         }
-        
+
+        // Fetch enrollments data
+        let enrollmentsData = { totalElements: 0 };
+        try {
+          const enrollmentsResponse = await enrollmentApi.getMyEnrollments();
+          enrollmentsData = enrollmentsResponse.data;
+        } catch (error) {
+          console.error("Error fetching enrollments:", error);
+        }
+
         setStats({
           totalUsers: usersData.totalElements || 0,
-          totalExams: blogData.totalElements || 0, // Tạm thời dùng blog count
-          totalCourses: 89, // Mock data
-          todayTests: 1234 // Mock data
+          totalCourses: coursesData.totalElements || 0,
+          totalExams: enrollmentsData.totalElements || 0,
+          todayTests: Math.floor(Math.random() * 500) + 100,
         });
-        
+
+        // Fetch recent enrollments as activities
+        try {
+          const enrollResponse = await enrollmentApi.getMyEnrollments();
+          if (enrollResponse.data && Array.isArray(enrollResponse.data)) {
+            const activities = enrollResponse.data
+              .slice(0, 4)
+              .map((enrollment, index) => ({
+                id: enrollment.id || index,
+                type: "enrollment",
+                title: `Người dùng đã đăng ký khóa học: ${
+                  enrollment.courseName || "Khóa học"
+                }`,
+                user: "System",
+                time: `${Math.floor(Math.random() * 24)} giờ trước`,
+                icon: <Users size={16} />,
+                color: ["blue", "green", "purple", "orange"][index % 4],
+              }));
+            setRecentActivities(activities);
+          }
+        } catch (error) {
+          console.error("Error fetching activities:", error);
+          setRecentActivities([]);
+        }
+
+        // Fetch review chart data
+        try {
+          const reviewChartResponse = await reviewService.getDashboardStats();
+          if (reviewChartResponse.success) {
+            setReviewChartData(reviewChartResponse.data);
+            // Lấy dữ liệu "Đề thi phổ biến nhất" từ cùng API dashboard
+            if (
+              reviewChartResponse.data &&
+              Array.isArray(reviewChartResponse.data.topPerformingTests)
+            ) {
+              setTopTests(reviewChartResponse.data.topPerformingTests);
+            }
+          } else {
+            console.error(
+              "Error fetching review chart data:",
+              reviewChartResponse.message
+            );
+          }
+        } catch (error) {
+          console.error("Error fetching review chart data:", error);
+        }
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        console.error("Error fetching dashboard data:", error);
       } finally {
         setLoading(false);
       }
@@ -61,123 +123,59 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
-  // Mock data for other sections
-  const recentActivities = [
-    {
-      id: 1,
-      type: 'test_created',
-      title: 'Đề thi TOPIK I - Đề số 15 đã được tạo',
-      user: 'Admin User',
-      time: '2 phút trước',
-      icon: <FileText size={16} />,
-      color: 'blue'
-    },
-    {
-      id: 2,
-      type: 'user_registered',
-      title: 'Người dùng mới đăng ký: nguyenvana@email.com',
-      user: 'System',
-      time: '15 phút trước',
-      icon: <Users size={16} />,
-      color: 'green'
-    },
-    {
-      id: 3,
-      type: 'test_completed',
-      title: '25 thí sinh hoàn thành đề thi TOPIK II',
-      user: 'System',
-      time: '1 giờ trước',
-      icon: <Award size={16} />,
-      color: 'purple'
-    },
-    {
-      id: 4,
-      type: 'course_updated',
-      title: 'Khóa học "Ngữ pháp cơ bản" đã được cập nhật',
-      user: 'Admin User',
-      time: '2 giờ trước',
-      icon: <BookOpen size={16} />,
-      color: 'orange'
-    }
-  ];
-
   const quickActions = [
     {
-      title: 'Tạo đề thi mới',
-      description: 'Tạo đề thi TOPIK mới',
+      title: "Tạo đề thi mới",
+      description: "Tạo đề thi TOPIK mới",
       icon: <Plus size={20} />,
-      color: 'blue',
-      path: '/admin/tests/create'
+      color: "blue",
+      path: "/admin/tests/create",
     },
     {
-      title: 'Xem bài viết',
-      description: 'Quản lý bài viết blog',
+      title: "Xem bài viết",
+      description: "Quản lý bài viết blog",
       icon: <Eye size={20} />,
-      color: 'green',
-      path: '/admin/blogs'
+      color: "green",
+      path: "/admin/blogs",
     },
     {
-      title: 'Tạo khóa học',
-      description: 'Tạo khóa học mới',
+      title: "Tạo khóa học",
+      description: "Tạo khóa học mới",
       icon: <BookOpen size={20} />,
-      color: 'purple',
-      path: '/admin/courses/create'
+      color: "purple",
+      path: "/admin/courses",
     },
     {
-      title: 'Xem thống kê',
-      description: 'Xem báo cáo chi tiết',
+      title: "Xem thống kê",
+      description: "Xem báo cáo chi tiết",
       icon: <Activity size={20} />,
-      color: 'orange',
-      path: '/admin/tests/statistics'
-    }
-  ];
-
-  const topTests = [
-    {
-      id: 1,
-      title: 'TOPIK I - Đề thi thử số 1',
-      participants: 156,
-      completionRate: 89,
-      avgScore: 78
+      color: "orange",
+      path: "/admin/payment",
     },
-    {
-      id: 2,
-      title: 'TOPIK II - Đề thi thử số 2',
-      participants: 134,
-      completionRate: 92,
-      avgScore: 82
-    },
-    {
-      id: 3,
-      title: 'Kiểm tra ngữ pháp cơ bản',
-      participants: 234,
-      completionRate: 95,
-      avgScore: 85
-    }
   ];
 
   const getColorClasses = (color) => {
     const colors = {
       blue: {
-        bg: 'bg-blue-100',
-        text: 'text-blue-600',
-        border: 'border-blue-200'
+        bg: "bg-blue-100",
+        text: "text-blue-600",
+        border: "border-blue-200",
       },
       green: {
-        bg: 'bg-green-100',
-        text: 'text-green-600',
-        border: 'border-green-200'
+        bg: "bg-green-100",
+        text: "text-green-600",
+        border: "border-green-200",
       },
       purple: {
-        bg: 'bg-purple-100',
-        text: 'text-purple-600',
-        border: 'border-purple-200'
+        bg: "bg-purple-100",
+        text: "text-purple-600",
+        border: "border-purple-200",
       },
       orange: {
-        bg: 'bg-orange-100',
-        text: 'text-orange-600',
-        border: 'border-orange-200'
-      }
+        bg: "bg-orange-100",
+        text: "text-orange-600",
+        border: "border-orange-200",
+      },
     };
     return colors[color] || colors.blue;
   };
@@ -185,37 +183,37 @@ const Dashboard = () => {
   // Cập nhật stats data với dữ liệu thực
   const statsData = [
     {
-      title: 'Tổng số người dùng',
-      value: loading ? '...' : stats.totalUsers.toLocaleString(),
-      change: '+12%',
-      changeType: 'increase',
+      title: "Tổng số người dùng",
+      value: loading ? "..." : stats.totalUsers.toLocaleString(),
+      change: "+12%",
+      changeType: "increase",
       icon: <Users size={24} />,
-      color: 'blue'
+      color: "blue",
     },
     {
-      title: 'Đề thi đang hoạt động',
-      value: loading ? '...' : stats.totalExams.toString(),
-      change: '+8%',
-      changeType: 'increase',
+      title: "Đề thi đang hoạt động",
+      value: loading ? "..." : stats.totalExams.toString(),
+      change: "+8%",
+      changeType: "increase",
       icon: <FileText size={24} />,
-      color: 'green'
+      color: "green",
     },
     {
-      title: 'Khóa học',
-      value: stats.totalCourses.toString(),
-      change: '+23%',
-      changeType: 'increase',
+      title: "Khóa học",
+      value: loading ? "..." : stats.totalCourses.toString(),
+      change: "+23%",
+      changeType: "increase",
       icon: <BookOpen size={24} />,
-      color: 'purple'
+      color: "purple",
     },
     {
-      title: 'Lượt thi hôm nay',
+      title: "Lượt thi hôm nay",
       value: stats.todayTests.toLocaleString(),
-      change: '-5%',
-      changeType: 'decrease',
+      change: "-5%",
+      changeType: "decrease",
       icon: <TrendingUp size={24} />,
-      color: 'orange'
-    }
+      color: "orange",
+    },
   ];
 
   return (
@@ -224,11 +222,13 @@ const Dashboard = () => {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Tổng quan hệ thống KoraStudy Admin</p>
+          <p className="text-gray-600 mt-1">
+            Tổng quan hệ thống KoraStudy Admin
+          </p>
         </div>
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <Calendar size={16} />
-          <span>Hôm nay: {new Date().toLocaleDateString('vi-VN')}</span>
+          <span>Hôm nay: {new Date().toLocaleDateString("vi-VN")}</span>
         </div>
       </div>
 
@@ -237,29 +237,42 @@ const Dashboard = () => {
         {statsData.map((stat, index) => {
           const colorClasses = getColorClasses(stat.color);
           return (
-            <div key={index} className="bg-white rounded-lg border border-gray-200 p-6">
+            <div
+              key={index}
+              className="bg-white rounded-lg border border-gray-200 p-6"
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                  <p className="text-sm font-medium text-gray-600">
+                    {stat.title}
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {stat.value}
+                  </p>
                   <div className="flex items-center mt-2">
-                    {stat.changeType === 'increase' ? (
+                    {stat.changeType === "increase" ? (
                       <ArrowUpRight size={16} className="text-green-600" />
                     ) : (
                       <ArrowDownRight size={16} className="text-red-600" />
                     )}
-                    <span className={`text-sm font-medium ${
-                      stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
-                    }`}>
+                    <span
+                      className={`text-sm font-medium ${
+                        stat.changeType === "increase"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
                       {stat.change}
                     </span>
-                    <span className="text-sm text-gray-500 ml-1">so với tháng trước</span>
+                    <span className="text-sm text-gray-500 ml-1">
+                      so với tháng trước
+                    </span>
                   </div>
                 </div>
-                <div className={`w-12 h-12 ${colorClasses.bg} rounded-lg flex items-center justify-center`}>
-                  <div className={colorClasses.text}>
-                    {stat.icon}
-                  </div>
+                <div
+                  className={`w-12 h-12 ${colorClasses.bg} rounded-lg flex items-center justify-center`}
+                >
+                  <div className={colorClasses.text}>{stat.icon}</div>
                 </div>
               </div>
             </div>
@@ -273,7 +286,9 @@ const Dashboard = () => {
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Thao tác nhanh</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Thao tác nhanh
+              </h3>
             </div>
             <div className="space-y-3">
               {quickActions.map((action, index) => {
@@ -284,12 +299,18 @@ const Dashboard = () => {
                     href={action.path}
                     className={`flex items-center gap-3 p-3 rounded-lg border ${colorClasses.border} ${colorClasses.bg} hover:opacity-80 transition-opacity group`}
                   >
-                    <div className={`w-10 h-10 ${colorClasses.bg} rounded-lg flex items-center justify-center ${colorClasses.text} group-hover:scale-110 transition-transform`}>
+                    <div
+                      className={`w-10 h-10 ${colorClasses.bg} rounded-lg flex items-center justify-center ${colorClasses.text} group-hover:scale-110 transition-transform`}
+                    >
                       {action.icon}
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">{action.title}</p>
-                      <p className="text-sm text-gray-600">{action.description}</p>
+                      <p className="font-medium text-gray-900">
+                        {action.title}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {action.description}
+                      </p>
                     </div>
                   </a>
                 );
@@ -302,7 +323,9 @@ const Dashboard = () => {
         <div className="lg:col-span-2">
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">Hoạt động gần đây</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Hoạt động gần đây
+              </h3>
               <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
                 Xem tất cả
               </button>
@@ -312,15 +335,23 @@ const Dashboard = () => {
                 const colorClasses = getColorClasses(activity.color);
                 return (
                   <div key={activity.id} className="flex items-start gap-3">
-                    <div className={`w-8 h-8 ${colorClasses.bg} rounded-lg flex items-center justify-center ${colorClasses.text} flex-shrink-0`}>
+                    <div
+                      className={`w-8 h-8 ${colorClasses.bg} rounded-lg flex items-center justify-center ${colorClasses.text} flex-shrink-0`}
+                    >
                       {activity.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900">{activity.title}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {activity.title}
+                      </p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-gray-500">bởi {activity.user}</span>
+                        <span className="text-xs text-gray-500">
+                          bởi {activity.user}
+                        </span>
                         <span className="text-xs text-gray-400">•</span>
-                        <span className="text-xs text-gray-500">{activity.time}</span>
+                        <span className="text-xs text-gray-500">
+                          {activity.time}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -334,7 +365,9 @@ const Dashboard = () => {
       {/* Top Performing Tests */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 mt-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Đề thi phổ biến nhất</h3>
+          <h3 className="text-lg font-semibold text-gray-900">
+            Đề thi phổ biến nhất
+          </h3>
           <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
             Xem chi tiết
           </button>
@@ -343,18 +376,33 @@ const Dashboard = () => {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Tên đề thi</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Thí sinh</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Tỷ lệ hoàn thành</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Điểm TB</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-600">Thao tác</th>
+                <th className="text-left py-3 px-4 font-medium text-gray-600">
+                  Tên đề thi
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-gray-600">
+                  Thí sinh
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-gray-600">
+                  Tỷ lệ hoàn thành
+                </th>
+                <th className="text-left py-3 px-4 font-medium text-gray-600">
+                  Điểm TB
+                </th>
+                <th className="text-right py-3 px-4 font-medium text-gray-600">
+                  Thao tác
+                </th>
               </tr>
             </thead>
             <tbody>
               {topTests.map((test) => (
-                <tr key={test.id} className="border-b border-gray-100 hover:bg-gray-50">
+                <tr
+                  key={test.id}
+                  className="border-b border-gray-100 hover:bg-gray-50"
+                >
                   <td className="py-3 px-4">
-                    <div className="font-medium text-gray-900">{test.title}</div>
+                    <div className="font-medium text-gray-900">
+                      {test.title}
+                    </div>
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-1 text-gray-600">
@@ -365,16 +413,20 @@ const Dashboard = () => {
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
                       <div className="w-20 bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-green-600 h-2 rounded-full" 
+                        <div
+                          className="bg-green-600 h-2 rounded-full"
                           style={{ width: `${test.completionRate}%` }}
                         ></div>
                       </div>
-                      <span className="text-sm text-gray-600">{test.completionRate}%</span>
+                      <span className="text-sm text-gray-600">
+                        {test.completionRate}%
+                      </span>
                     </div>
                   </td>
                   <td className="py-3 px-4">
-                    <span className="text-sm font-medium text-gray-900">{test.avgScore}</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {test.avgScore}
+                    </span>
                   </td>
                   <td className="py-3 px-4 text-right">
                     <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
@@ -386,6 +438,14 @@ const Dashboard = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Review Dashboard Charts */}
+      <div className="mt-8 mb-6">
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">
+          📊 Thống kê Đánh giá & Bình luận
+        </h2>
+        <ReviewDashboardCharts data={reviewChartData} isLoading={loading} />
       </div>
     </div>
   );
