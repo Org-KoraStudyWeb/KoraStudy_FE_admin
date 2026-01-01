@@ -20,6 +20,7 @@ import useCourseManagement from "../../hooks/useCourseManagement";
 import CourseEnrollmentList from "../../components/course/CourseEnrollmentList";
 import CreateCourseForm from "../../components/course/CreateCourseForm";
 import CourseList from "../../components/course/CourseList";
+import courseService from "../../services/CourseService"; // Import courseService
 import { Editor } from "@tinymce/tinymce-react";
 
 // TinyMCE wrapper so AntD Form can pass value/onChange
@@ -170,9 +171,15 @@ const CourseManagement = () => {
 
     try {
       setUploadLoading(true);
-      const tempUrl = URL.createObjectURL(file);
-      setImageUrl(tempUrl);
-      message.success("Upload hình ảnh thành công");
+      const response = await courseService.uploadCourseImage(file);
+      if (response.success) {
+        setImageUrl(response.data.url);
+        message.success(response.message || "Upload hình ảnh thành công");
+      } else {
+        message.error(response.message || "Upload thất bại");
+      }
+    } catch (error) {
+       message.error("Có lỗi xảy ra khi upload ảnh");
     } finally {
       setUploadLoading(false);
     }

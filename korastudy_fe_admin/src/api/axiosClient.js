@@ -67,7 +67,6 @@ axiosClient.interceptors.response.use(
     if (status === 401) {
       console.log("🔒 Unauthorized - Token invalid or expired");
       console.log("🔐 Clearing all tokens... (DISABLED FOR DEBUGGING)");
-
       // Clear all authentication data
       // localStorage.removeItem("accessToken");
       // localStorage.removeItem("token");
