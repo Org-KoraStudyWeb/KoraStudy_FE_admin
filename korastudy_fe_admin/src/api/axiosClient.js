@@ -12,14 +12,13 @@ const axiosClient = axios.create({
 // Request interceptor
 axiosClient.interceptors.request.use(
   (config) => {
-    // Thử các key token khác nhau trong localStorage
-    const token =
-      localStorage.getItem("accessToken") ||
-      localStorage.getItem("token") ||
-      localStorage.getItem("adminToken");
+    // Use accessToken as the single source of truth
+    const token = localStorage.getItem("accessToken");
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.warn("⚠️ No accessToken found in localStorage");
     }
 
     console.log("Request Headers:", config.headers);
@@ -50,13 +49,16 @@ axiosClient.interceptors.response.use(
     );
 
     if (error.response?.status === 401) {
-      console.log("Unauthorized - clearing tokens and redirecting to login");
-      // Clear all possible token keys
+      console.log(
+        "🔒 Unauthorized - Token invalid or expired. Clearing tokens and redirecting to login"
+      );
+      // Clear all authentication data
       localStorage.removeItem("accessToken");
       localStorage.removeItem("token");
       localStorage.removeItem("adminToken");
       localStorage.removeItem("userRoles");
       localStorage.removeItem("username");
+      sessionStorage.clear();
 
       // Redirect to login if not already there
       if (!window.location.pathname.includes("/login")) {

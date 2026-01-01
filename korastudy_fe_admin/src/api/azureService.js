@@ -1,14 +1,12 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
 
 /**
  * Get token from localStorage
  */
 const getToken = () => {
-  return localStorage.getItem("accessToken") ||
-         localStorage.getItem("token") ||
-         localStorage.getItem("adminToken");
+  return localStorage.getItem("accessToken");
 };
 
 /**
@@ -25,14 +23,14 @@ export const translateKoreanToVietnamese = async (text) => {
       { text },
       {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${getToken()}`,
         },
       }
     );
     return response.data;
   } catch (error) {
-    console.error('Error translating Korean to Vietnamese:', error);
+    console.error("Error translating Korean to Vietnamese:", error);
     throw error;
   }
 };
@@ -47,14 +45,14 @@ export const translateVietnameseToKorean = async (text) => {
       { text },
       {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${getToken()}`,
         },
       }
     );
     return response.data;
   } catch (error) {
-    console.error('Error translating Vietnamese to Korean:', error);
+    console.error("Error translating Vietnamese to Korean:", error);
     throw error;
   }
 };
@@ -69,14 +67,14 @@ export const detectLanguage = async (text) => {
       { text },
       {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${getToken()}`,
         },
       }
     );
     return response.data;
   } catch (error) {
-    console.error('Error detecting language:', error);
+    console.error("Error detecting language:", error);
     throw error;
   }
 };
@@ -87,21 +85,24 @@ export const detectLanguage = async (text) => {
  * @param {string} voice - Giọng đọc (mặc định: ko-KR-SunHiNeural)
  * @returns {Promise} - Audio data dạng base64
  */
-export const generateKoreanSpeech = async (text, voice = 'ko-KR-SunHiNeural') => {
+export const generateKoreanSpeech = async (
+  text,
+  voice = "ko-KR-SunHiNeural"
+) => {
   try {
     const response = await axios.post(
       `${API_URL}/api/v1/azure/speech/generate`,
       { text, voice },
       {
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           Authorization: `Bearer ${getToken()}`,
         },
       }
     );
     return response.data;
   } catch (error) {
-    console.error('Error generating speech:', error);
+    console.error("Error generating speech:", error);
     throw error;
   }
 };
@@ -118,7 +119,7 @@ export const getAvailableVoices = async () => {
     });
     return response.data;
   } catch (error) {
-    console.error('Error getting available voices:', error);
+    console.error("Error getting available voices:", error);
     throw error;
   }
 };
@@ -135,24 +136,24 @@ export const playAudioFromBase64 = (base64Data) => {
       byteNumbers[i] = byteCharacters.charCodeAt(i);
     }
     const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: 'audio/mpeg' });
-    
+    const blob = new Blob([byteArray], { type: "audio/mpeg" });
+
     // Create URL and play
     const audioUrl = URL.createObjectURL(blob);
     const audio = new Audio(audioUrl);
-    
-    audio.play().catch(error => {
-      console.error('Error playing audio:', error);
+
+    audio.play().catch((error) => {
+      console.error("Error playing audio:", error);
     });
-    
+
     // Clean up URL after playing
     audio.onended = () => {
       URL.revokeObjectURL(audioUrl);
     };
-    
+
     return audio;
   } catch (error) {
-    console.error('Error playing audio from base64:', error);
+    console.error("Error playing audio from base64:", error);
     throw error;
   }
 };
@@ -165,18 +166,18 @@ export const autoTranslate = async (text) => {
     // Detect language first
     const detectionResult = await detectLanguage(text);
     const detectedLang = detectionResult.detectedLanguage;
-    
+
     // Translate based on detected language
-    if (detectedLang === 'ko') {
+    if (detectedLang === "ko") {
       return await translateKoreanToVietnamese(text);
-    } else if (detectedLang === 'vi') {
+    } else if (detectedLang === "vi") {
       return await translateVietnameseToKorean(text);
     } else {
       // Default to Korean to Vietnamese if language is not detected
       return await translateKoreanToVietnamese(text);
     }
   } catch (error) {
-    console.error('Error in auto-translate:', error);
+    console.error("Error in auto-translate:", error);
     throw error;
   }
 };
