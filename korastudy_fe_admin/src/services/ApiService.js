@@ -1,21 +1,26 @@
 class ApiService {
   constructor() {
-    this.baseURL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api/v1';
-    this.token = localStorage.getItem('token');
+    this.baseURL =
+      process.env.REACT_APP_API_BASE_URL || "http://localhost:8080/api/v1";
+    // Use accessToken as the single source of truth
+    this.token = localStorage.getItem("accessToken");
   }
 
   setToken(token) {
     this.token = token;
-    localStorage.setItem('token', token);
+    // Store using accessToken key only
+    localStorage.setItem("accessToken", token);
   }
 
   getHeaders() {
+    // Always get the latest token from localStorage
+    const token = localStorage.getItem("accessToken");
     const headers = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     };
 
-    if (this.token) {
-      headers['Authorization'] = `Bearer ${this.token}`;
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
     }
 
     return headers;
@@ -30,61 +35,63 @@ class ApiService {
 
     try {
       const response = await fetch(url, config);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`
+        );
       }
 
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
         return await response.json();
       }
-      
+
       return response;
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error("API request failed:", error);
       throw error;
     }
   }
 
   async get(endpoint) {
-    return this.request(endpoint, { method: 'GET' });
+    return this.request(endpoint, { method: "GET" });
   }
 
   async post(endpoint, data) {
     return this.request(endpoint, {
-      method: 'POST',
+      method: "POST",
       body: JSON.stringify(data),
     });
   }
 
   async put(endpoint, data) {
     return this.request(endpoint, {
-      method: 'PUT',
+      method: "PUT",
       body: JSON.stringify(data),
     });
   }
 
   async patch(endpoint, data) {
     return this.request(endpoint, {
-      method: 'PATCH',
+      method: "PATCH",
       body: JSON.stringify(data),
     });
   }
 
   async delete(endpoint) {
-    return this.request(endpoint, { method: 'DELETE' });
+    return this.request(endpoint, { method: "DELETE" });
   }
 
   async uploadFile(endpoint, file) {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
     return this.request(endpoint, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${this.token}`,
+        Authorization: `Bearer ${this.token}`,
       },
       body: formData,
     });
