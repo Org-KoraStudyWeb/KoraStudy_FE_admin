@@ -256,8 +256,23 @@ const ExamEditor = () => {
     });
   };
 
-  const handleDeletePart = (partIndex) => {
+  const handleDeletePart = async (partIndex) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa phần này?")) {
+      const part = exam.parts[partIndex];
+      
+      // Nếu part đã có ID (đã lưu trên server), gọi API xóa
+      if (part.id && isEditing) {
+        try {
+          await AdminExamService.deletePart(part.id);
+          console.log("Đã xóa phần trên server:", part.id);
+        } catch (error) {
+          console.error("Lỗi khi xóa phần:", error);
+          alert("Không thể xóa phần này. Vui lòng thử lại.");
+          return;
+        }
+      }
+      
+      // Cập nhật state local
       const updatedParts = exam.parts.filter((_, index) => index !== partIndex);
       setExam({
         ...exam,
@@ -294,8 +309,23 @@ const ExamEditor = () => {
     });
   };
 
-  const handleDeleteQuestion = (partIndex, questionIndex) => {
+  const handleDeleteQuestion = async (partIndex, questionIndex) => {
     if (window.confirm("Bạn có chắc chắn muốn xóa câu hỏi này?")) {
+      const question = exam.parts[partIndex].questions[questionIndex];
+      
+      // Nếu question đã có ID (đã lưu trên server), gọi API xóa
+      if (question.id && isEditing) {
+        try {
+          await AdminExamService.deleteQuestion(question.id);
+          console.log("Đã xóa câu hỏi trên server:", question.id);
+        } catch (error) {
+          console.error("Lỗi khi xóa câu hỏi:", error);
+          alert("Không thể xóa câu hỏi này. Vui lòng thử lại.");
+          return;
+        }
+      }
+      
+      // Cập nhật state local
       const updatedParts = [...exam.parts];
       updatedParts[partIndex].questions.splice(questionIndex, 1);
       updatedParts[partIndex].questionCount =
