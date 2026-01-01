@@ -2,25 +2,25 @@ class ApiService {
   constructor() {
     this.baseURL =
       process.env.REACT_APP_API_BASE_URL || "http://localhost:8080/api/v1";
-    // Use accessToken as the single source of truth
+
+    // Single source of truth
     this.token = localStorage.getItem("accessToken");
   }
 
   setToken(token) {
     this.token = token;
-    // Store using accessToken key only
     localStorage.setItem("accessToken", token);
   }
 
   getHeaders() {
-    // Always get the latest token from localStorage
     const token = localStorage.getItem("accessToken");
+
     const headers = {
       "Content-Type": "application/json",
     };
 
     if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
+      headers.Authorization = `Bearer ${token}`;
     }
 
     return headers;
@@ -44,7 +44,7 @@ class ApiService {
       }
 
       const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
+      if (contentType?.includes("application/json")) {
         return await response.json();
       }
 
@@ -55,47 +55,49 @@ class ApiService {
     }
   }
 
-  async get(endpoint) {
+  get(endpoint) {
     return this.request(endpoint, { method: "GET" });
   }
 
-  async post(endpoint, data) {
+  post(endpoint, data) {
     return this.request(endpoint, {
       method: "POST",
       body: JSON.stringify(data),
     });
   }
 
-  async put(endpoint, data) {
+  put(endpoint, data) {
     return this.request(endpoint, {
       method: "PUT",
       body: JSON.stringify(data),
     });
   }
 
-  async patch(endpoint, data) {
+  patch(endpoint, data) {
     return this.request(endpoint, {
       method: "PATCH",
       body: JSON.stringify(data),
     });
   }
 
-  async delete(endpoint) {
+  delete(endpoint) {
     return this.request(endpoint, { method: "DELETE" });
   }
 
-  async uploadFile(endpoint, file) {
+  uploadFile(endpoint, file) {
     const formData = new FormData();
     formData.append("file", file);
 
     return this.request(endpoint, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${this.token}`,
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
       },
       body: formData,
     });
   }
 }
 
-export default new ApiService();
+const apiService = new ApiService();
+
+export default apiService;

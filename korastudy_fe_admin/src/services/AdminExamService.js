@@ -1,25 +1,11 @@
-import axios from "axios";
-
-const API_BASE_URL = "http://localhost:8080/api/v1";
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-});
-
-// Add auth token to requests
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+import axiosClient from "../api/axiosClient";
 
 const AdminExamService = {
   // Get all exams for admin
   getAllExams: async () => {
     try {
-      const response = await api.get("/admin/exams");
+      // Sử dụng axiosClient đã được cấu hình tập trung
+      const response = await axiosClient.get("/api/v1/admin/exams");
       console.log("Fetched exams from server:", response.data);
       return response.data;
     } catch (error) {
@@ -32,7 +18,7 @@ const AdminExamService = {
   deleteExam: async (id) => {
     try {
       console.log("Deleting exam with ID:", id);
-      const response = await api.delete(`/admin/exams/${id}`);
+      const response = await axiosClient.delete(`/api/v1/admin/exams/${id}`);
       console.log("Delete response:", response.data);
       return response.data;
     } catch (error) {
@@ -44,7 +30,7 @@ const AdminExamService = {
   // Get exam detail for editing
   getExamDetail: async (id) => {
     try {
-      const response = await api.get(`/admin/exams/${id}`);
+      const response = await axiosClient.get(`/api/v1/admin/exams/${id}`);
       console.log("Got exam details:", response.data);
       return response.data;
     } catch (error) {
@@ -57,7 +43,7 @@ const AdminExamService = {
   createExam: async (examData) => {
     try {
       console.log("Sending data to create exam:", examData);
-      const response = await api.post("/admin/exams", examData);
+      const response = await axiosClient.post("/api/v1/admin/exams", examData);
       console.log("Create exam response:", response.data);
       return response.data;
     } catch (error) {
@@ -70,7 +56,10 @@ const AdminExamService = {
   updateExam: async (id, examData) => {
     try {
       console.log("Sending data to update exam:", examData);
-      const response = await api.put(`/admin/exams/${id}`, examData);
+      const response = await axiosClient.put(
+        `/api/v1/admin/exams/${id}`,
+        examData
+      );
       console.log("Update exam response:", response.data);
       return response.data;
     } catch (error) {
@@ -83,7 +72,10 @@ const AdminExamService = {
   addPart: async (examId, partData) => {
     try {
       console.log("Adding part to exam:", examId, partData);
-      const response = await api.post(`/admin/exams/${examId}/parts`, partData);
+      const response = await axiosClient.post(
+        `/api/v1/admin/exams/${examId}/parts`,
+        partData
+      );
       console.log("Add part response:", response.data);
       return response.data;
     } catch (error) {
@@ -96,7 +88,10 @@ const AdminExamService = {
   updatePart: async (partId, partData) => {
     try {
       console.log("Updating part:", partId, partData);
-      const response = await api.put(`/admin/exams/parts/${partId}`, partData);
+      const response = await axiosClient.put(
+        `/api/v1/admin/exams/parts/${partId}`,
+        partData
+      );
       console.log("Update part response:", response.data);
       return response.data;
     } catch (error) {
@@ -108,7 +103,9 @@ const AdminExamService = {
   // Delete a part
   deletePart: async (partId) => {
     try {
-      const response = await api.delete(`/admin/exams/parts/${partId}`);
+      const response = await axiosClient.delete(
+        `/api/v1/admin/exams/parts/${partId}`
+      );
       return response.data;
     } catch (error) {
       console.error("Error deleting part:", error);
@@ -120,8 +117,8 @@ const AdminExamService = {
   addQuestion: async (partId, questionData) => {
     try {
       console.log("Adding question to part:", partId, questionData);
-      const response = await api.post(
-        `/admin/exams/parts/${partId}/questions`,
+      const response = await axiosClient.post(
+        `/api/v1/admin/exams/parts/${partId}/questions`,
         questionData
       );
       console.log("Add question response:", response.data);
@@ -136,8 +133,8 @@ const AdminExamService = {
   updateQuestion: async (questionId, questionData) => {
     try {
       console.log("Updating question:", questionId, questionData);
-      const response = await api.put(
-        `/admin/exams/questions/${questionId}`,
+      const response = await axiosClient.put(
+        `/api/v1/admin/exams/questions/${questionId}`,
         questionData
       );
       console.log("Update question response:", response.data);
@@ -151,7 +148,9 @@ const AdminExamService = {
   // Delete a question
   deleteQuestion: async (questionId) => {
     try {
-      const response = await api.delete(`/admin/exams/questions/${questionId}`);
+      const response = await axiosClient.delete(
+        `/api/v1/admin/exams/questions/${questionId}`
+      );
       return response.data;
     } catch (error) {
       console.error("Error deleting question:", error);
@@ -173,9 +172,9 @@ const AdminExamService = {
       // Chọn endpoint tương ứng
       const endpoint =
         fileType === "image"
-          ? `/admin/exams/questions/${questionId}/upload-image`
+          ? `/api/v1/admin/exams/questions/${questionId}/upload-image`
           : fileType === "audio"
-          ? `/admin/exams/questions/${questionId}/upload-audio`
+          ? `/api/v1/admin/exams/questions/${questionId}/upload-audio`
           : null;
 
       if (!endpoint) {
@@ -185,7 +184,7 @@ const AdminExamService = {
       console.log(`Sử dụng endpoint: ${endpoint}`);
 
       // Gửi request lên backend (đã có middleware update Cloudinary)
-      const response = await api.post(endpoint, formData);
+      const response = await axiosClient.post(endpoint, formData);
 
       console.log(
         `Upload ${fileType} và cập nhật câu hỏi thành công:`,
@@ -205,7 +204,9 @@ const AdminExamService = {
   // Toggle exam active status
   toggleExamActive: async (id) => {
     try {
-      const response = await api.patch(`/admin/exams/${id}/toggle-active`);
+      const response = await axiosClient.patch(
+        `/api/v1/admin/exams/${id}/toggle-active`
+      );
       return response.data;
     } catch (error) {
       console.error("Error toggling exam status:", error);
@@ -216,7 +217,9 @@ const AdminExamService = {
   // Duplicate exam
   duplicateExam: async (id) => {
     try {
-      const response = await api.post(`/admin/exams/${id}/duplicate`);
+      const response = await axiosClient.post(
+        `/api/v1/admin/exams/${id}/duplicate`
+      );
       return response.data;
     } catch (error) {
       console.error("Error duplicating exam:", error);
