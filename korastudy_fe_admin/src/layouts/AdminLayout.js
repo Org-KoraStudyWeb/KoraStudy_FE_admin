@@ -13,25 +13,34 @@ const AdminLayout = ({ children, title }) => {
     const userRoles = localStorage.getItem("userRoles");
 
     if (!token) {
-      console.warn("⚠️ No token found. Redirecting to login.");
+      console.warn("⚠️ No token found in AdminLayout. Redirecting to login.");
+      console.log("🔍 Debug - localStorage keys:", Object.keys(localStorage));
+      console.log("🔍 Debug - userRoles:", userRoles);
       navigate("/login");
       return;
     }
+    
+    console.log("✅ AdminLayout: Token found, verifying roles...");
 
     // Validate roles
     try {
       const roles = JSON.parse(userRoles || "[]");
+      console.log("🔍 AdminLayout Role Check - Parsed roles:", roles);
+      
       const hasAdminAccess = roles.some(
         (role) =>
           role === "ADMIN" ||
           role === "CONTENT_MANAGER" ||
           role === "DELIVERY_MANAGER"
       );
+      
+      console.log("🔍 AdminLayout Role Check - hasAdminAccess:", hasAdminAccess);
 
       if (!hasAdminAccess) {
         console.warn(
           "❌ User doesn't have admin access. Redirecting to login."
         );
+        console.warn("Roles found:", roles);
         localStorage.removeItem("accessToken");
         localStorage.removeItem("token");
         localStorage.removeItem("adminToken");

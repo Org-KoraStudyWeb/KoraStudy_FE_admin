@@ -1,13 +1,4 @@
-import axios from "axios";
-
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
-
-/**
- * Get token from localStorage
- */
-const getToken = () => {
-  return localStorage.getItem("accessToken");
-};
+import axiosClient from "./axiosClient";
 
 /**
  * Azure Service for Admin - Tích hợp Azure Translator và Text-to-Speech
@@ -18,15 +9,10 @@ const getToken = () => {
  */
 export const translateKoreanToVietnamese = async (text) => {
   try {
-    const response = await axios.post(
-      `${API_URL}/api/v1/azure/translate/ko-to-vi`,
-      { text },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`,
-        },
-      }
+    // Sử dụng axiosClient đã được cấu hình tập trung
+    const response = await axiosClient.post(
+      "/api/v1/azure/translate/ko-to-vi",
+      { text }
     );
     return response.data;
   } catch (error) {
@@ -40,15 +26,10 @@ export const translateKoreanToVietnamese = async (text) => {
  */
 export const translateVietnameseToKorean = async (text) => {
   try {
-    const response = await axios.post(
-      `${API_URL}/api/v1/azure/translate/vi-to-ko`,
-      { text },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`,
-        },
-      }
+    // Sử dụng axiosClient
+    const response = await axiosClient.post(
+      "/api/v1/azure/translate/vi-to-ko",
+      { text }
     );
     return response.data;
   } catch (error) {
@@ -62,16 +43,10 @@ export const translateVietnameseToKorean = async (text) => {
  */
 export const detectLanguage = async (text) => {
   try {
-    const response = await axios.post(
-      `${API_URL}/api/v1/azure/detect-language`,
-      { text },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`,
-        },
-      }
-    );
+    // Sử dụng axiosClient
+    const response = await axiosClient.post("/api/v1/azure/detect-language", {
+      text,
+    });
     return response.data;
   } catch (error) {
     console.error("Error detecting language:", error);
@@ -90,16 +65,11 @@ export const generateKoreanSpeech = async (
   voice = "ko-KR-SunHiNeural"
 ) => {
   try {
-    const response = await axios.post(
-      `${API_URL}/api/v1/azure/speech/generate`,
-      { text, voice },
-      {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`,
-        },
-      }
-    );
+    // Sử dụng axiosClient
+    const response = await axiosClient.post("/api/v1/azure/speech/generate", {
+      text,
+      voice,
+    });
     return response.data;
   } catch (error) {
     console.error("Error generating speech:", error);
@@ -112,11 +82,8 @@ export const generateKoreanSpeech = async (
  */
 export const getAvailableVoices = async () => {
   try {
-    const response = await axios.get(`${API_URL}/api/v1/azure/speech/voices`, {
-      headers: {
-        Authorization: `Bearer ${getToken()}`,
-      },
-    });
+    // Sử dụng axiosClient
+    const response = await axiosClient.get("/api/v1/azure/speech/voices");
     return response.data;
   } catch (error) {
     console.error("Error getting available voices:", error);

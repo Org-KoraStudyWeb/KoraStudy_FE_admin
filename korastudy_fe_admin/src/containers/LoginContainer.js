@@ -17,25 +17,56 @@ const LoginContainer = () => {
 
     try {
       // 👉 DÙNG axiosClient (KHÔNG dùng fetch)
+      console.log("🔐 Sending login request...");
       const response = await axiosClient.post("/api/v1/auth/login", formData);
 
-      const data = response.data;
+      console.log("📦 Full response:", response);
+      console.log("📦 Response.data:", response.data);
 
-      console.log("Response status:", response.status);
-      console.log("Response data:", data);
-      console.log("Token received:", data.token);
-      console.log("Roles:", data.roles);
+      // API might return data in response.data or nested structure
+      const data = response.data?.data || response.data;
+
+      console.log("✅ Processed data:", data);
+      console.log("Token received:", data?.token);
+      console.log("Roles:", data?.roles);
 
       if (data?.token) {
         // ✅ SINGLE SOURCE OF TRUTH
+        console.log("💾 Saving token to localStorage...");
+        console.log("🔑 Token to save - full:", data.token);
+        console.log("🔑 Token to save - length:", data.token.length);
+        console.log(
+          "🔑 Token to save - first 50 chars:",
+          data.token.substring(0, 50)
+        );
+
         localStorage.setItem("accessToken", data.token);
+        console.log("✅ accessToken saved");
 
         // (optional) legacy keys – có thể bỏ nếu backend/frontend đã đồng bộ
         localStorage.setItem("token", data.token);
         localStorage.setItem("adminToken", data.token);
 
-        localStorage.setItem("userRoles", JSON.stringify(data.roles || []));
+        const rolesData = JSON.stringify(data.roles || []);
+        localStorage.setItem("userRoles", rolesData);
         localStorage.setItem("username", data.username || formData.username);
+
+        // Verify storage
+        const storedToken = localStorage.getItem("accessToken");
+        const storedRoles = localStorage.getItem("userRoles");
+        console.log(
+          "🔍 Verification - accessToken:",
+          storedToken ? "✅ SAVED" : "❌ NOT SAVED"
+        );
+        console.log(
+          "🔍 Verification - storedToken length:",
+          storedToken?.length
+        );
+        console.log(
+          "🔍 Verification - storedToken first 50:",
+          storedToken?.substring(0, 50)
+        );
+        console.log("🔍 Verification - userRoles:", storedRoles);
 
         console.log("✅ Token stored successfully");
         console.log("Token:", data.token.substring(0, 30) + "...");
@@ -51,7 +82,25 @@ const LoginContainer = () => {
 
         if (hasAdminAccess) {
           console.log("✅ Access granted → /admin");
-          navigate("/admin", { replace: true });
+          
+          // Double check storage before navigating
+          let attempts = 0;
+          const checkAndNavigate = () => {
+            const savedToken = localStorage.getItem("accessToken");
+            if (savedToken) {
+               console.log("🚀 Token confirmed in storage, navigating now...");
+               navigate("/admin", { replace: true });
+            } else if (attempts < 5) {
+               attempts++;
+               console.warn(`⏳ Token not found yet, retrying (${attempts}/5)...`);
+               setTimeout(checkAndNavigate, 100);
+            } else {
+               console.error("❌ Failed to save token after 5 attempts!");
+               setError("Lỗi lưu phiên đăng nhập. Vui lòng thử lại.");
+            }
+          };
+          
+          checkAndNavigate();
         } else {
           console.log("❌ Access denied");
           setError(
@@ -61,7 +110,8 @@ const LoginContainer = () => {
           );
         }
       } else {
-        console.log("❌ Login failed: No token");
+        console.log("❌ Login failed: No token in response");
+        console.log("Response data keys:", Object.keys(data || {}));
         setError(data?.message || "Đăng nhập không thành công");
       }
     } catch (error) {
