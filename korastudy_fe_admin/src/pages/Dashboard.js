@@ -35,30 +35,37 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       try {
         setLoading(true);
+        console.log("📊 Dashboard: Starting to fetch data...");
 
         // Fetch users data
+        console.log("👥 Dashboard: Fetching users...");
         const usersResponse = await userApi.getAllUsers({ page: 0, size: 1 });
+        console.log("✅ Dashboard: Users fetched successfully");
         const usersData = usersResponse.data;
 
         // Fetch courses data
         let coursesData = { totalElements: 0 };
         try {
+          console.log("📚 Dashboard: Fetching courses...");
           const coursesResponse = await courseApi.getAllCoursesAdmin({
             page: 0,
             size: 1,
           });
           coursesData = coursesResponse.data;
+          console.log("✅ Dashboard: Courses fetched successfully");
         } catch (error) {
-          console.error("Error fetching courses:", error);
+          console.error("❌ Dashboard: Error fetching courses:", error);
         }
 
         // Fetch enrollments data
         let enrollmentsData = { totalElements: 0 };
         try {
+          console.log("📋 Dashboard: Fetching enrollments...");
           const enrollmentsResponse = await enrollmentApi.getMyEnrollments();
           enrollmentsData = enrollmentsResponse.data;
+          console.log("✅ Dashboard: Enrollments fetched successfully");
         } catch (error) {
-          console.error("Error fetching enrollments:", error);
+          console.error("❌ Dashboard: Error fetching enrollments:", error);
         }
 
         setStats({
@@ -94,7 +101,9 @@ const Dashboard = () => {
 
         // Fetch review chart data
         try {
+          console.log("📊 Dashboard: Fetching review stats...");
           const reviewChartResponse = await reviewService.getDashboardStats();
+          console.log("✅ Dashboard: Review stats fetched successfully");
           if (reviewChartResponse.success) {
             setReviewChartData(reviewChartResponse.data);
             // Lấy dữ liệu "Đề thi phổ biến nhất" từ cùng API dashboard
@@ -106,15 +115,19 @@ const Dashboard = () => {
             }
           } else {
             console.error(
-              "Error fetching review chart data:",
+              "❌ Dashboard: Error fetching review chart data:",
               reviewChartResponse.message
             );
           }
         } catch (error) {
-          console.error("Error fetching review chart data:", error);
+          console.error(
+            "❌ Dashboard: Error fetching review chart data:",
+            error
+          );
         }
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        console.error("❌ Dashboard: Error fetching dashboard data:", error);
+        console.error("📍 Dashboard: This error caused the logout");
       } finally {
         setLoading(false);
       }

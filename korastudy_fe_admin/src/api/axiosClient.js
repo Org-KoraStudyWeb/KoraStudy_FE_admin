@@ -3,7 +3,7 @@ import axios from "axios";
 
 const axiosClient = axios.create({
   baseURL: "http://localhost:8080", // Đảm bảo URL này đúng với server của bạn
-  timeout: 10000,
+  timeout: 60000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -17,20 +17,32 @@ axiosClient.interceptors.request.use(
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log("✅ Token found and set in Authorization header");
+      console.log("🔑 Token preview:", token.substring(0, 50) + "...");
+      console.log(" Token length:", token.length);
+      console.log("🔑 Token full:", token);
+
+      // Log the full Authorization header
+      if (config.headers.Authorization) {
+        console.log("📋 SENT AUTH HEADER:", config.headers.Authorization);
+      } else {
+        console.warn("⚠️ NO AUTH HEADER SENT for URL:", config.url);
+      }
     } else {
-      console.warn("⚠️ No accessToken found in localStorage");
+      console.warn(
+        "⚠️ No accessToken found in localStorage - request might fail!"
+      );
     }
 
-    console.log("Request Headers:", config.headers);
-    console.log(
-      "Token being sent:",
-      token ? `${token.substring(0, 20)}...` : "No token"
-    );
-    console.log("Request:", config.method?.toUpperCase(), config.url);
+    console.log("📡 Request - Method:", config.method?.toUpperCase());
+    console.log("📡 Request - URL:", config.url);
+    console.log("📡 Request - Full URL:", config.baseURL + config.url);
+    console.log("📡 Request - Headers:", config.headers);
 
     return config;
   },
   (error) => {
+    console.error("❌ Request interceptor error:", error);
     return Promise.reject(error);
   }
 );
@@ -38,20 +50,23 @@ axiosClient.interceptors.request.use(
 // Response interceptor
 axiosClient.interceptors.response.use(
   (response) => {
-    console.log("Response:", response.status, response.config.url);
+    console.log("✅ Response Success:", response.status, response.config.url);
+    console.log("📦 Response data:", response.data);
     return response;
   },
   (error) => {
-    console.error(
-      "API Error:",
-      error.response?.status,
-      error.response?.data || error.message
-    );
+    const status = error.response?.status;
+    const url = error.config?.url;
+    const data = error.response?.data;
 
-    if (error.response?.status === 401) {
-      console.log(
-        "🔒 Unauthorized - Token invalid or expired. Clearing tokens (DISABLED FOR DEBUGGING)"
-      );
+    console.error("❌ API Error - Status:", status);
+    console.error("❌ API Error - URL:", url);
+    console.error("❌ API Error - Data:", data || error.message);
+    console.error("❌ API Error - Full error:", error);
+
+    if (status === 401) {
+      console.log("🔒 Unauthorized - Token invalid or expired");
+      console.log("🔐 Clearing all tokens... (DISABLED FOR DEBUGGING)");
       // Clear all authentication data
       // localStorage.removeItem("accessToken");
       // localStorage.removeItem("token");
@@ -60,10 +75,17 @@ axiosClient.interceptors.response.use(
       // localStorage.removeItem("username");
       // sessionStorage.clear();
 
-      // Redirect to login if not already there
-      if (!window.location.pathname.includes("/login")) {
-        window.location.href = "/login";
-      }
+      console.log("⏳ Redirecting to login... (DISABLED FOR DEBUGGING)");
+
+      console.log("⏳ Redirecting to login in 2 seconds...");
+
+      // Add delay to allow logs to show
+      // Add delay to allow logs to show
+      // setTimeout(() => {
+      //   if (!window.location.pathname.includes("/login")) {
+      //     window.location.href = "/login";
+      //   }
+      // }, 2000);
     }
 
     return Promise.reject(error);
