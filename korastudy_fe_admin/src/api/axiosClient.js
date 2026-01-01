@@ -50,15 +50,15 @@ axiosClient.interceptors.response.use(
 
     if (error.response?.status === 401) {
       console.log(
-        "🔒 Unauthorized - Token invalid or expired. Clearing tokens and redirecting to login"
+        "🔒 Unauthorized - Token invalid or expired. Clearing tokens (DISABLED FOR DEBUGGING)"
       );
       // Clear all authentication data
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("token");
-      localStorage.removeItem("adminToken");
-      localStorage.removeItem("userRoles");
-      localStorage.removeItem("username");
-      sessionStorage.clear();
+      // localStorage.removeItem("accessToken");
+      // localStorage.removeItem("token");
+      // localStorage.removeItem("adminToken");
+      // localStorage.removeItem("userRoles");
+      // localStorage.removeItem("username");
+      // sessionStorage.clear();
 
       // Redirect to login if not already there
       if (!window.location.pathname.includes("/login")) {
