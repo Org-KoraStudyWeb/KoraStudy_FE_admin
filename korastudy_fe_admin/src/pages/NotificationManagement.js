@@ -1,12 +1,13 @@
 import React from 'react';
 import { Row, Col, Card, Tabs } from 'antd';
 import SendNotificationForm from '../components/notifications/SendNotificationForm';
+import ReportManagement from '../components/ReportManagement';
 
 const { TabPane } = Tabs;
 
 const NotificationManagement = () => {
   return (
-    <Card title="Quản lý thông báo">
+    <Card title="Quản lý thông báo & Báo cáo">
       <Tabs defaultActiveKey="send">
         <TabPane tab="Gửi thông báo" key="send">
           <Row gutter={[16, 16]}>
@@ -26,7 +27,10 @@ const NotificationManagement = () => {
             </Col>
           </Row>
         </TabPane>
-        {/* Có thể bổ sung thêm các tab khác như Lịch sử thông báo, v.v. */}
+        
+        <TabPane tab="Báo cáo bài viết" key="reports">
+          <ReportManagement />
+        </TabPane>
       </Tabs>
     </Card>
   );

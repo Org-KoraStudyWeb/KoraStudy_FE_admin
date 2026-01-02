@@ -91,6 +91,40 @@ const blogApi = {
       },
     });
   },
+
+  // Approve post
+  approvePost: (postId) => {
+    return axiosClient.put(`/api/v1/admin/blog/posts/${postId}/approve`);
+  },
+
+  // Reject post
+  rejectPost: (postId, reason) => {
+    return axiosClient.put(`/api/v1/admin/blog/posts/${postId}/reject`, { reason });
+  },
+
+  // Hide post
+  hidePost: (postId) => {
+    return axiosClient.put(`/api/v1/admin/blog/posts/${postId}/hide`);
+  },
+
+  // Get all reports
+  getAllReports: (status = null) => {
+    const params = status ? { status } : {};
+    return axiosClient.get('/api/v1/admin/blog/reports', { params });
+  },
+
+  // Get report by ID
+  getReportById: (reportId) => {
+    return axiosClient.get(`/api/v1/admin/blog/reports/${reportId}`);
+  },
+
+  // Review report
+  reviewReport: (reportId, status, adminNote) => {
+    return axiosClient.put(`/api/v1/admin/blog/reports/${reportId}/review`, {
+      status,
+      adminNote
+    });
+  }
 };
 
 export default blogApi;
