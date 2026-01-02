@@ -14,7 +14,11 @@ import {
   MoreVertical,
   MessageSquare,
   Calendar,
-  User
+  User,
+  ThumbsUp,
+  ThumbsDown,
+  EyeOff,
+  Clock
 } from 'lucide-react';
 import blogApi from '../../api/blogApi';
 
@@ -112,6 +116,49 @@ const BlogList = () => {
   useEffect(() => {
     fetchPosts();
   }, [fetchPosts]);
+
+  // Approve post
+  const handleApprovePost = async (postId) => {
+    if (!window.confirm('Bạn có chắc muốn duyệt bài viết này?')) return;
+    
+    try {
+      await blogApi.approvePost(postId);
+      alert('Đã duyệt bài viết');
+      fetchPosts();
+    } catch (err) {
+      console.error('Error approving post:', err);
+      alert('Không thể duyệt bài viết');
+    }
+  };
+
+  // Reject post
+  const handleRejectPost = async (postId) => {
+    const reason = prompt('Nhập lý do từ chối:');
+    if (!reason) return;
+    
+    try {
+      await blogApi.rejectPost(postId, reason);
+      alert('Đã từ chối bài viết');
+      fetchPosts();
+    } catch (err) {
+      console.error('Error rejecting post:', err);
+      alert('Không thể từ chối bài viết');
+    }
+  };
+
+  // Hide post
+  const handleHidePost = async (postId) => {
+    if (!window.confirm('Bạn có chắc muốn ẩn bài viết này?')) return;
+    
+    try {
+      await blogApi.hidePost(postId);
+      alert('Đã ẩn bài viết');
+      fetchPosts();
+    } catch (err) {
+      console.error('Error hiding post:', err);
+      alert('Không thể ẩn bài viết');
+    }
+  };
 
   // Handle page change
   const handlePageChange = (newPage) => {
@@ -400,19 +447,19 @@ const BlogList = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Danh mục
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Trạng thái
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Tác giả
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Lượt xem
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Thống kê
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Ngày xuất bản
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Ngày
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Thao tác
                 </th>
               </tr>
@@ -454,9 +501,9 @@ const BlogList = () => {
                         <div className="text-xs text-gray-500 truncate max-w-xs">{blog.postSummary}</div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
-                        {blog.categories && blog.categories.map((category) => (
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1 max-w-xs">
+                        {blog.categories && blog.categories.slice(0, 2).map((category) => (
                           <span 
                             key={category.id}
                             className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
@@ -464,81 +511,132 @@ const BlogList = () => {
                             {category.name}
                           </span>
                         ))}
+                        {blog.categories && blog.categories.length > 2 && (
+                          <span className="text-xs text-gray-400">+{blog.categories.length - 2}</span>
+                        )}
                         {(!blog.categories || blog.categories.length === 0) && (
-                          <span className="text-xs text-gray-400">Không có danh mục</span>
+                          <span className="text-xs text-gray-400">-</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        blog.published ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {blog.published ? 'Đã xuất bản' : 'Bản nháp'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 flex items-center gap-1">
-                      <User size={14} className="text-gray-400" />
-                      {blog.authorName || 'Admin'}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 flex items-center gap-1">
-                      <Eye size={14} className="text-gray-400" />
-                      {blog.viewCount || 0}
-                      {blog.commentCount > 0 && (
-                        <span className="ml-2 flex items-center gap-1 text-gray-500">
-                          <MessageSquare size={14} className="text-gray-400" />
-                          {blog.commentCount}
+                    <td className="px-4 py-3">
+                      <div className="space-y-1">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          blog.published ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {blog.published ? 'Xuất bản' : 'Nháp'}
                         </span>
-                      )}
+                        {blog.postStatus && (
+                          <div>
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                              blog.postStatus === 'APPROVED' ? 'bg-blue-100 text-blue-800' :
+                              blog.postStatus === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              {blog.postStatus === 'APPROVED' && <CheckCircle size={10} />}
+                              {blog.postStatus === 'PENDING' && <Clock size={10} />}
+                              {blog.postStatus === 'REJECTED' && <XCircle size={10} />}
+                              {blog.postStatus === 'APPROVED' ? 'Duyệt' :
+                               blog.postStatus === 'PENDING' ? 'Chờ' : 'Từ chối'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 flex items-center gap-1">
-                      <Calendar size={14} className="text-gray-400" />
-                      {blog.published
-                        ? (blog.publishedAt
-                            ? new Date(blog.publishedAt).toLocaleDateString('vi-VN')
+                    <td className="px-4 py-3 text-sm text-gray-900">
+                      <div className="flex items-center gap-1">
+                        <User size={12} className="text-gray-400" />
+                        <span className="truncate max-w-[100px]">{blog.authorName || 'Admin'}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-900">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          <Eye size={12} className="text-gray-400" />
+                          <span>{blog.viewCount || 0}</span>
+                        </div>
+                        {blog.commentCount > 0 && (
+                          <div className="flex items-center gap-1 text-gray-500">
+                            <MessageSquare size={12} className="text-gray-400" />
+                            <span>{blog.commentCount}</span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-900">
+                      <div className="flex items-center gap-1">
+                        <Calendar size={12} className="text-gray-400" />
+                        <span className="text-xs">
+                          {blog.published
+                            ? (blog.publishedAt
+                                ? new Date(blog.publishedAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+                                : (blog.createdAt
+                                    ? new Date(blog.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+                                    : '-'))
                             : (blog.createdAt
-                                ? new Date(blog.createdAt).toLocaleDateString('vi-VN')
-                                : 'Chưa xuất bản'))
-                        : (blog.createdAt
-                            ? new Date(blog.createdAt).toLocaleDateString('vi-VN')
-                            : 'Chưa xuất bản')}
+                                ? new Date(blog.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })
+                                : '-')}
+                        </span>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end space-x-2">
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end space-x-1">
+                        {blog.postStatus === 'PENDING' && (
+                          <>
+                            <button
+                              onClick={() => handleApprovePost(blog.id)}
+                              className="p-1.5 hover:bg-green-50 rounded text-gray-600 hover:text-green-600 transition-colors"
+                              title="Duyệt bài"
+                            >
+                              <ThumbsUp size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleRejectPost(blog.id)}
+                              className="p-1.5 hover:bg-red-50 rounded text-gray-600 hover:text-red-600 transition-colors"
+                              title="Từ chối"
+                            >
+                              <ThumbsDown size={14} />
+                            </button>
+                          </>
+                        )}
+                        {blog.published && (
+                          <button
+                            onClick={() => handleHidePost(blog.id)}
+                            className="p-1.5 hover:bg-orange-50 rounded text-gray-600 hover:text-orange-600 transition-colors"
+                            title="Ẩn bài viết"
+                          >
+                            <EyeOff size={14} />
+                          </button>
+                        )}
                         <Link
                           to={`/admin/blogs/edit/${blog.id}`}
-                          className="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-blue-600"
+                          className="p-1.5 hover:bg-blue-50 rounded text-gray-600 hover:text-blue-600 transition-colors"
                           title="Chỉnh sửa"
                         >
-                          <Edit size={16} />
+                          <Edit size={14} />
                         </Link>
                         <button
                           onClick={() => handleTogglePublish(blog.id)}
-                          className={`p-1 hover:bg-gray-100 rounded text-gray-600 ${blog.published ? 'hover:text-yellow-600' : 'hover:text-green-600'}`}
+                          className={`p-1.5 rounded transition-colors ${blog.published ? 'hover:bg-yellow-50 hover:text-yellow-600' : 'hover:bg-green-50 hover:text-green-600'} text-gray-600`}
                           title={blog.published ? 'Chuyển về nháp' : 'Xuất bản'}
                         >
-                          {blog.published ? <XCircle size={16} /> : <CheckCircle size={16} />}
+                          {blog.published ? <XCircle size={14} /> : <CheckCircle size={14} />}
                         </button>
                         <a
-                          href={`/blog/${blog.slug}`}
+                          href={`/blog/${blog.slug || blog.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-purple-600"
+                          className="p-1.5 hover:bg-purple-50 rounded text-gray-600 hover:text-purple-600 transition-colors"
                           title="Xem trên website"
                         >
-                          <ExternalLink size={16} />
+                          <ExternalLink size={14} />
                         </a>
                         <button
                           onClick={() => confirmDeletePost(blog.id)}
-                          className="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-red-600"
+                          className="p-1.5 hover:bg-red-50 rounded text-gray-600 hover:text-red-600 transition-colors"
                           title="Xóa"
                         >
-                          <Trash2 size={16} />
-                        </button>
-                        <button
-                          className="p-1 hover:bg-gray-100 rounded text-gray-600"
-                          title="Thêm"
-                        >
-                          <MoreVertical size={16} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </td>

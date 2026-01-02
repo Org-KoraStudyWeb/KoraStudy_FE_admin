@@ -123,7 +123,7 @@ const CreateBlog = () => {
             content: postData.postContent || '',
             categories: postData.categories?.map(cat => cat.id) || [],
             tags: postData.metas?.find(meta => meta.metaKey === 'seo_keywords')?.postMetaContext || '',
-            imageUrl: postData.metas?.find(meta => meta.metaKey === 'featured_image')?.postMetaContext || '',
+            imageUrl: postData.featuredImage || '',
             published: postData.published || false,
             authorName: postData.authorName || '',
             slug: postData.slug || ''
