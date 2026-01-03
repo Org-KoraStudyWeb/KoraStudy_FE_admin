@@ -11,7 +11,6 @@ import {
   XCircle,
   Eye,
   ExternalLink,
-  MoreVertical,
   MessageSquare,
   Calendar,
   User,
