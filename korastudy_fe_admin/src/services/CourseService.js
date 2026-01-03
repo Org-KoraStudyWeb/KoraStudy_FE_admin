@@ -22,24 +22,31 @@ class CourseService {
 
   async getAllCoursesAdmin(params = {}) {
     try {
-      // Destructure params với giá trị mặc định để xử lý các trường hợp thiếu
+      // Destructure params với giá trị mặc định
       const {
         page: rawPage,
-        size = 5, // Đặt size mặc định là 5 theo yêu cầu
+        size = 5,
         sortBy = "id",
         sortDir = "desc",
         keyword,
+        level,           // NEW: Filter by level
+        minPrice,        // NEW: Filter by min price
+        maxPrice,        // NEW: Filter by max price
+        isPublished,     // NEW: Filter by published status
       } = params;
 
-      // Xử lý tường minh các giá trị không hợp lệ cho 'page' (NaN, undefined, null, số âm)
-      // Đây là nơi sửa lỗi gốc rễ của cảnh báo bạn thấy.
+      // Xử lý tường minh các giá trị không hợp lệ cho 'page'
       const page = !isNaN(rawPage) && rawPage >= 0 ? rawPage : 0;
 
       // Xây dựng object params cuối cùng để gọi API
       const cleanParams = { page, size, sortBy, sortDir };
-      if (keyword) {
-        cleanParams.keyword = keyword;
-      }
+      
+      // Add optional parameters only if they have values
+      if (keyword) cleanParams.keyword = keyword;
+      if (level) cleanParams.level = level;
+      if (minPrice !== null && minPrice !== undefined) cleanParams.minPrice = minPrice;
+      if (maxPrice !== null && maxPrice !== undefined) cleanParams.maxPrice = maxPrice;
+      if (isPublished !== null && isPublished !== undefined) cleanParams.isPublished = isPublished;
 
       console.log("📦 Fetching admin courses with clean params:", cleanParams);
 
