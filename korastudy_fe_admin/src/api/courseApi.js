@@ -6,6 +6,16 @@ const courseApi = {
 
   /**
    * Lấy danh sách khóa học (Admin)
+   * @param {Object} params - Query parameters
+   * @param {number} params.page - Số trang (bắt đầu từ 0)
+   * @param {number} params.size - Số lượng items mỗi trang
+   * @param {string} params.sortBy - Trường để sắp xếp
+   * @param {string} params.sortDir - Hướng sắp xếp (asc/desc)
+   * @param {string} params.keyword - Tìm kiếm theo tên hoặc mô tả
+   * @param {string} params.level - Lọc theo cấp độ (Beginner/Intermediate/Advanced)
+   * @param {number} params.minPrice - Giá tối thiểu
+   * @param {number} params.maxPrice - Giá tối đa
+   * @param {boolean} params.isPublished - Lọc theo trạng thái xuất bản
    */
   getAllCoursesAdmin: (params = {}) => {
     const {
@@ -14,16 +24,29 @@ const courseApi = {
       sortBy = "id",
       sortDir = "desc",
       keyword = "",
+      level,
+      minPrice,
+      maxPrice,
+      isPublished,
     } = params;
 
+    // Build query params object, only include non-null/undefined values
+    const queryParams = {
+      page,
+      size,
+      sortBy,
+      sortDir,
+    };
+
+    // Add optional parameters only if they have values
+    if (keyword) queryParams.keyword = keyword;
+    if (level) queryParams.level = level;
+    if (minPrice !== null && minPrice !== undefined) queryParams.minPrice = minPrice;
+    if (maxPrice !== null && maxPrice !== undefined) queryParams.maxPrice = maxPrice;
+    if (isPublished !== null && isPublished !== undefined) queryParams.isPublished = isPublished;
+
     return axiosClient.get("/api/v1/admin/courses", {
-      params: {
-        page,
-        size,
-        sortBy,
-        sortDir,
-        keyword,
-      },
+      params: queryParams,
     });
   },
 

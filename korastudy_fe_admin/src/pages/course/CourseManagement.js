@@ -54,6 +54,7 @@ const CourseManagement = () => {
     error,
     pagination,
     stats,
+    filters,          
     loadCourses,
     createCourse,
     updateCourse,
@@ -62,6 +63,8 @@ const CourseManagement = () => {
     searchCourses,
     changePage,
     clearError,
+    applyFilters,     
+    resetFilters,     
   } = useCourseManagement();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -220,6 +223,7 @@ const CourseManagement = () => {
         loading={loading}
         stats={stats}
         pagination={pagination}
+        filters={filters}                    // NEW: Pass current filters
         onLoadCourses={loadCourses}
         onSearchCourses={searchCourses}
         onChangePage={changePage}
@@ -227,6 +231,8 @@ const CourseManagement = () => {
         onDeleteCourse={handleDelete}
         onTogglePublish={handleTogglePublish}
         onShowEnrollmentList={showEnrollmentList}
+        onApplyFilters={applyFilters}        // NEW: Pass apply filters handler
+        onResetFilters={resetFilters}        // NEW: Pass reset filters handler
       />
 
       {/* ==== MODAL ==== */}
