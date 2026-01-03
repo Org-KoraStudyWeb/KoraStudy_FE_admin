@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Eye, Check, X, AlertTriangle } from 'lucide-react';
+import { Eye, X, AlertTriangle } from 'lucide-react';
 import blogApi from '../api/blogApi';
 
 const ReportManagement = () => {
@@ -15,7 +15,7 @@ const ReportManagement = () => {
 
   useEffect(() => {
     fetchReports();
-  }, [filterStatus]);
+  }, [filterStatus, fetchReports]);
 
   const fetchReports = async () => {
     try {
