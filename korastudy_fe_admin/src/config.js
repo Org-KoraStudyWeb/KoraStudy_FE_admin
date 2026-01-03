@@ -1,7 +1,7 @@
 // Configuration file for the application
 
 // API Base URL - adjust this to your backend API endpoint
-export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
+export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://korastudybackend-g0fbapeue9gphqhd.indonesiacentral-01.azurewebsites.net';
 
 // Other global configuration constants can be added here
 export const APP_NAME = 'KoraStudy Admin';
