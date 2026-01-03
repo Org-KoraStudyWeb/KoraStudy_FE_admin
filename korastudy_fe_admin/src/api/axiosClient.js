@@ -2,7 +2,7 @@
 import axios from "axios";
 
 const axiosClient = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || "https://korastudybackend-g0fbapeue9gphqhd.indonesiacentral-01.azurewebsites.net",
+  baseURL: process.env.REACT_APP_API_BASE_URL,
   timeout: 60000,
   headers: {
     "Content-Type": "application/json",

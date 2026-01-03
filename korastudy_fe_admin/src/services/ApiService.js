@@ -1,7 +1,6 @@
 class ApiService {
   constructor() {
-    this.baseURL =
-      process.env.REACT_APP_API_BASE_URL || "https://korastudybackend-g0fbapeue9gphqhd.indonesiacentral-01.azurewebsites.net";
+    this.baseURL = process.env.REACT_APP_API_BASE_URL;
 
     // Single source of truth
     this.token = localStorage.getItem("accessToken");
