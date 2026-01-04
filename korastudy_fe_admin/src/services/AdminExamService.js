@@ -183,8 +183,12 @@ const AdminExamService = {
 
       console.log(`Sử dụng endpoint: ${endpoint}`);
 
-      // Gửi request lên backend (đã có middleware update Cloudinary)
-      const response = await axiosClient.post(endpoint, formData);
+      // Gửi request lên backend với header multipart/form-data
+      const response = await axiosClient.post(endpoint, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       console.log(
         `Upload ${fileType} và cập nhật câu hỏi thành công:`,
