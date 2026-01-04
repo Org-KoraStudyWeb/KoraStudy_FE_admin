@@ -176,6 +176,30 @@ class QuizService {
     }
   }
 
+  async importQuestions(quizId, file) {
+    try {
+      if (!quizId) {
+        return { success: false, message: "Quiz ID không được để trống" };
+      }
+      if (!file) {
+        return { success: false, message: "Vui lòng chọn file Excel" };
+      }
+
+      console.log("[ADMIN] Importing questions for quiz:", quizId);
+      const response = await quizApi.importQuestions(quizId, file);
+      const data = this._extractDataFromResponse(response);
+
+      console.log("[ADMIN] Questions imported successfully:", data);
+      return {
+        success: true,
+        data: data,
+        message: "Import câu hỏi thành công",
+      };
+    } catch (error) {
+      return this.handleError(error, "Lỗi khi import câu hỏi từ Excel");
+    }
+  }
+
   async updateQuestion(questionId, questionData) {
     try {
       if (!questionId) {
