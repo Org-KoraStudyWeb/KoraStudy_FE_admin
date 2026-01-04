@@ -19,6 +19,7 @@ import {
   Typography,
   Badge,
   FloatButton,
+  Upload,
 } from "antd";
 import {
   ArrowLeftOutlined,
@@ -31,7 +32,11 @@ import {
   TrophyOutlined,
   ClockCircleOutlined,
   UpOutlined,
+  UploadOutlined,
+  DownloadOutlined,
 } from "@ant-design/icons";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import QuizService from "../../../services/Quiz/QuizService";
 import QuestionForm from "../../../components/quiz/QuestionForm";
 
@@ -47,6 +52,103 @@ const QuizQuestionManager = () => {
   const [questionFormVisible, setQuestionFormVisible] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
+
+  // ==================== DOWNLOAD TEMPLATE ====================
+  const handleDownloadTemplate = () => {
+    // 1. Define headers
+    const headers = [
+      "Question Text",
+      "Question Type",
+      "Score",
+      "Order",
+      "Explanation",
+      "Answer 1",
+      "Is Correct 1",
+      "Answer 2",
+      "Is Correct 2",
+      "Answer 3",
+      "Is Correct 3",
+      "Answer 4",
+      "Is Correct 4",
+      "Answer 5",
+      "Is Correct 5",
+    ];
+
+    // 2. Define sample rows
+    const data = [
+      [
+        "Câu hỏi mẫu 1: Chọn đáp án đúng",
+        "SINGLE_CHOICE",
+        1.0,
+        1,
+        "Giải thích cho câu 1",
+        "Đáp án A",
+        "TRUE",
+        "Đáp án B",
+        "FALSE",
+        "Đáp án C",
+        "FALSE",
+        "Đáp án D",
+        "FALSE",
+      ],
+      [
+        "Câu hỏi mẫu 2: Chọn nhiều đáp án",
+        "MULTIPLE_CHOICE",
+        1.0,
+        2,
+        "Giải thích cho câu 2",
+        "Đáp án A",
+        "TRUE",
+        "Đáp án B",
+        "FALSE",
+        "Đáp án C",
+        "TRUE",
+        "Đáp án D",
+        "FALSE",
+      ],
+      [
+        "Câu hỏi mẫu 3: Điền vào chỗ trống",
+        "FILL_IN_BLANK",
+        1.0,
+        3,
+        "Giải thích cho câu 3",
+        "đáp án chính xác",
+        "TRUE",
+        "từ đồng nghĩa 1",
+        "TRUE",
+      ],
+      [
+        "Câu hỏi mẫu 4: Đúng/Sai",
+        "TRUE_FALSE",
+        1.0,
+        4,
+        "Giải thích cho câu 4",
+        "True",
+        "TRUE",
+        "False",
+        "FALSE",
+      ],
+    ];
+
+    // 3. Create worksheet
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...data]);
+
+    // 4. Create workbook
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Template");
+
+    // 5. Generate buffer
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+
+    // 6. Save file
+    const dataBlob = new Blob([excelBuffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8",
+    });
+    saveAs(dataBlob, "quiz_questions_template.xlsx");
+  };
 
   // ==================== FIX ESLINT WARNING ====================
   // Dùng useCallback để wrap loadQuizData
@@ -279,15 +381,56 @@ const QuizQuestionManager = () => {
                   </Button>
                 </Tooltip>
               </div>
-              {/* NÚT THÊM CÂU HỎI TẠI ĐÂY (CHO NGƯỜI DÙNG SCROLL LÊN) */}
-              <Button
-                type="primary"
-                icon={<PlusOutlined />}
-                onClick={() => showQuestionForm()}
-                size="large"
-              >
-                Thêm câu hỏi
-              </Button>
+
+              {/* NÚT IMPORT EXCEL & DOWNLOAD TEMPLATE */}
+              <div style={{ display: "flex", gap: 8 }}>
+                <Button
+                  icon={<DownloadOutlined />}
+                  onClick={handleDownloadTemplate}
+                  size="large"
+                >
+                  Tải mẫu
+                </Button>
+
+                <Upload
+                  accept=".xlsx, .xls"
+                  showUploadList={false}
+                  beforeUpload={async (file) => {
+                    const hide = message.loading("Đang import câu hỏi...", 0);
+                    try {
+                      const response = await QuizService.importQuestions(
+                        quizId,
+                        file
+                      );
+                      if (response.success) {
+                        message.success(response.message);
+                        loadQuizData();
+                      } else {
+                        message.error(response.message);
+                      }
+                    } catch (error) {
+                      message.error("Lỗi khi import file");
+                    } finally {
+                      hide();
+                    }
+                    return false;
+                  }}
+                >
+                  <Button icon={<UploadOutlined />} size="large">
+                    Import Excel
+                  </Button>
+                </Upload>
+
+                {/* NÚT THÊM CÂU HỎI TẠI ĐÂY (CHO NGƯỜI DÙNG SCROLL LÊN) */}
+                <Button
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  onClick={() => showQuestionForm()}
+                  size="large"
+                >
+                  Thêm câu hỏi
+                </Button>
+              </div>
             </Space>
           </Col>
         </Row>
