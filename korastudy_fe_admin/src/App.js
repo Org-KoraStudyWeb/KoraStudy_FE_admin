@@ -36,6 +36,10 @@ import QuizQuestionManager from "./pages/course/quiz/QuizQuestionManager";
 import PaymentManagement from "./pages/PaymentManagement";
 import ReviewManagement from "./pages/review/ReviewManagement";
 
+// Import News Management components
+import NewsList from "./pages/news/NewsList";
+import NewsEditor from "./pages/news/NewsEditor";
+
 function App() {
   return (
     <>
@@ -241,6 +245,40 @@ function App() {
           element={
             <AdminLayout title="Chỉnh sửa bài viết">
               <CreateBlog />
+            </AdminLayout>
+          }
+        />
+
+        {/* News Management Routes */}
+        <Route
+          path="/admin/news"
+          element={
+            <AdminLayout title="Quản lý Tin tức">
+              <NewsList />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/news/create"
+          element={
+            <AdminLayout title="Tạo tin tức mới">
+              <NewsEditor />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/news/edit/:id"
+          element={
+            <AdminLayout title="Chỉnh sửa tin tức">
+              <NewsEditor />
+            </AdminLayout>
+          }
+        />
+        <Route
+          path="/admin/news/view/:id"
+          element={
+            <AdminLayout title="Xem tin tức">
+              <NewsEditor />
             </AdminLayout>
           }
         />
