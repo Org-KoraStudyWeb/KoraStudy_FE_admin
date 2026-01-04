@@ -18,6 +18,7 @@ import {
   Edit3, // Icon cho Blog
   DollarSign, // Icon mới cho Thanh toán
   MessageSquare, // Icon cho Đánh giá
+  Newspaper, // Icon cho Tin tức
 } from "lucide-react";
 
 const Sidebar = ({ isCollapsed, onCollapse }) => {
@@ -28,6 +29,7 @@ const Sidebar = ({ isCollapsed, onCollapse }) => {
     courses: false,
     flashcards: false,
     blogs: false,
+    news: false,
     reviews: false,
   });
 
@@ -132,6 +134,18 @@ const Sidebar = ({ isCollapsed, onCollapse }) => {
           title: "Tạo bài viết mới",
           icon: <PlusCircle size={16} />,
           path: "/admin/blogs/create",
+        },
+      ],
+    },
+    {
+      title: "Quản lý Tin tức",
+      icon: <Newspaper size={20} />,
+      key: "news",
+      submenu: [
+        {
+          title: "Danh sách tin tức",
+          icon: <List size={16} />,
+          path: "/admin/news",
         },
       ],
     },
