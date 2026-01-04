@@ -3,6 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Save,
   ArrowLeft,
+  CheckCircle,
+  FileText,
+  Image,
+  Tag,
+  BarChart2,
+  Globe,
   Archive,
   RefreshCw
 } from 'lucide-react';
