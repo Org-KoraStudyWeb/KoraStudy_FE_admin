@@ -96,15 +96,23 @@ const CourseList = ({
   };
 
   // Handle table change (for sorting via column headers)
-  const handleTableChange = (pagination, filters, sorter) => {
-    if (sorter.field) {
-      // Map frontend field names to backend field names
+  const handleTableChange = (newPagination, tableFilters, sorter) => {
+    // Chỉ gọi API filter khi có thay đổi về sort
+    // Pagination đã được handle bởi onChangePage ở Table props
+    if (sorter.field && sorter.order) {
       let sortBy = sorter.field;
       if (sorter.field === "published") {
         sortBy = "isPublished";
       }
       const sortDir = sorter.order === "ascend" ? "asc" : "desc";
-      onApplyFilters({ sortBy, sortDir });
+      
+      // Check if sort actually changed to avoid redundant calls
+      const currentSortBy = filters?.sortBy || "id";
+      const currentSortDir = filters?.sortDir || "desc";
+      
+      if (sortBy !== currentSortBy || sortDir !== currentSortDir) {
+        onApplyFilters({ sortBy, sortDir });
+      }
     }
   };
 
@@ -239,24 +247,27 @@ const CourseList = ({
       sortOrder: filters?.sortBy === "courseLevel" ? (filters?.sortDir === "asc" ? "ascend" : "descend") : null,
       render: (courseLevel) => {
         let color;
+        let label;
         switch (courseLevel) {
           case "BEGINNER":
             color = "green";
+            label = "Sơ cấp";
             break;
           case "INTERMEDIATE":
-            color = "orange";
+            color = "blue"; // Changed from orange to differentiate better or keep consistency
+            label = "Trung cấp";
             break;
           case "ADVANCED":
             color = "red";
+            label = "Cao cấp";
             break;
           default:
             color = "gray";
+            label = "Không xác định";
         }
         return (
           <Tag color={color}>
-            {courseLevel
-              ? courseLevel.charAt(0) + courseLevel.slice(1).toLowerCase()
-              : "Không xác định"}
+            {label}
           </Tag>
         );
       },
@@ -439,9 +450,9 @@ const CourseList = ({
                     <Col xs={24} sm={12} md={6}>
                       <Form.Item label="Cấp độ" name="level">
                         <Select placeholder="Chọn cấp độ" allowClear>
-                          <Option value="Beginner">Cơ bản</Option>
+                          <Option value="Beginner">Sơ cấp</Option>
                           <Option value="Intermediate">Trung cấp</Option>
-                          <Option value="Advanced">Nâng cao</Option>
+                          <Option value="Advanced">Cao cấp</Option>
                         </Select>
                       </Form.Item>
                     </Col>
@@ -528,8 +539,12 @@ const CourseList = ({
                 <Option value="courseName-desc">Tên (Z-A)</Option>
                 <Option value="coursePrice-asc">Giá (Thấp đến cao)</Option>
                 <Option value="coursePrice-desc">Giá (Cao đến thấp)</Option>
-                <Option value="courseLevel-asc">Cấp độ (Thấp đến cao)</Option>
-                <Option value="courseLevel-desc">Cấp độ (Cao đến thấp)</Option>
+                <Option value="courseLevel-asc">Cấp độ (Sơ cấp - Cao cấp)</Option>
+                <Option value="courseLevel-desc">Cấp độ (Cao cấp - Sơ cấp)</Option>
+                <Option value="numberOfEnrollments-desc">Học viên (Nhiều nhất)</Option>
+                <Option value="numberOfEnrollments-asc">Học viên (Ít nhất)</Option>
+                <Option value="numberOfLessons-desc">Bài học (Nhiều nhất)</Option>
+                <Option value="numberOfLessons-asc">Bài học (Ít nhất)</Option>
                 <Option value="isPublished-desc">Đã xuất bản trước</Option>
                 <Option value="isPublished-asc">Chưa xuất bản trước</Option>
                 <Option value="createdAt-desc">Mới nhất</Option>
