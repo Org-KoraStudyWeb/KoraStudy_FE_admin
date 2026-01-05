@@ -9,7 +9,6 @@ import {
   Settings,
   List,
   PlusCircle,
-  BarChart3,
   ChevronLeft,
   ChevronDown,
   ChevronRight,
@@ -65,12 +64,7 @@ const Sidebar = ({ isCollapsed, onCollapse }) => {
           title: "Tạo đề thi mới",
           icon: <PlusCircle size={16} />,
           path: "/admin/tests/create",
-        },
-        {
-          title: "Thống kê",
-          icon: <BarChart3 size={16} />,
-          path: "/admin/tests/statistics",
-        },
+        }
       ],
     },
     {
