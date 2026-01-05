@@ -24,8 +24,7 @@ export const API_BASE_URL = (() => {
 // - TinyMCE API Key là PUBLIC key, được thiết kế để dùng trong frontend
 // - Key này được bảo vệ bởi Domain Whitelisting (chỉ hoạt động trên domain đã đăng ký)
 // - KHÔNG BAO GIỜ đưa Backend API keys (DB password, JWT secret, Azure keys) vào frontend!
-// - Để deploy lên Azure, cấu hình biến môi trường REACT_APP_TINYMCE_API_KEY trong Azure Static Web Apps
-export const TINYMCE_API_KEY = process.env.REACT_APP_TINYMCE_API_KEY || 'no-api-key';
+export const TINYMCE_API_KEY = import.meta.env.VITE_TINYMCE_API_KEY || 'no-api-key';
 
 // Other global configuration constants can be added here
 export const APP_NAME = 'KoraStudy Admin';
