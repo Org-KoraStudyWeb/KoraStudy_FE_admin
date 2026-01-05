@@ -6,9 +6,9 @@ import {
   Trash2, 
   Copy, 
   Eye, 
+  EyeOff,
   Search, 
   Filter,
-  MoreVertical,
   Clock,
   FileText,
   Users,
@@ -221,7 +221,7 @@ const ExamManagement = () => {
           >
             <option value="">Tất cả trạng thái</option>
             <option value="active">Đang hoạt động</option>
-            <option value="inactive">Tạm dừng</option>
+            <option value="inactive">Bản nháp</option>
           </select>
 
           <div className="flex items-center gap-2">
@@ -260,7 +260,7 @@ const ExamManagement = () => {
         <div className="bg-white p-6 rounded-lg border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Tạm dừng</p>
+              <p className="text-sm font-medium text-gray-600">Bản nháp</p>
               <p className="text-2xl font-bold text-orange-600">
                 {exams.filter(e => !e.isActive).length}
               </p>
@@ -354,7 +354,7 @@ const ExamManagement = () => {
                           : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
                       }`}
                     >
-                      {exam.isActive ? 'Hoạt động' : 'Tạm dừng'}
+                      {exam.isActive ? 'Hoạt động' : 'Bản nháp'}
                     </button>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
@@ -370,11 +370,11 @@ const ExamManagement = () => {
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <button 
-                        onClick={() => handleViewExam(exam.id)}
-                        className="p-1 hover:bg-gray-100 rounded text-gray-600 hover:text-blue-600"
-                        title="Xem chi tiết"
+                        onClick={() => handleToggleStatus(exam.id)}
+                        className={`p-1 hover:bg-gray-100 rounded ${exam.isActive ? 'text-green-600 hover:text-green-700' : 'text-gray-400 hover:text-gray-600'}`}
+                        title={exam.isActive ? 'Ẩn bài thi (chuyển sang bản nháp)' : 'Hiện bài thi (kích hoạt)'}
                       >
-                        <Eye size={16} />
+                        {exam.isActive ? <Eye size={16} /> : <EyeOff size={16} />}
                       </button>
                       <button 
                         onClick={() => handleEditExam(exam.id)}
@@ -396,9 +396,6 @@ const ExamManagement = () => {
                         title="Xóa"
                       >
                         <Trash2 size={16} />
-                      </button>
-                      <button className="p-1 hover:bg-gray-100 rounded text-gray-600">
-                        <MoreVertical size={16} />
                       </button>
                     </div>
                   </td>
