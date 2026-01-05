@@ -400,7 +400,7 @@ const Dashboard = () => {
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
             <div className="flex items-center gap-2 mb-2">
               <Target size={16} className="text-orange-500" />
-              <span className="text-xs text-gray-500">Điểm TB</span>
+              <span className="text-xs text-gray-500">Điểm Đánh Giá</span>
             </div>
             <p className="text-2xl font-bold text-gray-900">{loading ? "..." : stats.averageScore}</p>
             <p className="text-xs text-gray-500">điểm</p>
