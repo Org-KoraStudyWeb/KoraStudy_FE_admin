@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../../api/axiosClient"; 
-import axios from "axios";
 import AddCourse from "../../pages/course/AddCoursePages";
 
 const CourseContainer = () => {
