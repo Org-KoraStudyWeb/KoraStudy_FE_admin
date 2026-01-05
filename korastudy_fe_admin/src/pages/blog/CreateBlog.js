@@ -8,6 +8,7 @@ import {
   ImageIcon
 } from 'lucide-react';
 import blogApi from '../../api/blogApi';
+import { TINYMCE_API_KEY } from '../../config';
 
 const CreateBlog = () => {
   const navigate = useNavigate();
@@ -283,7 +284,7 @@ const CreateBlog = () => {
                   Nội dung <span className="text-red-500">*</span>
                 </label>
                 <Editor
-                  apiKey={process.env.REACT_APP_TINYMCE_API_KEY}
+                  apiKey={TINYMCE_API_KEY}
                   value={blog.content}
                   onEditorChange={(content) => setBlog({ ...blog, content })}
                   init={editorConfig}
