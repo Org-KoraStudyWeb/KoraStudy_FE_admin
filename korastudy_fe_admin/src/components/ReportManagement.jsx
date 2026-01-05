@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
-import { Eye, Check, X, AlertTriangle } from 'lucide-react';
+import { Eye, X, AlertTriangle } from 'lucide-react';
 import blogApi from '../api/blogApi';
 
 const ReportManagement = () => {
@@ -13,11 +13,7 @@ const ReportManagement = () => {
   const [adminNote, setAdminNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchReports();
-  }, [filterStatus]);
-
-  const fetchReports = async () => {
+  const fetchReports = useCallback(async () => {
     try {
       setLoading(true);
       const response = await blogApi.getAllReports(filterStatus || null);
@@ -28,7 +24,11 @@ const ReportManagement = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterStatus]);
+
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
 
   const handleViewReport = async (reportId) => {
     try {

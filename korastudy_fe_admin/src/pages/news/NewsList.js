@@ -5,19 +5,14 @@ import {
   Trash2,
   Search,
   Plus,
-  Filter,
   RefreshCw,
   CheckCircle,
   XCircle,
   Eye,
-  ExternalLink,
-  MoreVertical,
-  Calendar,
   Download,
   Globe,
   FileText,
   Archive,
-  Clock,
   Tag
 } from 'lucide-react';
 import { toast } from 'react-toastify';
@@ -40,7 +35,7 @@ const NewsList = () => {
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   

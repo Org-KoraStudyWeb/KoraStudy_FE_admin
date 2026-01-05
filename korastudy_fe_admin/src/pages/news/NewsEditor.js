@@ -3,14 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Save,
   ArrowLeft,
-  Eye,
-  Globe,
-  Image,
+  CheckCircle,
   FileText,
+  Image,
   Tag,
   BarChart2,
-  CheckCircle,
-  Clock,
+  Globe,
   Archive,
   RefreshCw
 } from 'lucide-react';
@@ -48,6 +46,7 @@ const NewsEditor = () => {
       fetchArticle();
     }
     fetchTopics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchArticle = async () => {

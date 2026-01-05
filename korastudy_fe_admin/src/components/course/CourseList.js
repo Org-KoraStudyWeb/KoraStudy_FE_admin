@@ -1,5 +1,5 @@
 // src/components/course/CourseList.js
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Table,
@@ -13,6 +13,12 @@ import {
   Col,
   Statistic,
   Tooltip,
+  Select,
+  InputNumber,
+  Radio,
+  Collapse,
+  Badge,
+  Form,
 } from "antd";
 import {
   PlusOutlined,
@@ -25,16 +31,21 @@ import {
   CheckCircleOutlined,
   ClockCircleOutlined,
   ReloadOutlined,
+  FilterOutlined,
+  ClearOutlined,
 } from "@ant-design/icons";
 import CourseService from "../../services/CourseService";
 
 const { Search } = Input;
+const { Option } = Select;
+
 
 const CourseList = ({
   courses,
   loading,
   stats,
   pagination,
+  filters,          // NEW: Current filter values
   onLoadCourses,
   onSearchCourses,
   onChangePage,
@@ -42,8 +53,68 @@ const CourseList = ({
   onDeleteCourse,
   onTogglePublish,
   onShowEnrollmentList,
+  onApplyFilters,   // NEW: Apply filters handler
+  onResetFilters,   // NEW: Reset filters handler
 }) => {
   const navigate = useNavigate();
+  const [form] = Form.useForm();
+  
+  // Local state for active filter count
+  const [activeFilterCount, setActiveFilterCount] = useState(0);
+
+  // Calculate active filters count
+  React.useEffect(() => {
+    let count = 0;
+    if (filters?.level) count++;
+    if (filters?.minPrice !== null && filters?.minPrice !== undefined) count++;
+    if (filters?.maxPrice !== null && filters?.maxPrice !== undefined) count++;
+    if (filters?.isPublished !== null && filters?.isPublished !== undefined) count++;
+    setActiveFilterCount(count);
+  }, [filters]);
+
+  // Handle filter form submit
+  const handleFilterSubmit = (values) => {
+    const filterParams = {
+      level: values.level || null,
+      minPrice: values.minPrice || null,
+      maxPrice: values.maxPrice || null,
+      isPublished: values.isPublished !== undefined ? values.isPublished : null,
+    };
+    onApplyFilters(filterParams);
+  };
+
+  // Handle reset filters
+  const handleResetFilters = () => {
+    form.resetFields();
+    onResetFilters();
+  };
+
+  // Handle sort change
+  const handleSortChange = (value) => {
+    const [sortBy, sortDir] = value.split("-");
+    onApplyFilters({ sortBy, sortDir });
+  };
+
+  // Handle table change (for sorting via column headers)
+  const handleTableChange = (newPagination, tableFilters, sorter) => {
+    // Chỉ gọi API filter khi có thay đổi về sort
+    // Pagination đã được handle bởi onChangePage ở Table props
+    if (sorter.field && sorter.order) {
+      let sortBy = sorter.field;
+      if (sorter.field === "published") {
+        sortBy = "isPublished";
+      }
+      const sortDir = sorter.order === "ascend" ? "asc" : "desc";
+      
+      // Check if sort actually changed to avoid redundant calls
+      const currentSortBy = filters?.sortBy || "id";
+      const currentSortDir = filters?.sortDir || "desc";
+      
+      if (sortBy !== currentSortBy || sortDir !== currentSortDir) {
+        onApplyFilters({ sortBy, sortDir });
+      }
+    }
+  };
 
   // ========== TABLE ==========
   const columns = [
@@ -53,6 +124,7 @@ const CourseList = ({
       key: "id",
       width: 60,
       sorter: true,
+      sortOrder: filters?.sortBy === "id" ? (filters?.sortDir === "asc" ? "ascend" : "descend") : null,
       fixed: "left",
     },
     {
@@ -94,6 +166,8 @@ const CourseList = ({
       dataIndex: "courseName",
       key: "courseName",
       width: 150,
+      sorter: true,
+      sortOrder: filters?.sortBy === "courseName" ? (filters?.sortDir === "asc" ? "ascend" : "descend") : null,
       onCell: () => ({
         style: {
           whiteSpace: "normal",
@@ -156,6 +230,8 @@ const CourseList = ({
       dataIndex: "coursePrice",
       key: "coursePrice",
       width: 100,
+      sorter: true,
+      sortOrder: filters?.sortBy === "coursePrice" ? (filters?.sortDir === "asc" ? "ascend" : "descend") : null,
       render: (coursePrice) => (
         <span>
           {coursePrice ? CourseService.formatCurrency(coursePrice) : "Miễn phí"}
@@ -167,26 +243,31 @@ const CourseList = ({
       dataIndex: "courseLevel",
       key: "courseLevel",
       width: 100,
+      sorter: true,
+      sortOrder: filters?.sortBy === "courseLevel" ? (filters?.sortDir === "asc" ? "ascend" : "descend") : null,
       render: (courseLevel) => {
         let color;
+        let label;
         switch (courseLevel) {
           case "BEGINNER":
             color = "green";
+            label = "Sơ cấp";
             break;
           case "INTERMEDIATE":
-            color = "orange";
+            color = "blue"; // Changed from orange to differentiate better or keep consistency
+            label = "Trung cấp";
             break;
           case "ADVANCED":
             color = "red";
+            label = "Cao cấp";
             break;
           default:
             color = "gray";
+            label = "Không xác định";
         }
         return (
           <Tag color={color}>
-            {courseLevel
-              ? courseLevel.charAt(0) + courseLevel.slice(1).toLowerCase()
-              : "Không xác định"}
+            {label}
           </Tag>
         );
       },
@@ -196,6 +277,8 @@ const CourseList = ({
       dataIndex: "published",
       key: "published",
       width: 100,
+      sorter: true,
+      sortOrder: filters?.sortBy === "isPublished" ? (filters?.sortDir === "asc" ? "ascend" : "descend") : null,
       render: (published) => (
         <Tag color={published ? "green" : "orange"}>
           {published ? "Đã xuất bản" : "Nháp"}
@@ -207,6 +290,8 @@ const CourseList = ({
       dataIndex: "createdAt",
       key: "createdAt",
       width: 120,
+      sorter: true,
+      sortOrder: filters?.sortBy === "createdAt" ? (filters?.sortDir === "asc" ? "ascend" : "descend") : null,
       render: (date) => CourseService.formatDate(date),
     },
     {
@@ -334,18 +419,157 @@ const CourseList = ({
           </Space>
         }
       >
-        {/* Tìm kiếm */}
-        <div style={{ marginBottom: 16 }}>
-          <Search
-            placeholder="Tìm kiếm khóa học..."
-            allowClear
-            enterButton={<SearchOutlined />}
-            size="large"
-            onSearch={(value) => onSearchCourses(value)}
-            onChange={(e) => e.target.value === "" && onSearchCourses("")}
-            style={{ maxWidth: 400, width: "100%" }}
-          />
-        </div>
+        {/* ==== FILTER PANEL ==== */}
+        <Collapse
+          style={{ marginBottom: 16 }}
+          items={[
+            {
+              key: "1",
+              label: (
+                <Space>
+                  <FilterOutlined />
+                  <span>Bộ lọc nâng cao</span>
+                  {activeFilterCount > 0 && (
+                    <Badge count={activeFilterCount} style={{ backgroundColor: "#52c41a" }} />
+                  )}
+                </Space>
+              ),
+              children: (
+                <Form
+                  form={form}
+                  layout="vertical"
+                  onFinish={handleFilterSubmit}
+                  initialValues={{
+                    level: filters?.level,
+                    minPrice: filters?.minPrice,
+                    maxPrice: filters?.maxPrice,
+                    isPublished: filters?.isPublished,
+                  }}
+                >
+                  <Row gutter={16}>
+                    <Col xs={24} sm={12} md={6}>
+                      <Form.Item label="Cấp độ" name="level">
+                        <Select placeholder="Chọn cấp độ" allowClear>
+                          <Option value="Beginner">Sơ cấp</Option>
+                          <Option value="Intermediate">Trung cấp</Option>
+                          <Option value="Advanced">Cao cấp</Option>
+                        </Select>
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12} md={6}>
+                      <Form.Item label="Giá tối thiểu (VND)" name="minPrice">
+                        <InputNumber
+                          placeholder="0"
+                          min={0}
+                          style={{ width: "100%" }}
+                          formatter={(value) =>
+                            `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                          }
+                          parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
+                        />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12} md={6}>
+                      <Form.Item label="Giá tối đa (VND)" name="maxPrice">
+                        <InputNumber
+                          placeholder="0"
+                          min={0}
+                          style={{ width: "100%" }}
+                          formatter={(value) =>
+                            `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                          }
+                          parser={(value) => value.replace(/\$\s?|(,*)/g, "")}
+                        />
+                      </Form.Item>
+                    </Col>
+
+                    <Col xs={24} sm={12} md={6}>
+                      <Form.Item label="Trạng thái xuất bản" name="isPublished">
+                        <Radio.Group>
+                          <Radio value={null}>Tất cả</Radio>
+                          <Radio value={true}>Đã xuất bản</Radio>
+                          <Radio value={false}>Chưa xuất bản</Radio>
+                        </Radio.Group>
+                      </Form.Item>
+                    </Col>
+                  </Row>
+
+                  <Row>
+                    <Col span={24}>
+                      <Space>
+                        <Button
+                          type="primary"
+                          htmlType="submit"
+                          icon={<FilterOutlined />}
+                          loading={loading}
+                        >
+                          Áp dụng
+                        </Button>
+                        <Button
+                          icon={<ClearOutlined />}
+                          onClick={handleResetFilters}
+                        >
+                          Xóa bộ lọc
+                        </Button>
+                      </Space>
+                    </Col>
+                  </Row>
+                </Form>
+              ),
+            },
+          ]}
+        />
+
+        {/* ==== SORT & SEARCH ==== */}
+        <Row gutter={16} style={{ marginBottom: 16 }}>
+          <Col xs={24} sm={12} md={8}>
+            <Space direction="vertical" style={{ width: "100%" }}>
+              <span style={{ fontWeight: 500 }}>Sắp xếp theo:</span>
+              <Select
+                style={{ width: "100%" }}
+                placeholder="Chọn cách sắp xếp"
+                value={`${filters?.sortBy || "id"}-${filters?.sortDir || "desc"}`}
+                onChange={handleSortChange}
+              >
+                <Option value="id-desc">ID (Giảm dần)</Option>
+                <Option value="id-asc">ID (Tăng dần)</Option>
+                <Option value="courseName-asc">Tên (A-Z)</Option>
+                <Option value="courseName-desc">Tên (Z-A)</Option>
+                <Option value="coursePrice-asc">Giá (Thấp đến cao)</Option>
+                <Option value="coursePrice-desc">Giá (Cao đến thấp)</Option>
+                <Option value="courseLevel-asc">Cấp độ (Sơ cấp - Cao cấp)</Option>
+                <Option value="courseLevel-desc">Cấp độ (Cao cấp - Sơ cấp)</Option>
+                <Option value="numberOfEnrollments-desc">Học viên (Nhiều nhất)</Option>
+                <Option value="numberOfEnrollments-asc">Học viên (Ít nhất)</Option>
+                <Option value="numberOfLessons-desc">Bài học (Nhiều nhất)</Option>
+                <Option value="numberOfLessons-asc">Bài học (Ít nhất)</Option>
+                <Option value="isPublished-desc">Đã xuất bản trước</Option>
+                <Option value="isPublished-asc">Chưa xuất bản trước</Option>
+                <Option value="createdAt-desc">Mới nhất</Option>
+                <Option value="createdAt-asc">Cũ nhất</Option>
+                <Option value="viewCount-desc">Lượt xem (Cao đến thấp)</Option>
+                <Option value="viewCount-asc">Lượt xem (Thấp đến cao)</Option>
+              </Select>
+            </Space>
+          </Col>
+
+          <Col xs={24} sm={12} md={16}>
+            <Space direction="vertical" style={{ width: "100%" }}>
+              <span style={{ fontWeight: 500 }}>Tìm kiếm:</span>
+              <Search
+                placeholder="Tìm kiếm theo tên hoặc mô tả khóa học..."
+                allowClear
+                enterButton={<SearchOutlined />}
+                size="large"
+                onSearch={(value) => onSearchCourses(value)}
+                onChange={(e) => e.target.value === "" && onSearchCourses("")}
+                style={{ width: "100%" }}
+              />
+            </Space>
+          </Col>
+        </Row>
 
         {/* Bảng danh sách khóa học */}
         <Table
@@ -355,6 +579,7 @@ const CourseList = ({
           rowKey="id"
           tableLayout="fixed"
           scroll={{ x: "max-content" }}
+          onChange={handleTableChange}
           pagination={{
             current: pagination.current,
             pageSize: pagination.pageSize,

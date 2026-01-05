@@ -17,6 +17,10 @@ const useCourseManagement = () => {
     sortBy: "id",
     sortDir: "desc",
     search: "",
+    level: null,        // NEW: Filter by level (Beginner/Intermediate/Advanced)
+    minPrice: null,     // NEW: Filter by min price
+    maxPrice: null,     // NEW: Filter by max price
+    isPublished: null,  // NEW: Filter by published status (true/false/null for all)
   });
   const [stats, setStats] = useState({
     totalCourses: 0,
@@ -60,6 +64,11 @@ const useCourseManagement = () => {
           sortBy: params.sortBy || currentFilters.sortBy,
           sortDir: params.sortDir || currentFilters.sortDir,
           keyword,
+          // NEW: Add filter parameters
+          level: params.level !== undefined ? params.level : currentFilters.level,
+          minPrice: params.minPrice !== undefined ? params.minPrice : currentFilters.minPrice,
+          maxPrice: params.maxPrice !== undefined ? params.maxPrice : currentFilters.maxPrice,
+          isPublished: params.isPublished !== undefined ? params.isPublished : currentFilters.isPublished,
         };
 
         const response = await CourseService.getAllCoursesAdmin(queryParams);
@@ -274,6 +283,30 @@ const useCourseManagement = () => {
     setError(null);
   }, []);
 
+  // Apply filters - NEW
+  const applyFilters = useCallback(
+    (filterValues) => {
+      setFilters((prev) => ({ ...prev, ...filterValues }));
+      loadCourses(1, filterValues);
+    },
+    [loadCourses]
+  );
+
+  // Reset filters - NEW
+  const resetFilters = useCallback(() => {
+    const defaultFilters = {
+      sortBy: "id",
+      sortDir: "desc",
+      search: "",
+      level: null,
+      minPrice: null,
+      maxPrice: null,
+      isPublished: null,
+    };
+    setFilters(defaultFilters);
+    loadCourses(1, defaultFilters);
+  }, [loadCourses]);
+
   // Initial load
   useEffect(() => {
     loadCourses();
@@ -301,6 +334,8 @@ const useCourseManagement = () => {
     changePage,
     changeFilters,
     clearError,
+    applyFilters,    // NEW
+    resetFilters,    // NEW
   };
 };
 

@@ -1,7 +1,6 @@
 class ApiService {
   constructor() {
-    this.baseURL =
-      process.env.REACT_APP_API_BASE_URL || "http://localhost:8080/api/v1";
+    this.baseURL = process.env.REACT_APP_API_BASE_URL;
 
     // Single source of truth
     this.token = localStorage.getItem("accessToken");

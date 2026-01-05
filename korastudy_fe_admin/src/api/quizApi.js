@@ -33,6 +33,20 @@ const quizApi = {
     );
   },
 
+  importQuestions: (quizId, file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return axiosClient.post(
+      `/api/v1/quizzes/${quizId}/import-questions`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+  },
+
   updateQuestion: (questionId, questionData) => {
     return axiosClient.put(
       `/api/v1/quizzes/questions/${questionId}`,

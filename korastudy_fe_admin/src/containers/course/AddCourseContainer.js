@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axiosClient from "../../api/axiosClient"; // dùng client có interceptor
-import axios from "axios";
+import axiosClient from "../../api/axiosClient"; 
 import AddCourse from "../../pages/course/AddCoursePages";
 
 const CourseContainer = () => {
@@ -59,8 +58,8 @@ const CourseContainer = () => {
         const imageForm = new FormData();
         imageForm.append("file", imageFile);
 
-        const uploadRes = await axios.post(
-          "http://localhost:8080/api/v1/upload",
+        const uploadRes = await axiosClient.post(
+          "/api/v1/upload",
           imageForm,
           {
             headers: {

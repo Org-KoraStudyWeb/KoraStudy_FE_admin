@@ -337,6 +337,8 @@ const QuestionForm = ({ quizId, onSuccess, editingQuestion }) => {
         questionType,
         imageUrl: questionImage, // Cloudinary URL đã upload
         options: finalOptions,
+        // Fix lỗi backend yêu cầu orderIndex >= 1
+        orderIndex: editingQuestion?.orderIndex || 1,
       };
 
       console.log("📝 Submitting question data:", questionData);
