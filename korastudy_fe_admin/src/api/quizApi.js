@@ -39,6 +39,11 @@ const quizApi = {
     return axiosClient.post(
       `/api/v1/quizzes/${quizId}/import-questions`,
       formData,
+      {
+        headers: {
+          "Content-Type": undefined,
+        },
+      }
     );
   },
 
