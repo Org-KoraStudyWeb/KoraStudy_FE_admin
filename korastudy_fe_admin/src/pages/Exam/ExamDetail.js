@@ -79,7 +79,7 @@ const ExamDetail = () => {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => navigate(`/admin/exams/${id}/edit`)}
+            onClick={() => navigate(`/admin/tests/${id}/edit`)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
           >
             <Edit size={16} />

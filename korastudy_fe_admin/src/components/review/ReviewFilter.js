@@ -122,6 +122,16 @@ const ReviewFilter = ({ onFilter, isLoading }) => {
           Bài thi
         </button>
         <button
+          onClick={() => handleQuickFilter("targetType", "NEWS")}
+          className={`px-3 py-1.5 text-sm rounded-lg ${
+            filters.targetType === "NEWS"
+              ? "bg-blue-600 text-white"
+              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+          }`}
+        >
+          Bài viết
+        </button>
+        <button
           onClick={() => handleQuickFilter("status", "HIDDEN")}
           className={`px-3 py-1.5 text-sm rounded-lg ${
             filters.status === "HIDDEN"
@@ -151,6 +161,7 @@ const ReviewFilter = ({ onFilter, isLoading }) => {
                 <option value="">Tất cả loại</option>
                 <option value="COURSE">Khóa học</option>
                 <option value="MOCK_TEST">Bài thi thử</option>
+                <option value="NEWS">Bài viết</option>
               </select>
             </div>
 

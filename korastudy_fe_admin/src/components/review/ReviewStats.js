@@ -27,6 +27,13 @@ const ReviewStats = ({ stats }) => {
       iconColor: "text-purple-600",
     },
     {
+      title: "Bài viết",
+      value: stats.totalNewsReviews || 0,
+      icon: <MessageSquare size={24} />,
+      iconBgColor: "bg-blue-50",
+      iconColor: "text-blue-500",
+    },
+    {
       title: "Rating trung bình",
       value: stats.averageRating ? stats.averageRating.toFixed(1) : "0.0",
       icon: <Star size={24} />,

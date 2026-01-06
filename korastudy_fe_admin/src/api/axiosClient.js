@@ -7,6 +7,20 @@ const axiosClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  paramsSerializer: {
+    serialize: (params) => {
+      const searchParams = new URLSearchParams();
+      for (const key in params) {
+        const value = params[key];
+        if (Array.isArray(value)) {
+          value.forEach((val) => searchParams.append(key, val));
+        } else if (value !== null && value !== undefined) {
+          searchParams.append(key, value);
+        }
+      }
+      return searchParams.toString();
+    },
+  },
 });
 
 // Request interceptor

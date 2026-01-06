@@ -45,22 +45,22 @@ const blogApi = {
 
   // Lấy danh sách categories
   getAllCategories: () => {
-    return axiosClient.get("/api/v1/admin/blog/categories");
+    return axiosClient.get("/api/v1/categories");
   },
 
   // Tạo mới category
   createCategory: (data) => {
-    return axiosClient.post("/api/v1/admin/blog/categories", data);
+    return axiosClient.post("/api/v1/categories", data);
   },
 
   // Cập nhật category
   updateCategory: (id, data) => {
-    return axiosClient.put(`/api/v1/admin/blog/categories/${id}`, data);
+    return axiosClient.put(`/api/v1/categories/${id}`, data);
   },
 
   // Xóa category
   deleteCategory: (id) => {
-    return axiosClient.delete(`/api/v1/admin/blog/categories/${id}`);
+    return axiosClient.delete(`/api/v1/categories/${id}`);
   },
 
   // Lấy danh sách comments của bài viết
@@ -85,7 +85,7 @@ const blogApi = {
   uploadImage: (file) => {
     const formData = new FormData();
     formData.append("file", file);
-    return axiosClient.post("/api/v1/admin/upload/image", formData, {
+    return axiosClient.post("/api/v1/upload/image", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
