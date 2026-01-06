@@ -854,7 +854,7 @@ const CourseEnrollmentList = ({ visible, onClose, courseId, courseName }) => {
         onCancel={onClose}
         width={1400}
         footer={null}
-        destroyOnClose
+        destroyOnHidden
         style={{ top: 20 }}
       >
         {/* Statistics */}

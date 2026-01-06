@@ -112,7 +112,7 @@ const QuizForm = ({ visible, onClose, onSuccess, sectionId, editingQuiz }) => {
       open={visible}
       onCancel={onClose}
       width={800}
-      destroyOnClose
+      destroyOnHidden
       bodyStyle={{ padding: "24px 0", maxHeight: "80vh", overflow: "auto" }}
       footer={[
         <Button key="cancel" onClick={onClose} size="large">

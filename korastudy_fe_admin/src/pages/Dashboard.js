@@ -109,16 +109,7 @@ const Dashboard = () => {
           }
         }
 
-        // Fetch enrollments data
-        let enrollmentsData = { totalElements: 0 };
-        try {
 
-          const enrollmentsResponse = await enrollmentApi.getMyEnrollments();
-          enrollmentsData = enrollmentsResponse.data;
-
-        } catch (error) {
-          console.error("❌ Dashboard: Error fetching enrollments:", error);
-        }
 
         setStats({
           totalUsers: usersData.totalElements || 0,
