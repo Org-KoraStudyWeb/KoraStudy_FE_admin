@@ -661,7 +661,7 @@ const QuizQuestionManager = () => {
         onCancel={closeQuestionForm}
         footer={null}
         width={800}
-        destroyOnClose
+        destroyOnHidden
       >
         <QuestionForm
           quizId={quizId}
