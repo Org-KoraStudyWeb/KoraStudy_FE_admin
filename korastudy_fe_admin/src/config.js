@@ -2,6 +2,7 @@
 
 // API Base URL - adjust this to your backend API endpoint
 export const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+export const USER_WEBSITE_URL = process.env.REACT_APP_USER_WEBSITE_URL;
 
 // Other global configuration constants can be added here
 export const APP_NAME = 'KoraStudy Admin';
