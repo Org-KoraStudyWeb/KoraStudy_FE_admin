@@ -513,11 +513,35 @@ const BlogList = () => {
                         {blog.categories && blog.categories.length > 2 && (
                           <span className="text-xs text-gray-400">+{blog.categories.length - 2}</span>
                         )}
-                        {(!blog.categories || blog.categories.length === 0) && (
+                        {/* Map categoryIds to names if categories array is missing */}
+                        {(!blog.categories || blog.categories.length === 0) && blog.categoryIds && blog.categoryIds.length > 0 && categories.length > 0 && (
+                          <>
+                            {blog.categoryIds.slice(0, 2).map(id => {
+                              const cat = categories.find(c => c.id === id);
+                              return cat ? (
+                                <span key={id} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  {cat.name}
+                                </span>
+                              ) : null;
+                            })}
+                            {blog.categoryIds.length > 2 && (
+                               <span className="text-xs text-gray-400">+{blog.categoryIds.length - 2}</span>
+                            )}
+                          </>
+                        )}
+
+                        {/* Fallback to categoryName or singular category if array is empty */}
+                        {(!blog.categories || blog.categories.length === 0) && (!blog.categoryIds || blog.categoryIds.length === 0) && (blog.categoryName || blog.category?.name) && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                             {blog.categoryName || blog.category?.name}
+                          </span>
+                        )}
+                        {(!blog.categories || blog.categories.length === 0) && (!blog.categoryIds || blog.categoryIds.length === 0) && (!blog.categoryName && !blog.category?.name) && (
                           <span className="text-xs text-gray-400">-</span>
                         )}
                       </div>
                     </td>
+
                     <td className="px-4 py-3">
                       <div className="space-y-1">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${

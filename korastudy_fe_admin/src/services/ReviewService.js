@@ -5,6 +5,7 @@ class ReviewService {
   static REVIEW_TYPES = {
     COURSE: "COURSE",
     MOCK_TEST: "MOCK_TEST",
+    NEWS: "NEWS",
   };
 
   static REVIEW_STATUS = {
@@ -460,6 +461,11 @@ class ReviewService {
         label: "Bài thi thử",
         color: "secondary",
         icon: "quiz",
+      },
+      [ReviewService.REVIEW_TYPES.NEWS]: {
+        label: "Bài viết",
+        color: "info",
+        icon: "article",
       },
     };
     return typeLabels[type] || { label: type, color: "default", icon: "help" };
