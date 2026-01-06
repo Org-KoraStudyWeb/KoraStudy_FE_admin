@@ -1,6 +1,19 @@
 import axiosClient from "../api/axiosClient";
 
 const AdminExamService = {
+  // Get dashboard stats for admin
+  getDashboardStats: async () => {
+    try {
+      console.log("📊 Fetching exam dashboard stats...");
+      const response = await axiosClient.get("/api/v1/admin/exams/stats");
+      console.log("✅ Exam dashboard stats fetched:", response.data);
+      return response.data;
+    } catch (error) {
+      console.error("❌ Error fetching exam dashboard stats:", error);
+      throw error;
+    }
+  },
+
   // Get all exams for admin
   getAllExams: async () => {
     try {
