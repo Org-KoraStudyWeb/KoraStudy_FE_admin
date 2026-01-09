@@ -24,6 +24,26 @@ import enrollmentApi from "../api/enrollmentApi";
 import reviewService from "../services/ReviewService";
 import AdminExamService from "../services/AdminExamService";
 import ReviewDashboardCharts from "../components/review/ReviewDashboardCharts";
+import enrollmentService from "../services/EnrollmentService";
+
+const formatTimeAgo = (dateString) => {
+  if (!dateString) return "Vừa xong";
+  const date = new Date(dateString);
+  const now = new Date();
+  const seconds = Math.floor((now - date) / 1000);
+
+  let interval = seconds / 31536000;
+  if (interval > 1) return Math.floor(interval) + " năm trước";
+  interval = seconds / 2592000;
+  if (interval > 1) return Math.floor(interval) + " tháng trước";
+  interval = seconds / 86400;
+  if (interval > 1) return Math.floor(interval) + " ngày trước";
+  interval = seconds / 3600;
+  if (interval > 1) return Math.floor(interval) + " giờ trước";
+  interval = seconds / 60;
+  if (interval > 1) return Math.floor(interval) + " phút trước";
+  return Math.floor(seconds) + " giây trước";
+};
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -124,21 +144,20 @@ const Dashboard = () => {
 
         // Fetch recent enrollments as activities
         try {
-          const enrollResponse = await enrollmentApi.getMyEnrollments();
-          if (enrollResponse.data && Array.isArray(enrollResponse.data)) {
-            const activities = enrollResponse.data
-              .slice(0, 4)
-              .map((enrollment, index) => ({
-                id: enrollment.id || index,
-                type: "enrollment",
-                title: `Người dùng đã đăng ký khóa học: ${
-                  enrollment.courseName || "Khóa học"
-                }`,
-                user: "System",
-                time: `${Math.floor(Math.random() * 24)} giờ trước`,
-                icon: <Users size={16} />,
-                color: ["blue", "green", "purple", "orange"][index % 4],
-              }));
+          const enrollResponse = await enrollmentService.getRecentEnrollments(5);
+          if (enrollResponse.success && Array.isArray(enrollResponse.data)) {
+            const activities = enrollResponse.data.map((item, index) => ({
+              id: item.id || index,
+              type: "enrollment",
+              title: `Người dùng ${item.userFullName || "Unknown"} đã đăng ký khóa học: ${
+                item.courseName || "Khóa học"
+              }`,
+              user: item.userFullName || "Unknown User",
+              time: formatTimeAgo(item.enrollmentDate), // Use real time
+              icon: <Users size={16} />,
+              color: ["blue", "green", "purple", "orange"][index % 4],
+              avatar: item.userAvatar
+            }));
             setRecentActivities(activities);
           }
         } catch (error) {
