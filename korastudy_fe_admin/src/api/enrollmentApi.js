@@ -89,6 +89,15 @@ const enrollmentApi = {
   getEnrollmentStats: () => {
     return axiosClient.get("/api/v1/enrollments/stats");
   },
+
+  /**
+   * Lấy danh sách hoạt động đăng ký gần đây (Admin)
+   */
+  getRecentEnrollments: (limit = 5) => {
+    return axiosClient.get("/api/v1/enrollments/recent", {
+      params: { limit },
+    });
+  },
 };
 
 export default enrollmentApi;
