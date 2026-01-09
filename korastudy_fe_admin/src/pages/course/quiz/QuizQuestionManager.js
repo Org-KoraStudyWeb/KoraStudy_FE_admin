@@ -396,6 +396,25 @@ const QuizQuestionManager = () => {
                   accept=".xlsx, .xls"
                   showUploadList={false}
                   beforeUpload={async (file) => {
+                    // Validation
+                    const isExcel =
+                      file.type ===
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+                      file.type === "application/vnd.ms-excel" ||
+                      file.name.endsWith(".xlsx") ||
+                      file.name.endsWith(".xls");
+
+                    if (!isExcel) {
+                      message.error("Chỉ chấp nhận file Excel (.xlsx, .xls)!");
+                      return Upload.LIST_IGNORE;
+                    }
+
+                    const isLt5M = file.size / 1024 / 1024 < 5;
+                    if (!isLt5M) {
+                      message.error("File phải nhỏ hơn 5MB!");
+                      return Upload.LIST_IGNORE;
+                    }
+
                     const hide = message.loading("Đang import câu hỏi...", 0);
                     try {
                       const response = await QuizService.importQuestions(

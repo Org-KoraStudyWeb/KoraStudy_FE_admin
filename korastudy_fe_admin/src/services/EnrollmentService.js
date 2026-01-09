@@ -298,6 +298,26 @@ class EnrollmentService {
     }
   }
 
+  /**
+   * Lấy danh sách hoạt động gần đây (Admin)
+   */
+  async getRecentEnrollments(limit = 5) {
+    try {
+      console.log("📊 [ADMIN] Fetching recent enrollments, limit:", limit);
+
+      const response = await enrollmentApi.getRecentEnrollments(limit);
+
+      return {
+        success: true,
+        data: response.data,
+        message: "Lấy danh sách hoạt động gần đây thành công",
+      };
+    } catch (error) {
+      console.error("❌ [ADMIN] Failed to fetch recent enrollments:", error);
+      return this.handleError(error, "Lỗi khi lấy danh sách hoạt động gần đây");
+    }
+  }
+
   // ==================== UTILITY METHODS ====================
 
   /**

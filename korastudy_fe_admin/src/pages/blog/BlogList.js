@@ -19,6 +19,7 @@ import {
   EyeOff,
   Clock
 } from 'lucide-react';
+import { USER_WEBSITE_URL } from '../../config';
 import blogApi from '../../api/blogApi';
 
 const BlogList = () => {
@@ -579,10 +580,16 @@ const BlogList = () => {
                           <span>{blog.viewCount || 0}</span>
                         </div>
                         {blog.commentCount > 0 && (
-                          <div className="flex items-center gap-1 text-gray-500">
+                          <a 
+                            href={`${USER_WEBSITE_URL}/blog/${blog.slug || blog.id}#comments`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-gray-500 hover:text-blue-600 transition-colors"
+                            title="Xem bình luận trên website"
+                          >
                             <MessageSquare size={12} className="text-gray-400" />
                             <span>{blog.commentCount}</span>
-                          </div>
+                          </a>
                         )}
                       </div>
                     </td>
@@ -646,7 +653,7 @@ const BlogList = () => {
                           {blog.published ? <XCircle size={14} /> : <CheckCircle size={14} />}
                         </button>
                         <a
-                          href={`/blog/${blog.slug || blog.id}`}
+                          href={`${USER_WEBSITE_URL}/blog/${blog.slug || blog.id}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="p-1.5 hover:bg-purple-50 rounded text-gray-600 hover:text-purple-600 transition-colors"
