@@ -83,6 +83,7 @@ const ReviewListContainer = () => {
           totalReviews: result.data.totalReviews || 0,
           totalCourseReviews: result.data.courseReviews || 0,
           totalMockTestReviews: result.data.mockTestReviews || 0,
+          totalNewsReviews: result.data.newsReviews || 0,
           averageRating: parseFloat(result.data.averageRating) || 0,
           todayReviews: result.data.todayReviews || 0,
           reportedReviews: result.data.reportedReviews || 0,

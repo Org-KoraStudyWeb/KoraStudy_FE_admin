@@ -21,7 +21,6 @@ const CreateBlog = () => {
     excerpt: '',
     content: '',
     categories: [],
-    tags: '',
     featuredImage: null,
     imageUrl: '',
     published: false,
@@ -87,16 +86,8 @@ const CreateBlog = () => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        // Tạm thời comment API call cho đến khi backend có endpoint
-        // const response = await blogApi.getAllCategories();
-        // setCategories(response.data);
-        
-        // Mock data
-        setCategories([
-          { id: 1, name: 'Công nghệ' },
-          { id: 2, name: 'Lập trình' },
-          { id: 3, name: 'Thiết kế' }
-        ]);
+        const response = await blogApi.getAllCategories();
+        setCategories(response.data);
       } catch (error) {
         console.error('Lỗi khi tải danh mục:', error);
         setCategories([]);
@@ -122,8 +113,7 @@ const CreateBlog = () => {
             title: postData.postTitle || '',
             excerpt: postData.postSummary || '',
             content: postData.postContent || '',
-            categories: postData.categories?.map(cat => cat.id) || [],
-            tags: postData.metas?.find(meta => meta.metaKey === 'seo_keywords')?.postMetaContext || '',
+            categories: postData.categoryIds || postData.categories?.map(cat => cat.id) || [],
             imageUrl: postData.featuredImage || '',
             published: postData.published || false,
             authorName: postData.authorName || '',
@@ -154,8 +144,11 @@ const CreateBlog = () => {
         postSummary: blog.excerpt,
         postContent: blog.content,
         categoryIds: blog.categories,
-        published: blog.published
+        published: blog.published // Support both incase backend still checks 'published'
       };
+      
+      // Ensure postPublished is definitely sent as per guide
+      postData.postPublished = blog.published;
 
       console.log('Sending post data:', postData);
 
@@ -245,7 +238,7 @@ const CreateBlog = () => {
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="max-w-4xl">
+        <div className="w-full">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">
@@ -335,18 +328,7 @@ const CreateBlog = () => {
                     </p>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tags
-                    </label>
-                    <input
-                      type="text"
-                      value={blog.tags}
-                      onChange={(e) => setBlog({ ...blog, tags: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Nhập tags, phân cách bằng dấu phẩy"
-                    />
-                  </div>
+
                 </div>
               </div>
 
